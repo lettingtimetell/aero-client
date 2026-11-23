@@ -49,6 +49,7 @@ use crate::frame::{
 use crate::input::{CursorMode, InputState};
 use crate::pipeline::PhaseList;
 use crate::settings::GameSettings;
+use crate::window_icon::WindowIcon;
 use crate::{AcquiredFrame, Gpu, RenderError};
 
 /// How the app wants the swap chain to present, polled once per frame through
@@ -101,6 +102,9 @@ pub struct ShellConfig {
     pub max_duration: Option<Duration>,
     /// Grab the cursor as soon as the window opens.
     pub grab_cursor_on_start: bool,
+    /// The window's icon (the title bar, the taskbar and Alt+Tab), at several sizes; the shell
+    /// picks each for the display scaling. `None` leaves the system's default icon.
+    pub icon: Option<WindowIcon>,
 }
 
 impl Default for ShellConfig {
@@ -112,6 +116,7 @@ impl Default for ShellConfig {
             max_frames: None,
             max_duration: None,
             grab_cursor_on_start: false,
+            icon: None,
         }
     }
 }
@@ -491,6 +496,7 @@ impl Shell {
             reported_refresh: None,
             reported_scale: None,
             background: BackgroundWait::default(),
+            icon_sizes: None,
         };
 
         let loop_result = event_loop.run_app(&mut runner);
@@ -628,9 +634,26 @@ struct Runner<'a, A: ShellApp> {
     /// Whether the window is minimized, and the next frame's wait while the
     /// window is in the background ([`ShellApp::background_frame_cap`]).
     background: BackgroundWait,
+    /// The pixel sizes ([`WindowIcon::target_sizes`]) the window icon was last set for; `None`
+    /// until it has been set (and always without [`ShellConfig::icon`]).
+    icon_sizes: Option<(u32, u32)>,
 }
 
 impl<A: ShellApp> Runner<'_, A> {
+    /// Sets the window icon again when the window's display scaling now wants other sizes (a move
+    /// to a screen with another scaling, or the scaling changed). A plain move costs a scale-factor
+    /// read and a comparison.
+    fn refresh_window_icon(&mut self) {
+        let (Some(icon), Some(live)) = (self.config.icon.as_ref(), self.state.as_ref()) else {
+            return;
+        };
+        let sizes = WindowIcon::target_sizes(live.window.scale_factor());
+        if self.icon_sizes != Some(sizes) {
+            icon.apply(&live.window);
+            self.icon_sizes = Some(sizes);
+        }
+    }
+
     fn start(&mut self, event_loop: &ActiveEventLoop) -> Result<(), RenderError> {
         let attrs = Window::default_attributes()
             .with_active(!self.background_window)
@@ -647,6 +670,12 @@ impl<A: ShellApp> Runner<'_, A> {
         // The size a screen-open re-centres the GUI cursor in; `Resized` keeps it current.
         let inner = window.inner_size();
         self.input.set_window_size(inner.width, inner.height);
+
+        // The window's icon, at the sizes this screen's scaling wants (re-picked when it changes).
+        if let Some(icon) = &self.config.icon {
+            icon.apply(&window);
+            self.icon_sizes = Some(WindowIcon::target_sizes(window.scale_factor()));
+        }
 
         // Diagnostic for the frame-pacing question: `shell.acquire` was measured at
         // ~2.8-3 ms/frame under `PresentMode::AutoVsync`, far under a 60 Hz refresh's ~16.7 ms.
@@ -3084,6 +3113,7 @@ impl<A: ShellApp> ApplicationHandler for Runner<'_, A> {
             // The window may now be on another monitor.
             WindowEvent::Moved(_) | WindowEvent::ScaleFactorChanged { .. } => {
                 self.monitor_dirty = true;
+                self.refresh_window_icon();
             }
 
             WindowEvent::Focused(focused) => {

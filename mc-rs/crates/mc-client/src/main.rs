@@ -244,6 +244,8 @@ fn run(config: ClientConfig) -> std::result::Result<(), Box<RunFailure>> {
         width: client.config.width,
         height: client.config.height,
         max_frames: client.config.max_frames,
+        // The Aero Client logo on the title bar, the taskbar and Alt+Tab.
+        icon: Some(mc_client::window_icon::aero_window_icon()),
         ..ShellConfig::default()
     };
     let settings = client.settings.clone();

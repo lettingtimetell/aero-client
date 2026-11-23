@@ -257,6 +257,7 @@ fn main() -> Result<(), Box<mc_render::RenderError>> {
         max_frames: frames,
         max_duration: seconds.map(Duration::from_secs),
         grab_cursor_on_start: false,
+        icon: None,
     };
 
     let mut demo = Demo {

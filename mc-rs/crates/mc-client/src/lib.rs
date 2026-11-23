@@ -62,6 +62,7 @@
 //! | [`sync`] | [`sync::ClientState`] and the dispatch for all 74 S2C Play packets |
 //! | [`outbound`] | Movement cadence (hazard H11), digging, placing, held-item sync |
 //! | [`session`] | [`session::Session`]: the game-loop-facing state machine |
+//! | [`window_icon`] | The Aero Client logo as the window's icon (title bar, taskbar, Alt+Tab) |
 
 pub mod app;
 pub mod error;
@@ -69,6 +70,7 @@ pub mod net;
 pub mod outbound;
 pub mod session;
 pub mod sync;
+pub mod window_icon;
 
 pub use app::{Client, ClientConfig, CrashReport, GameState};
 pub use error::ClientError;

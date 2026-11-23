@@ -93,6 +93,7 @@ pub mod w18_ob_ab;
 pub mod w21_mr;
 // The allocator's freed pages at transitions.
 pub mod w21_mb;
+pub mod window_icon;
 pub mod world_directions;
 
 pub use context::{AcquiredFrame, DepthAttachment, Gpu, GpuOptions, DEPTH_FORMAT, HEADLESS_FORMAT};
