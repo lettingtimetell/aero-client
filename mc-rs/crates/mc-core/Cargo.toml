@@ -1,0 +1,22 @@
+[package]
+name        = "mc-core"
+description = "Conventions shared by every mc-* crate: tracing setup and profile_scope!."
+version.workspace = true
+edition.workspace = true
+publish.workspace = true
+license.workspace = true
+repository.workspace = true
+
+[features]
+default    = []
+# Only mc-client installs a subscriber; libraries just emit spans.
+subscriber = ["dep:tracing-subscriber"]
+
+[dependencies]
+tracing.workspace            = true
+tracing-subscriber = { workspace = true, optional = true }
+# The hasher behind `FastMap`/`FastSet` (see `lib.rs`). Already in the build graph
+# through hashbrown, hecs and wgpu, so this adds no new crate. Declared here rather than in the
+# workspace table because mc-core is the only crate that names it; everything else uses the
+# aliases.
+foldhash = "0.2"

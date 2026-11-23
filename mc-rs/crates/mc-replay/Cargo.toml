@@ -1,0 +1,56 @@
+[package]
+name        = "mc-replay"
+description = "Aero replay files: the compressed recording container, its writer and reader, clips and the replay library."
+version.workspace = true
+edition.workspace = true
+publish.workspace = true
+license.workspace = true
+repository.workspace = true
+
+[dependencies]
+# Add only what this crate needs (for example a
+# compressor); never edit the root Cargo.toml's other entries.
+#
+# The block compressor: the reference zstd C library through `zstd-sys` (crate MIT; library
+# BSD-3-Clause, dual GPLv2, used under BSD). Default features off: no legacy-format decoders, no
+# dictionary builder, no multithreaded compression (blocks are compressed on our own worker).
+zstd = { version = "0.13", default-features = false }
+# Block, header and metadata checksums. Already in the graph through flate2.
+crc32fast = "1"
+# `ReplayMeta` is stored as JSON in the file.
+serde.workspace      = true
+serde_json.workspace = true
+thiserror.workspace  = true
+tracing.workspace    = true
+# Local date and time for replay file names. Already in the graph (mc-ui), same features.
+chrono.workspace = true
+# The microphone (off by default): the default input device. Already in the graph through kira
+# (same version, no default features, so nothing changes for the audio output).
+cpal = { version = "0.18", default-features = false }
+# The writer and capture threads run inside `mc_core::panic_scope` (`src/contained.rs`). A
+# workspace crate with no new dependencies of its own.
+mc-core.workspace = true
+
+[target.'cfg(windows)'.dependencies]
+# Desktop audio (`src/desktop/wasapi.rs`), Windows' process
+# loopback capture through WASAPI. 0.62.2 is already in the graph (cpal, wgpu-hal, mc-media,
+# mc-video); these features are new for this crate only. `windows-core` is named because the
+# `implement` macro (the activation's completion handler) expands to `::windows_core` paths.
+windows = { version = "0.62", features = [
+    "Win32_Foundation",
+    "Win32_Media_Audio",
+    "Win32_Security",
+    "Win32_System_Com",
+    "Win32_System_Com_StructuredStorage",
+    "Win32_System_Diagnostics_ToolHelp",
+    "Win32_System_Memory",
+    "Win32_System_Threading",
+    "Win32_System_Variant",
+] }
+windows-core = "0.62"
+
+[dev-dependencies]
+tempfile.workspace = true
+# The compression comparison (`examples/compression.rs`: zstd against deflate on real captures;
+# it also inflates the `.mccap` captures it reads).
+flate2.workspace = true

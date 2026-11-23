@@ -1,0 +1,34 @@
+{
+  "schema": 1,
+  "protocol": 47,
+  "checks": {
+    "status_json_preserved_verbatim": true,
+    "ping_pong_payload_echoed": true
+  },
+  "receipts": [
+    {
+      "server": "Vanilla 1.8.9",
+      "endpoint": "127.0.0.1:25571",
+      "latency": "95.1us",
+      "status_json": "{\"description\":\"MCP-919 vanilla 1.8.9 loopback fixture\",\"players\":{\"max\":4,\"online\":2,\"sample\":[{\"id\":\"1571583c-ccb9-39ac-8d11-ae394768d2ef\",\"name\":\"Reference\"},{\"id\":\"f9eaf53b-a41b-37b5-aaaa-fb79e08e7251\",\"name\":\"McRsLauncher\"}]},\"version\":{\"name\":\"1.8.9\",\"protocol\":47}}"
+    },
+    {
+      "server": "Paper 1.8.8 build 445",
+      "endpoint": "127.0.0.1:25572",
+      "latency": "134us",
+      "status_json": "{\"description\":\"MCP-919 Paper 1.8.8 build 445 loopback fixture\",\"players\":{\"max\":4,\"online\":0},\"version\":{\"name\":\"PaperSpigot 1.8.8\",\"protocol\":47}}"
+    },
+    {
+      "server": "BungeeCord 2089 + Vanilla backend",
+      "endpoint": "127.0.0.1:25573",
+      "latency": "125.8us",
+      "status_json": "{\"version\":{\"name\":\"BungeeCord 1.8.x-26.x\",\"protocol\":47},\"players\":{\"max\":4,\"online\":0},\"description\":{\"extra\":[{\"color\":\"dark_blue\",\"text\":\"MCP-919 vanilla backend\"}],\"text\":\"\"},\"modinfo\":{\"type\":\"FML\",\"modList\":[]}}"
+    },
+    {
+      "server": "Spigot 1.8.8 BuildTools output",
+      "endpoint": "127.0.0.1:25577",
+      "latency": "225.5us",
+      "status_json": "{\"description\":\"MCP-919 Paper 1.8.8 build 445 loopback fixture\",\"players\":{\"max\":4,\"online\":0},\"version\":{\"name\":\"Spigot 1.8.8\",\"protocol\":47}}"
+    }
+  ]
+}

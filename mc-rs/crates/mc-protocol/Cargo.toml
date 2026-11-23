@@ -1,0 +1,30 @@
+[package]
+name        = "mc-protocol"
+description = "Protocol 47 packets, codec, encryption and compression."
+version.workspace = true
+edition.workspace = true
+publish.workspace = true
+license.workspace = true
+repository.workspace = true
+
+[dependencies]
+mc-core.workspace     = true
+thiserror.workspace   = true
+bytes.workspace       = true
+mc-nbt.workspace      = true
+mc-math.workspace     = true
+uuid.workspace        = true
+tokio-util.workspace  = true
+mc-auth.workspace     = true          # server_hash (H3) + the session-server join call
+aes.workspace         = true          # AES-128 block cipher under CFB8
+cfb8.workspace        = true          # the CFB8 stream mode itself (H4)
+rsa.workspace         = true          # SPKI DER parse + PKCS#1 v1.5 encrypt
+rand.workspace        = true          # OsRng for the shared secret and PKCS#1 padding
+flate2.workspace      = true          # zlib, above the SetCompression threshold
+# The root table gives tokio ["rt","time","macros"]; S07 also needs the socket and the
+# AsyncRead/AsyncWrite extension traits. Added here rather than in the root table so the
+# other sections' builds do not grow a networking stack they never use.
+tokio                 = { workspace = true, features = ["net", "io-util"] }
+
+[dev-dependencies]
+proptest.workspace = true

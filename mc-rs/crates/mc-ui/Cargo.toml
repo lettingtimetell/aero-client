@@ -1,0 +1,63 @@
+[package]
+name        = "mc-ui"
+description = "Font rendering, widgets, screens, and container UIs."
+version.workspace = true
+edition.workspace = true
+publish.workspace = true
+license.workspace = true
+repository.workspace = true
+
+[dependencies]
+mc-core.workspace   = true
+thiserror.workspace = true
+mc-assets.workspace = true
+mc-render.workspace = true
+mc-math.workspace   = true
+# ascii.png / unicode_page_*.png decode. PNG only: the font atlas is the only image
+# this crate reads itself, everything else arrives pre-decoded from mc-assets.
+image.workspace      = true
+# Chat component trees arrive as JSON on the wire (S06 hands us the string). The tree is
+# walked as `serde_json::Value` rather than derived, so that the deserialiser can reproduce
+# vanilla's exact node-shape rules (and reject what vanilla rejects); no direct `serde` dep.
+serde_json.workspace = true
+# The `UI 800` render phase.
+wgpu.workspace       = true
+# Item/enchantment/armour registry lookups (max stack size, durability, tool class) for
+# the container click logic, tooltips, and creative-tab item lists.
+mc-data.workspace    = true
+# `ItemStack`, `C0EPacketClickWindow`/`S32PacketConfirmTransaction` and the rest of the
+# window packet family the click protocol reads and writes.
+mc-protocol.workspace = true
+# Tooltip text (display name, lore, enchantments) reads an `ItemStack`'s NBT tag directly.
+mc-nbt.workspace     = true
+# The isometric "gui" transform used to project a block's baked 3D model into a slot icon
+# (mc-math re-exports `Vec3`/`DVec3` but not the `Mat4` this needs).
+glam.workspace       = true
+# The F3 debug overlay reads live chunk/biome/light/entity state, and the HUD reads the
+# local player's health/hunger/XP out of the ECS.
+mc-world.workspace   = true
+# A real `widget::keys::Clipboard` over the window system (S15 shipped only the trait
+# plus an in-memory stub), and the raw key/modifier types the options "controls" screen rebinds.
+winit.workspace      = true
+# Server-list favicons arrive as a base64 `data:image/png;base64,...` string in the
+# status response JSON.
+base64.workspace     = true
+# The Microsoft login screen renders `mc_auth`'s `DeviceCodePrompt` and its typed errors.
+# (`reqwest` is already in this crate's graph via mc-render's skin fetcher, so this costs
+# nothing new to build.)
+mc-auth.workspace    = true
+# `ServerAddress.getIP()` applies IDN.toASCII after optional SRV replacement. Keep the converter
+# beside the shared saved-server parser so ping and login cannot acquire different semantics.
+idna.workspace       = true
+# Java Calendar's host-local month/day, including the Windows timezone/DST provider.
+chrono.workspace     = true
+# The mod menu and the mod HUD pipeline read the catalog and settings store.
+mc-mods.workspace    = true
+# The mod menu's Segoe UI text, rasterised into a glyph atlas (falls back to the MC font).
+ab_glyph.workspace   = true
+
+[dev-dependencies]
+# S15 set the precedent: GPU tests render through `mc_render::Gpu::headless` and read pixels
+# back, so a logger is wanted when RUST_LOG is set.
+tracing-subscriber.workspace = true
+tempfile.workspace = true

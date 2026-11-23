@@ -1,0 +1,297 @@
+{
+  "assets": "player profile properties are empty and request the default skin path; asset discovery and runtime skin visibility are not verified by this generator",
+  "camera": {
+    "intent": "Diagnostic framing target for the complete V1 row or E1 10x10 grid; image visibility remains unverified.",
+    "pitch_degrees": 6.0,
+    "position": [
+      0.5,
+      64.0,
+      -18.0
+    ],
+    "vertical_fov_degrees": 70.0,
+    "viewport": [
+      854,
+      480
+    ],
+    "yaw_degrees": 0.0
+  },
+  "clocks": {
+    "capture": "synthetic explicit microseconds in Recorder::record_at",
+    "replay": "runtime ReplaySource virtual cadence is not generated or verified here; pin replay_step_micros",
+    "wall_time": "not used by generation; runtime wall-clock/frame trace audit is required"
+  },
+  "contract": "mc-rs.optimization.synthetic-fixture-recipe",
+  "disclaimer": "Synthetic typed-packet diagnostic input only; no image, visibility, asset, or performance qualification is claimed.",
+  "fixture_id": "V1",
+  "generation": "mc-protocol Packet::write and mc-data registry lookups; no raw invented packet or block-state bytes",
+  "local_player": {
+    "entity_id": 1,
+    "fixed_position_32": [
+      16,
+      2048,
+      -576
+    ],
+    "uuid": "00000000-0000-4000-8000-000000000001"
+  },
+  "player_count": 8,
+  "players": [
+    {
+      "entity_id": 100,
+      "fixed_position_32": [
+        -272,
+        2048,
+        -272
+      ],
+      "profile_properties": "empty_default_skin",
+      "username": "V1P00",
+      "uuid": "00000000-0000-4000-8000-000000010000",
+      "yaw_byte": 0
+    },
+    {
+      "entity_id": 101,
+      "fixed_position_32": [
+        -208,
+        2048,
+        -272
+      ],
+      "profile_properties": "empty_default_skin",
+      "username": "V1P01",
+      "uuid": "00000000-0000-4000-8000-000000010001",
+      "yaw_byte": 32
+    },
+    {
+      "entity_id": 102,
+      "fixed_position_32": [
+        -144,
+        2048,
+        -272
+      ],
+      "profile_properties": "empty_default_skin",
+      "username": "V1P02",
+      "uuid": "00000000-0000-4000-8000-000000010002",
+      "yaw_byte": 64
+    },
+    {
+      "entity_id": 103,
+      "fixed_position_32": [
+        -80,
+        2048,
+        -272
+      ],
+      "profile_properties": "empty_default_skin",
+      "username": "V1P03",
+      "uuid": "00000000-0000-4000-8000-000000010003",
+      "yaw_byte": 96
+    },
+    {
+      "entity_id": 104,
+      "fixed_position_32": [
+        -16,
+        2048,
+        -272
+      ],
+      "profile_properties": "empty_default_skin",
+      "username": "V1P04",
+      "uuid": "00000000-0000-4000-8000-000000010004",
+      "yaw_byte": 128
+    },
+    {
+      "entity_id": 105,
+      "fixed_position_32": [
+        48,
+        2048,
+        -272
+      ],
+      "profile_properties": "empty_default_skin",
+      "username": "V1P05",
+      "uuid": "00000000-0000-4000-8000-000000010005",
+      "yaw_byte": 160
+    },
+    {
+      "entity_id": 106,
+      "fixed_position_32": [
+        112,
+        2048,
+        -272
+      ],
+      "profile_properties": "empty_default_skin",
+      "username": "V1P06",
+      "uuid": "00000000-0000-4000-8000-000000010006",
+      "yaw_byte": 192
+    },
+    {
+      "entity_id": 107,
+      "fixed_position_32": [
+        176,
+        2048,
+        -272
+      ],
+      "profile_properties": "empty_default_skin",
+      "username": "V1P07",
+      "uuid": "00000000-0000-4000-8000-000000010007",
+      "yaw_byte": 224
+    }
+  ],
+  "protocol": 47,
+  "scoring_eligible": false,
+  "spawn_player_metadata": [
+    {
+      "index": 0,
+      "meaning": "vanilla Entity flags default",
+      "type": "Byte",
+      "value": 0
+    }
+  ],
+  "status": "UNQUALIFIED_DIAGNOSTIC",
+  "version": 1,
+  "world": {
+    "biome": {
+      "id": 1,
+      "name": "Plains"
+    },
+    "block_light_nibble": 0,
+    "block_states": {
+      "dirt": 48,
+      "grass": 32,
+      "stone": 16
+    },
+    "chunk_columns": [
+      {
+        "chunk_x": -2,
+        "chunk_z": -2,
+        "section_mask": 31
+      },
+      {
+        "chunk_x": -2,
+        "chunk_z": -1,
+        "section_mask": 31
+      },
+      {
+        "chunk_x": -2,
+        "chunk_z": 0,
+        "section_mask": 31
+      },
+      {
+        "chunk_x": -2,
+        "chunk_z": 1,
+        "section_mask": 31
+      },
+      {
+        "chunk_x": -2,
+        "chunk_z": 2,
+        "section_mask": 31
+      },
+      {
+        "chunk_x": -1,
+        "chunk_z": -2,
+        "section_mask": 31
+      },
+      {
+        "chunk_x": -1,
+        "chunk_z": -1,
+        "section_mask": 31
+      },
+      {
+        "chunk_x": -1,
+        "chunk_z": 0,
+        "section_mask": 31
+      },
+      {
+        "chunk_x": -1,
+        "chunk_z": 1,
+        "section_mask": 31
+      },
+      {
+        "chunk_x": -1,
+        "chunk_z": 2,
+        "section_mask": 31
+      },
+      {
+        "chunk_x": 0,
+        "chunk_z": -2,
+        "section_mask": 31
+      },
+      {
+        "chunk_x": 0,
+        "chunk_z": -1,
+        "section_mask": 31
+      },
+      {
+        "chunk_x": 0,
+        "chunk_z": 0,
+        "section_mask": 31
+      },
+      {
+        "chunk_x": 0,
+        "chunk_z": 1,
+        "section_mask": 31
+      },
+      {
+        "chunk_x": 0,
+        "chunk_z": 2,
+        "section_mask": 31
+      },
+      {
+        "chunk_x": 1,
+        "chunk_z": -2,
+        "section_mask": 31
+      },
+      {
+        "chunk_x": 1,
+        "chunk_z": -1,
+        "section_mask": 31
+      },
+      {
+        "chunk_x": 1,
+        "chunk_z": 0,
+        "section_mask": 31
+      },
+      {
+        "chunk_x": 1,
+        "chunk_z": 1,
+        "section_mask": 31
+      },
+      {
+        "chunk_x": 1,
+        "chunk_z": 2,
+        "section_mask": 31
+      },
+      {
+        "chunk_x": 2,
+        "chunk_z": -2,
+        "section_mask": 31
+      },
+      {
+        "chunk_x": 2,
+        "chunk_z": -1,
+        "section_mask": 31
+      },
+      {
+        "chunk_x": 2,
+        "chunk_z": 0,
+        "section_mask": 31
+      },
+      {
+        "chunk_x": 2,
+        "chunk_z": 1,
+        "section_mask": 31
+      },
+      {
+        "chunk_x": 2,
+        "chunk_z": 2,
+        "section_mask": 31
+      }
+    ],
+    "ground_up_continuous": true,
+    "island_radius_blocks": 20,
+    "loaded_air_section_count": 113,
+    "loaded_column_count": 25,
+    "sky_light_nibble_above_surface": 15,
+    "solid_block_count": 5028,
+    "solid_y_range": [
+      60,
+      63
+    ],
+    "surface_y": 63
+  }
+}

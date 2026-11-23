@@ -1,0 +1,11 @@
+/target
+
+# Session credentials for an opt-in online test run: a short-lived access token belonging to a
+# real account. Never commit it.
+.local-credentials.json
+
+# Derived startup cache. Safe to delete; rebuilt from the resource packs.
+/cache/
+
+# Python bytecode caches from running the packaging and test scripts.
+__pycache__/

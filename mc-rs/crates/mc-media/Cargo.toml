@@ -1,0 +1,39 @@
+[package]
+name        = "mc-media"
+description = "Now-playing information and media controls from the Windows media session."
+version.workspace = true
+edition.workspace = true
+publish.workspace = true
+license.workspace = true
+repository.workspace = true
+
+[dependencies]
+# The Windows media-session and audio-session
+# bindings and the cover-art decoders, scoped to this crate.
+tracing.workspace = true
+# PNG covers (Spotify desktop sends a PNG, measured 2026-11-07) and the downscale to 128x128. The
+# workspace entry (png only) is reused unchanged, so this adds no `image` feature to any other
+# crate's build.
+image.workspace = true
+# JPEG covers (browsers and other players). Taken directly instead of switching on `image/jpeg`,
+# which would turn on JPEG decoding for every crate sharing `image` (resource packs included).
+# 0.5.15 is already in Cargo.lock.
+zune-jpeg = "0.5"
+
+[target.'cfg(windows)'.dependencies]
+# 0.62.2 is already in the graph (cpal, wgpu-hal, gpu-allocator); cpal already enables every
+# Win32_* feature listed here. Only Foundation, Media_Control and Storage_Streams are new.
+windows = { version = "0.62", features = [
+    "Foundation",
+    "Media_Control",
+    "Storage_Streams",
+    "Win32_Foundation",
+    "Win32_Media_Audio",
+    "Win32_System_Com",
+    "Win32_System_Com_StructuredStorage",
+    "Win32_System_Threading",
+    "Win32_System_Variant",
+] }
+# The completion-handler type for timed waits on WinRT async calls (`windows` does not re-export
+# it). Already in the graph as 0.3.2; no features, so nothing changes for other crates.
+windows-future = { version = "0.3", default-features = false }

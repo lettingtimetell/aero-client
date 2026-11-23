@@ -1,0 +1,81 @@
+name	state	id	len	hex	java_class	note
+hs_login	HANDSHAKING	0x00	20	002f0e6d632e6578616d706c652e636f6d63dd02	handshake.client.C00Handshake	protocol 47, next-state LOGIN(2)
+hs_status	HANDSHAKING	0x00	15	002f096c6f63616c686f737463dd01	handshake.client.C00Handshake	next-state STATUS(1) -- the server-list ping path
+hs_login_forwarded	HANDSHAKING	0x00	65	002f3b686f73742e6578616d706c65003132372e302e302e310066383463366137392d306134652d343565302d383739622d63643439656264346334653263dd02	handshake.client.C00Handshake	proxy-forwarded NUL-delimited address: embedded U+0000 must survive as UTF-8
+login_start	LOGIN	0x00	15	000d5061726974795f546573746572	login.client.C00PacketLoginStart	16-char-max username, no UUID on the wire
+login_encryption_response	LOGIN	0x01	15	010800017f80feff102004deadbeef	login.client.C01PacketEncryptionResponse	fixed ciphertext -- real RSA output is randomised, so it can never be a fixture
+keepalive_zero	PLAY	0x00	2	0000	play.client.C00PacketKeepAlive	VarInt 0 -- one byte
+keepalive_small	PLAY	0x00	2	007f	play.client.C00PacketKeepAlive	VarInt boundary: last one-byte value
+keepalive_two_byte	PLAY	0x00	3	008001	play.client.C00PacketKeepAlive	VarInt boundary: first two-byte value
+keepalive_max	PLAY	0x00	6	00ffffffff07	play.client.C00PacketKeepAlive	five-byte VarInt
+keepalive_negative	PLAY	0x00	6	00ffffffff0f	play.client.C00PacketKeepAlive	negative VarInt: five bytes, NOT a signed short form
+keepalive_min	PLAY	0x00	6	008080808008	play.client.C00PacketKeepAlive	negative VarInt at the extreme
+chat_ascii	PLAY	0x01	13	010b68656c6c6f20776f726c64	play.client.C01PacketChatMessage	plain ASCII
+chat_command	PLAY	0x01	34	01202f67616d656d6f6465206372656174697665205061726974795f546573746572	play.client.C01PacketChatMessage	a command is sent as ordinary chat -- no client-side parsing
+chat_unicode	PLAY	0x01	24	0116636166c3a920e299a620c2a7632072656420f09f9880	play.client.C01PacketChatMessage	2-byte, 3-byte, section sign and a 4-byte astral pair: the length prefix counts BYTES, not chars
+chat_100_chars	PLAY	0x01	102	016430313233343536373839303132333435363738393031323334353637383930313233343536373839303132333435363738393031323334353637383930313233343536373839303132333435363738393031323334353637383930313233343536373839	play.client.C01PacketChatMessage	exactly vanilla's 100-character client cap
+useentity_attack	PLAY	0x02	3	020101	play.client.C02PacketUseEntity	the packet W-PICK makes mc-rs send at an EntityItem
+useentity_interact_max_id	PLAY	0x02	7	02ffffffff0700	play.client.C02PacketUseEntity	entity id as a five-byte VarInt
+useentity_interact_at	PLAY	0x02	16	02ac02023f0000003fa00000bf400000	play.client.C02PacketUseEntity	the three trailing floats are written ONLY for INTERACT_AT, and are float, not double
+player_onground	PLAY	0x03	2	0301	play.client.C03PacketPlayer	the two-byte idle packet
+player_airborne	PLAY	0x03	2	0300	play.client.C03PacketPlayer	same, on-ground false
+playerposition	PLAY	0x04	26	0440210000000000004050000000000000c04020000000000001	play.client.C03PacketPlayer$C04PacketPlayerPosition	doubles go on the wire raw -- no fixed-point truncation on 1.8 movement
+playerposition_extreme	PLAY	0x04	26	04c17c9c37f8000000406fffe000000000417c9c37f800000000	play.client.C03PacketPlayer$C04PacketPlayerPosition	world-border-scale coordinates
+playerposition_negzero	PLAY	0x04	26	0480000000000000000000000000000000800000000000000001	play.client.C03PacketPlayer$C04PacketPlayerPosition	negative zero has a distinct bit pattern and must survive
+playerlook	PLAY	0x05	10	05c333800042b4000001	play.client.C03PacketPlayer$C05PacketPlayerLook	yaw/pitch are float degrees here, NOT the packed bytes the entity packets use
+playerlook_wrapped	PLAY	0x05	10	0544341000c2b4000000	play.client.C03PacketPlayer$C05PacketPlayerLook	vanilla does not normalise yaw before sending
+playerposlook	PLAY	0x06	34	0640210000000000004050000000000000c040200000000000c333800041b4000001	play.client.C03PacketPlayer$C06PacketPlayerPosLook	the packet the client actually sends most often
+digging_start	PLAY	0x07	11	07000000028103ffffec01	play.client.C07PacketPlayerDigging	ordinal 0, facing UP=1
+digging_abort	PLAY	0x07	11	07010000028103ffffec02	play.client.C07PacketPlayerDigging	ordinal 1
+digging_stop	PLAY	0x07	11	07020000028103ffffec05	play.client.C07PacketPlayerDigging	ordinal 2
+digging_drop_item	PLAY	0x07	11	0704000000000000000000	play.client.C07PacketPlayerDigging	Q key: position is ORIGIN and facing DOWN, both ignored by the server
+digging_drop_all	PLAY	0x07	11	0703000000000000000000	play.client.C07PacketPlayerDigging	ctrl-Q
+digging_release_use	PLAY	0x07	11	0705000000000000000000	play.client.C07PacketPlayerDigging	bow release / eating stop -- ordinal 5
+digging_negative_pos	PLAY	0x07	11	0700ffffffffffffffff00	play.client.C07PacketPlayerDigging	all-negative BlockPos: the 26/12/26 pack with every sign bit set
+digging_far_pos	PLAY	0x07	11	07008000000001ffffff00	play.client.C07PacketPlayerDigging	the 26-bit X/Z extremes, at the exact limit of the pack
+place_on_block	PLAY	0x08	19	080000028103ffffec01000140000000080808	play.client.C08PacketPlayerBlockPlacement	ordinary placement: cursor floats are written as (int)(f * 16.0F), so 0.5 -> 8
+place_untargeted	PLAY	0x08	19	08ffffffffffffffffff000140000000000000	play.client.C08PacketPlayerBlockPlacement	sendUseItem: position -1,-1,-1 and direction 255 -- W-RCLICK's missing fall-through
+place_untargeted_empty_hand	PLAY	0x08	15	08ffffffffffffffffffffff000000	play.client.C08PacketPlayerBlockPlacement	same, with a null stack: the item slot is a bare short -1
+place_cursor_extremes	PLAY	0x08	19	0800000000000000000000014000000010000f	play.client.C08PacketPlayerBlockPlacement	cursor 1.0 truncates to 16 -- one past the 0-15 range a reader might assume
+place_stack_with_nbt	PLAY	0x08	93	08000000400800000302011401002a0a000003000a526570616972436f7374000000070a0007646973706c61790900044c6f7265080000000100086c696e65206f6e650800044e616d65000c50617269747920426c6164650000040c08	play.client.C08PacketPlayerBlockPlacement	damageable item: gzip-free NBT blob follows the damage short
+place_stack_nbt_nondamageable	PLAY	0x08	93	0800000040080000030200010100000a000003000a526570616972436f7374000000070a0007646973706c61790900044c6f7265080000000100086c696e65206f6e650800044e616d65000c50617269747920426c6164650000040c08	play.client.C08PacketPlayerBlockPlacement	non-damageable item carrying NBT: the tag is still written -- getShareTag() is always true
+helditem_slot0	PLAY	0x09	3	090000	play.client.C09PacketHeldItemChange	hotbar slot 0
+helditem_slot8	PLAY	0x09	3	090008	play.client.C09PacketHeldItemChange	hotbar slot 8 -- the wire field is a short
+animation	PLAY	0x0A	1	0a	play.client.C0APacketAnimation	empty body: the whole packet is one id byte. W-SWING is about WHEN this is sent, not its bytes
+entityaction_start_sprinting	PLAY	0x0B	4	0b010300	play.client.C0BPacketEntityAction	ordinal 3, aux 0
+entityaction_stop_sneaking	PLAY	0x0B	4	0b010100	play.client.C0BPacketEntityAction	ordinal 1
+entityaction_riding_jump	PLAY	0x0B	4	0b010564	play.client.C0BPacketEntityAction	the only action that uses auxData -- horse jump charge
+entityaction_open_inventory	PLAY	0x0B	4	0b010600	play.client.C0BPacketEntityAction	ordinal 6 -- sent when mounted
+input_forward	PLAY	0x0C	10	0c000000003f7ae14800	play.client.C0CPacketInput	vehicle steering: 0.98 is vanilla's exact forward magnitude
+input_all_flags	PLAY	0x0C	10	0cbf7ae1483f7ae14803	play.client.C0CPacketInput	both flag bits set: jumping=1, sneaking=2
+closewindow_player	PLAY	0x0D	2	0d00	play.client.C0DPacketCloseWindow	window 0 is the always-present player inventory, and the server DOES act on it
+closewindow_chest	PLAY	0x0D	2	0d03	play.client.C0DPacketCloseWindow	an ordinary container id
+clickwindow_left	PLAY	0x0E	14	0e01002400000100011401000000	play.client.C0EPacketClickWindow	note the field ORDER: actionNumber is written BEFORE mode, not after
+clickwindow_shift_right	PLAY	0x0E	10	0e01000001000201ffff	play.client.C0EPacketClickWindow	mode 1 shift-click, right button, empty slot
+clickwindow_outside_drop	PLAY	0x0E	10	0e00fc1900000300ffff	play.client.C0EPacketClickWindow	slot -999 means outside the window: a NEGATIVE short, not a VarInt
+clickwindow_number_key	PLAY	0x0E	14	0e02001e04000402011401000000	play.client.C0EPacketClickWindow	mode 2 hotbar swap, button = target hotbar slot
+confirmtransaction_accept	PLAY	0x0F	5	0f00000101	play.client.C0FPacketConfirmTransaction	W-CONFIRM: window 0 is the case vanilla answers and mc-rs does not
+confirmtransaction_reject	PLAY	0x0F	5	0f03fffc00	play.client.C0FPacketConfirmTransaction	a negative action number round-trips as a signed short
+creative_set_slot	PLAY	0x10	9	100024011401000000	play.client.C10PacketCreativeInventoryAction	set slot 36 from the creative inventory
+creative_clear_slot	PLAY	0x10	5	100000ffff	play.client.C10PacketCreativeInventoryAction	a null stack clears the slot
+creative_drop_outside	PLAY	0x10	9	10ffff011401000000	play.client.C10PacketCreativeInventoryAction	slot -1 drops the stack into the world
+enchantitem	PLAY	0x11	3	110302	play.client.C11PacketEnchantItem	enchanting table, third option
+updatesign	PLAY	0x12	79	12000003011bfffffd0a226c696e65206f6e65220222222b7b22626f6c64223a747275652c22636f6c6f72223a22726564222c2274657874223a227374796c6564227d0b22636166c3a920e299a622	play.client.C12PacketUpdateSign	four JSON chat components, NOT four raw strings
+abilities_creative_flying	PLAY	0x13	10	130f3d4ccccd3dcccccd	play.client.C13PacketPlayerAbilities	all four flag bits set: 1|2|4|8 = 0x0F
+abilities_survival	PLAY	0x13	10	13003d4ccccd3dcccccd	play.client.C13PacketPlayerAbilities	no flags, but the two speed floats are still sent
+tabcomplete_plain	PLAY	0x14	10	14072f67616d656d6f00	play.client.C14PacketTabComplete	no target block: a single false byte follows the string
+tabcomplete_with_block	PLAY	0x14	21	140a2f736574626c6f636b2001fffffe0010000010	play.client.C14PacketTabComplete	target block present: true byte then the packed position
+clientsettings_default	PLAY	0x15	11	1505656e5f55530c00017f	play.client.C15PacketClientSettings	vanilla's own defaults, including the all-parts-on skin byte 0x7F
+clientsettings_hidden	PLAY	0x15	11	150564655f444502020000	play.client.C15PacketClientSettings	W-SETTINGS: mc-rs pins chat visibility to FULL and the skin byte to 0x7F, so this shape never leaves it
+clientsettings_system	PLAY	0x15	11	150566725f46522001012a	play.client.C15PacketClientSettings	view distance 32 exceeds a signed byte and is still written as one byte
+clientstatus_respawn	PLAY	0x16	2	1600	play.client.C16PacketClientStatus	ordinal 0
+clientstatus_request_stats	PLAY	0x16	2	1601	play.client.C16PacketClientStatus	W-STATS: mc-rs constructs this nowhere
+clientstatus_achievements	PLAY	0x16	2	1602	play.client.C16PacketClientStatus	ordinal 2
+pluginmessage_brand	PLAY	0x17	18	17084d437c4272616e640776616e696c6c61	play.client.C17PacketCustomPayload	the payload is the REST OF THE FRAME -- it carries no length prefix of its own
+pluginmessage_binary	PLAY	0x17	15	17094d437c416476436d6400ff7f80	play.client.C17PacketCustomPayload	arbitrary bytes, including 0x00 and 0xFF
+pluginmessage_empty	PLAY	0x17	13	170b4d437c5069636b4974656d	play.client.C17PacketCustomPayload	zero-length payload: the frame ends right after the channel name
+spectate	PLAY	0x18	17	18f84c6a790a4e45e0879bcd49ebd4c4e2	play.client.C18PacketSpectate	a UUID is two big-endian longs, most significant first
+resourcepack_loaded	PLAY	0x19	43	19283031323334353637383961626364656630313233343536373839616263646566303132333435363700	play.client.C19PacketResourcePackStatus	ordinal 0
+resourcepack_declined	PLAY	0x19	43	19283031323334353637383961626364656630313233343536373839616263646566303132333435363701	play.client.C19PacketResourcePackStatus	ordinal 1
+resourcepack_failed	PLAY	0x19	43	19283031323334353637383961626364656630313233343536373839616263646566303132333435363702	play.client.C19PacketResourcePackStatus	ordinal 2
+resourcepack_accepted	PLAY	0x19	43	19283031323334353637383961626364656630313233343536373839616263646566303132333435363703	play.client.C19PacketResourcePackStatus	ordinal 3

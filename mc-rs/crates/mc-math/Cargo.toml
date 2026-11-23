@@ -1,0 +1,13 @@
+[package]
+name        = "mc-math"
+description = "Vectors, AABBs, and bit-exact MathHelper arithmetic."
+version.workspace = true
+edition.workspace = true
+publish.workspace = true
+license.workspace = true
+repository.workspace = true
+
+[dependencies]
+mc-core.workspace   = true
+thiserror.workspace = true
+glam.workspace      = true

@@ -1,0 +1,35 @@
+{
+  "schema": "mc-rs.optimization.fixture",
+  "schema_version": 1,
+  "fixture_id": "E1",
+  "title": "Crowded lobby entity stress",
+  "status": "DRAFT",
+  "scoring_eligible": false,
+  "path_root": "../../..",
+  "inputs": {
+    "capture": {"path": "mc-rs/optimization/fixtures/generated-light-v2/e1-50.mccap", "sha256": "58246040c1cc65a4fe129edfc07fe0566a5078b8cdcce0a2a9d19b5f85a56ff2", "required": true, "missing_reason": "Generated E1-50 light-v2 diagnostic capture is pinned; fixture qualification and visual readiness remain open."},
+    "camera_input_script": {"path": null, "sha256": null, "required": true, "missing_reason": "The lobby camera and input script has not been produced."},
+    "settings": {"path": null, "sha256": null, "required": true, "missing_reason": "The complete parity settings export has not been frozen."},
+    "assets_manifest": {"path": null, "sha256": null, "required": true, "missing_reason": "The player skin, nameplate and UI asset manifest has not been frozen."}
+  },
+  "clocks": {
+    "simulation": {"mode": "unknown", "semantics": "Lobby update cadence and entity spawn sequence must be pinned."},
+    "input": {"mode": "unknown", "semantics": "Camera and UI actions must be owned by a pinned script."},
+    "capture": {"mode": "unknown", "semantics": "The telemetry clock and interval semantics are not selected."},
+    "rng": {"mode": "unknown", "semantics": "Skin, animation and effect RNG ownership has not been captured."}
+  },
+  "visual_profile": {"name": "Parity", "settings": null, "settings_fingerprint": null},
+  "readiness": [
+    {"id": "world_loaded", "kind": "world_loaded", "required": true, "status": "not_checked", "description": "The lobby and entity population are loaded before warmup.", "evidence": null, "missing_reason": "Generated E1-50 capture is present, but world-loaded readiness has not been independently validated."},
+    {"id": "telemetry_ready", "kind": "telemetry_ready", "required": true, "status": "not_checked", "description": "Entity, UI, frame and upload telemetry is available.", "evidence": null, "missing_reason": "The telemetry adapter is not yet qualified."}
+  ],
+  "intervals": {
+    "warmup": {"unit": "frames", "value": null, "semantics": "Discard the declared warmup frame range before entity measurement.", "missing_reason": "Warmup frame count has not been selected."},
+    "measurement": {"unit": "frames", "value": null, "semantics": "Include exactly the declared contiguous lobby measurement frames.", "missing_reason": "Measurement frame count has not been selected."}
+  },
+  "checks": {
+    "image": [{"id": "lobby_reference", "required": true, "status": "not_checked", "frame": 0, "path": null, "sha256": null, "description": "Pinned crowded-lobby image checkpoint.", "missing_reason": "A clean light-v2 diagnostic image is archived, but no pinned parity reference or visibility qualification is defined."}],
+    "visibility": [{"id": "lobby_entities", "required": true, "status": "not_checked", "frame": 0, "path": null, "sha256": null, "description": "Visible entity identities and UI state at the lobby checkpoint.", "missing_reason": "A diagnostic image is archived, but visible entity identity and UI state have not been independently checked."}]
+  },
+  "known_limitations": ["Draft only; no entity population or stress result is asserted.", "A terrain capture must not be relabeled as a lobby fixture.", "The light-v2 diagnostic image is not a pinned parity reference and visibility qualification remains open.", "Replay uses ordinary wall-clock timing, so nondeterminism remains and scoring is not eligible."]
+}

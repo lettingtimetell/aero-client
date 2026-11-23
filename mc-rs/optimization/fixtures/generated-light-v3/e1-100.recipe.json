@@ -1,0 +1,1401 @@
+{
+  "assets": "player profile properties are empty and request the default skin path; asset discovery and runtime skin visibility are not verified by this generator",
+  "camera": {
+    "intent": "Diagnostic framing target for the complete V1 row or E1 10x10 grid; image visibility remains unverified.",
+    "pitch_degrees": 6.0,
+    "position": [
+      0.5,
+      64.0,
+      -18.0
+    ],
+    "vertical_fov_degrees": 70.0,
+    "viewport": [
+      854,
+      480
+    ],
+    "yaw_degrees": 0.0
+  },
+  "clocks": {
+    "capture": "synthetic explicit microseconds in Recorder::record_at",
+    "replay": "runtime ReplaySource virtual cadence is not generated or verified here; pin replay_step_micros",
+    "wall_time": "not used by generation; runtime wall-clock/frame trace audit is required"
+  },
+  "contract": "mc-rs.optimization.synthetic-fixture-recipe",
+  "disclaimer": "Synthetic typed-packet diagnostic input only; no image, visibility, asset, or performance qualification is claimed.",
+  "fixture_id": "E1-100",
+  "generation": "mc-protocol Packet::write and mc-data registry lookups; no raw invented packet or block-state bytes",
+  "local_player": {
+    "entity_id": 1,
+    "fixed_position_32": [
+      16,
+      2048,
+      -576
+    ],
+    "uuid": "00000000-0000-4000-8000-000000000001"
+  },
+  "player_count": 100,
+  "players": [
+    {
+      "entity_id": 100,
+      "fixed_position_32": [
+        -272,
+        2048,
+        -272
+      ],
+      "profile_properties": "empty_default_skin",
+      "username": "E1P000",
+      "uuid": "00000000-0000-4000-8000-000000010000",
+      "yaw_byte": 0
+    },
+    {
+      "entity_id": 101,
+      "fixed_position_32": [
+        -208,
+        2048,
+        -272
+      ],
+      "profile_properties": "empty_default_skin",
+      "username": "E1P001",
+      "uuid": "00000000-0000-4000-8000-000000010001",
+      "yaw_byte": 32
+    },
+    {
+      "entity_id": 102,
+      "fixed_position_32": [
+        -144,
+        2048,
+        -272
+      ],
+      "profile_properties": "empty_default_skin",
+      "username": "E1P002",
+      "uuid": "00000000-0000-4000-8000-000000010002",
+      "yaw_byte": 64
+    },
+    {
+      "entity_id": 103,
+      "fixed_position_32": [
+        -80,
+        2048,
+        -272
+      ],
+      "profile_properties": "empty_default_skin",
+      "username": "E1P003",
+      "uuid": "00000000-0000-4000-8000-000000010003",
+      "yaw_byte": 96
+    },
+    {
+      "entity_id": 104,
+      "fixed_position_32": [
+        -16,
+        2048,
+        -272
+      ],
+      "profile_properties": "empty_default_skin",
+      "username": "E1P004",
+      "uuid": "00000000-0000-4000-8000-000000010004",
+      "yaw_byte": 128
+    },
+    {
+      "entity_id": 105,
+      "fixed_position_32": [
+        48,
+        2048,
+        -272
+      ],
+      "profile_properties": "empty_default_skin",
+      "username": "E1P005",
+      "uuid": "00000000-0000-4000-8000-000000010005",
+      "yaw_byte": 160
+    },
+    {
+      "entity_id": 106,
+      "fixed_position_32": [
+        112,
+        2048,
+        -272
+      ],
+      "profile_properties": "empty_default_skin",
+      "username": "E1P006",
+      "uuid": "00000000-0000-4000-8000-000000010006",
+      "yaw_byte": 192
+    },
+    {
+      "entity_id": 107,
+      "fixed_position_32": [
+        176,
+        2048,
+        -272
+      ],
+      "profile_properties": "empty_default_skin",
+      "username": "E1P007",
+      "uuid": "00000000-0000-4000-8000-000000010007",
+      "yaw_byte": 224
+    },
+    {
+      "entity_id": 108,
+      "fixed_position_32": [
+        240,
+        2048,
+        -272
+      ],
+      "profile_properties": "empty_default_skin",
+      "username": "E1P008",
+      "uuid": "00000000-0000-4000-8000-000000010008",
+      "yaw_byte": 0
+    },
+    {
+      "entity_id": 109,
+      "fixed_position_32": [
+        304,
+        2048,
+        -272
+      ],
+      "profile_properties": "empty_default_skin",
+      "username": "E1P009",
+      "uuid": "00000000-0000-4000-8000-000000010009",
+      "yaw_byte": 32
+    },
+    {
+      "entity_id": 110,
+      "fixed_position_32": [
+        -272,
+        2048,
+        -208
+      ],
+      "profile_properties": "empty_default_skin",
+      "username": "E1P010",
+      "uuid": "00000000-0000-4000-8000-00000001000a",
+      "yaw_byte": 64
+    },
+    {
+      "entity_id": 111,
+      "fixed_position_32": [
+        -208,
+        2048,
+        -208
+      ],
+      "profile_properties": "empty_default_skin",
+      "username": "E1P011",
+      "uuid": "00000000-0000-4000-8000-00000001000b",
+      "yaw_byte": 96
+    },
+    {
+      "entity_id": 112,
+      "fixed_position_32": [
+        -144,
+        2048,
+        -208
+      ],
+      "profile_properties": "empty_default_skin",
+      "username": "E1P012",
+      "uuid": "00000000-0000-4000-8000-00000001000c",
+      "yaw_byte": 128
+    },
+    {
+      "entity_id": 113,
+      "fixed_position_32": [
+        -80,
+        2048,
+        -208
+      ],
+      "profile_properties": "empty_default_skin",
+      "username": "E1P013",
+      "uuid": "00000000-0000-4000-8000-00000001000d",
+      "yaw_byte": 160
+    },
+    {
+      "entity_id": 114,
+      "fixed_position_32": [
+        -16,
+        2048,
+        -208
+      ],
+      "profile_properties": "empty_default_skin",
+      "username": "E1P014",
+      "uuid": "00000000-0000-4000-8000-00000001000e",
+      "yaw_byte": 192
+    },
+    {
+      "entity_id": 115,
+      "fixed_position_32": [
+        48,
+        2048,
+        -208
+      ],
+      "profile_properties": "empty_default_skin",
+      "username": "E1P015",
+      "uuid": "00000000-0000-4000-8000-00000001000f",
+      "yaw_byte": 224
+    },
+    {
+      "entity_id": 116,
+      "fixed_position_32": [
+        112,
+        2048,
+        -208
+      ],
+      "profile_properties": "empty_default_skin",
+      "username": "E1P016",
+      "uuid": "00000000-0000-4000-8000-000000010010",
+      "yaw_byte": 0
+    },
+    {
+      "entity_id": 117,
+      "fixed_position_32": [
+        176,
+        2048,
+        -208
+      ],
+      "profile_properties": "empty_default_skin",
+      "username": "E1P017",
+      "uuid": "00000000-0000-4000-8000-000000010011",
+      "yaw_byte": 32
+    },
+    {
+      "entity_id": 118,
+      "fixed_position_32": [
+        240,
+        2048,
+        -208
+      ],
+      "profile_properties": "empty_default_skin",
+      "username": "E1P018",
+      "uuid": "00000000-0000-4000-8000-000000010012",
+      "yaw_byte": 64
+    },
+    {
+      "entity_id": 119,
+      "fixed_position_32": [
+        304,
+        2048,
+        -208
+      ],
+      "profile_properties": "empty_default_skin",
+      "username": "E1P019",
+      "uuid": "00000000-0000-4000-8000-000000010013",
+      "yaw_byte": 96
+    },
+    {
+      "entity_id": 120,
+      "fixed_position_32": [
+        -272,
+        2048,
+        -144
+      ],
+      "profile_properties": "empty_default_skin",
+      "username": "E1P020",
+      "uuid": "00000000-0000-4000-8000-000000010014",
+      "yaw_byte": 128
+    },
+    {
+      "entity_id": 121,
+      "fixed_position_32": [
+        -208,
+        2048,
+        -144
+      ],
+      "profile_properties": "empty_default_skin",
+      "username": "E1P021",
+      "uuid": "00000000-0000-4000-8000-000000010015",
+      "yaw_byte": 160
+    },
+    {
+      "entity_id": 122,
+      "fixed_position_32": [
+        -144,
+        2048,
+        -144
+      ],
+      "profile_properties": "empty_default_skin",
+      "username": "E1P022",
+      "uuid": "00000000-0000-4000-8000-000000010016",
+      "yaw_byte": 192
+    },
+    {
+      "entity_id": 123,
+      "fixed_position_32": [
+        -80,
+        2048,
+        -144
+      ],
+      "profile_properties": "empty_default_skin",
+      "username": "E1P023",
+      "uuid": "00000000-0000-4000-8000-000000010017",
+      "yaw_byte": 224
+    },
+    {
+      "entity_id": 124,
+      "fixed_position_32": [
+        -16,
+        2048,
+        -144
+      ],
+      "profile_properties": "empty_default_skin",
+      "username": "E1P024",
+      "uuid": "00000000-0000-4000-8000-000000010018",
+      "yaw_byte": 0
+    },
+    {
+      "entity_id": 125,
+      "fixed_position_32": [
+        48,
+        2048,
+        -144
+      ],
+      "profile_properties": "empty_default_skin",
+      "username": "E1P025",
+      "uuid": "00000000-0000-4000-8000-000000010019",
+      "yaw_byte": 32
+    },
+    {
+      "entity_id": 126,
+      "fixed_position_32": [
+        112,
+        2048,
+        -144
+      ],
+      "profile_properties": "empty_default_skin",
+      "username": "E1P026",
+      "uuid": "00000000-0000-4000-8000-00000001001a",
+      "yaw_byte": 64
+    },
+    {
+      "entity_id": 127,
+      "fixed_position_32": [
+        176,
+        2048,
+        -144
+      ],
+      "profile_properties": "empty_default_skin",
+      "username": "E1P027",
+      "uuid": "00000000-0000-4000-8000-00000001001b",
+      "yaw_byte": 96
+    },
+    {
+      "entity_id": 128,
+      "fixed_position_32": [
+        240,
+        2048,
+        -144
+      ],
+      "profile_properties": "empty_default_skin",
+      "username": "E1P028",
+      "uuid": "00000000-0000-4000-8000-00000001001c",
+      "yaw_byte": 128
+    },
+    {
+      "entity_id": 129,
+      "fixed_position_32": [
+        304,
+        2048,
+        -144
+      ],
+      "profile_properties": "empty_default_skin",
+      "username": "E1P029",
+      "uuid": "00000000-0000-4000-8000-00000001001d",
+      "yaw_byte": 160
+    },
+    {
+      "entity_id": 130,
+      "fixed_position_32": [
+        -272,
+        2048,
+        -80
+      ],
+      "profile_properties": "empty_default_skin",
+      "username": "E1P030",
+      "uuid": "00000000-0000-4000-8000-00000001001e",
+      "yaw_byte": 192
+    },
+    {
+      "entity_id": 131,
+      "fixed_position_32": [
+        -208,
+        2048,
+        -80
+      ],
+      "profile_properties": "empty_default_skin",
+      "username": "E1P031",
+      "uuid": "00000000-0000-4000-8000-00000001001f",
+      "yaw_byte": 224
+    },
+    {
+      "entity_id": 132,
+      "fixed_position_32": [
+        -144,
+        2048,
+        -80
+      ],
+      "profile_properties": "empty_default_skin",
+      "username": "E1P032",
+      "uuid": "00000000-0000-4000-8000-000000010020",
+      "yaw_byte": 0
+    },
+    {
+      "entity_id": 133,
+      "fixed_position_32": [
+        -80,
+        2048,
+        -80
+      ],
+      "profile_properties": "empty_default_skin",
+      "username": "E1P033",
+      "uuid": "00000000-0000-4000-8000-000000010021",
+      "yaw_byte": 32
+    },
+    {
+      "entity_id": 134,
+      "fixed_position_32": [
+        -16,
+        2048,
+        -80
+      ],
+      "profile_properties": "empty_default_skin",
+      "username": "E1P034",
+      "uuid": "00000000-0000-4000-8000-000000010022",
+      "yaw_byte": 64
+    },
+    {
+      "entity_id": 135,
+      "fixed_position_32": [
+        48,
+        2048,
+        -80
+      ],
+      "profile_properties": "empty_default_skin",
+      "username": "E1P035",
+      "uuid": "00000000-0000-4000-8000-000000010023",
+      "yaw_byte": 96
+    },
+    {
+      "entity_id": 136,
+      "fixed_position_32": [
+        112,
+        2048,
+        -80
+      ],
+      "profile_properties": "empty_default_skin",
+      "username": "E1P036",
+      "uuid": "00000000-0000-4000-8000-000000010024",
+      "yaw_byte": 128
+    },
+    {
+      "entity_id": 137,
+      "fixed_position_32": [
+        176,
+        2048,
+        -80
+      ],
+      "profile_properties": "empty_default_skin",
+      "username": "E1P037",
+      "uuid": "00000000-0000-4000-8000-000000010025",
+      "yaw_byte": 160
+    },
+    {
+      "entity_id": 138,
+      "fixed_position_32": [
+        240,
+        2048,
+        -80
+      ],
+      "profile_properties": "empty_default_skin",
+      "username": "E1P038",
+      "uuid": "00000000-0000-4000-8000-000000010026",
+      "yaw_byte": 192
+    },
+    {
+      "entity_id": 139,
+      "fixed_position_32": [
+        304,
+        2048,
+        -80
+      ],
+      "profile_properties": "empty_default_skin",
+      "username": "E1P039",
+      "uuid": "00000000-0000-4000-8000-000000010027",
+      "yaw_byte": 224
+    },
+    {
+      "entity_id": 140,
+      "fixed_position_32": [
+        -272,
+        2048,
+        -16
+      ],
+      "profile_properties": "empty_default_skin",
+      "username": "E1P040",
+      "uuid": "00000000-0000-4000-8000-000000010028",
+      "yaw_byte": 0
+    },
+    {
+      "entity_id": 141,
+      "fixed_position_32": [
+        -208,
+        2048,
+        -16
+      ],
+      "profile_properties": "empty_default_skin",
+      "username": "E1P041",
+      "uuid": "00000000-0000-4000-8000-000000010029",
+      "yaw_byte": 32
+    },
+    {
+      "entity_id": 142,
+      "fixed_position_32": [
+        -144,
+        2048,
+        -16
+      ],
+      "profile_properties": "empty_default_skin",
+      "username": "E1P042",
+      "uuid": "00000000-0000-4000-8000-00000001002a",
+      "yaw_byte": 64
+    },
+    {
+      "entity_id": 143,
+      "fixed_position_32": [
+        -80,
+        2048,
+        -16
+      ],
+      "profile_properties": "empty_default_skin",
+      "username": "E1P043",
+      "uuid": "00000000-0000-4000-8000-00000001002b",
+      "yaw_byte": 96
+    },
+    {
+      "entity_id": 144,
+      "fixed_position_32": [
+        -16,
+        2048,
+        -16
+      ],
+      "profile_properties": "empty_default_skin",
+      "username": "E1P044",
+      "uuid": "00000000-0000-4000-8000-00000001002c",
+      "yaw_byte": 128
+    },
+    {
+      "entity_id": 145,
+      "fixed_position_32": [
+        48,
+        2048,
+        -16
+      ],
+      "profile_properties": "empty_default_skin",
+      "username": "E1P045",
+      "uuid": "00000000-0000-4000-8000-00000001002d",
+      "yaw_byte": 160
+    },
+    {
+      "entity_id": 146,
+      "fixed_position_32": [
+        112,
+        2048,
+        -16
+      ],
+      "profile_properties": "empty_default_skin",
+      "username": "E1P046",
+      "uuid": "00000000-0000-4000-8000-00000001002e",
+      "yaw_byte": 192
+    },
+    {
+      "entity_id": 147,
+      "fixed_position_32": [
+        176,
+        2048,
+        -16
+      ],
+      "profile_properties": "empty_default_skin",
+      "username": "E1P047",
+      "uuid": "00000000-0000-4000-8000-00000001002f",
+      "yaw_byte": 224
+    },
+    {
+      "entity_id": 148,
+      "fixed_position_32": [
+        240,
+        2048,
+        -16
+      ],
+      "profile_properties": "empty_default_skin",
+      "username": "E1P048",
+      "uuid": "00000000-0000-4000-8000-000000010030",
+      "yaw_byte": 0
+    },
+    {
+      "entity_id": 149,
+      "fixed_position_32": [
+        304,
+        2048,
+        -16
+      ],
+      "profile_properties": "empty_default_skin",
+      "username": "E1P049",
+      "uuid": "00000000-0000-4000-8000-000000010031",
+      "yaw_byte": 32
+    },
+    {
+      "entity_id": 150,
+      "fixed_position_32": [
+        -272,
+        2048,
+        48
+      ],
+      "profile_properties": "empty_default_skin",
+      "username": "E1P050",
+      "uuid": "00000000-0000-4000-8000-000000010032",
+      "yaw_byte": 64
+    },
+    {
+      "entity_id": 151,
+      "fixed_position_32": [
+        -208,
+        2048,
+        48
+      ],
+      "profile_properties": "empty_default_skin",
+      "username": "E1P051",
+      "uuid": "00000000-0000-4000-8000-000000010033",
+      "yaw_byte": 96
+    },
+    {
+      "entity_id": 152,
+      "fixed_position_32": [
+        -144,
+        2048,
+        48
+      ],
+      "profile_properties": "empty_default_skin",
+      "username": "E1P052",
+      "uuid": "00000000-0000-4000-8000-000000010034",
+      "yaw_byte": 128
+    },
+    {
+      "entity_id": 153,
+      "fixed_position_32": [
+        -80,
+        2048,
+        48
+      ],
+      "profile_properties": "empty_default_skin",
+      "username": "E1P053",
+      "uuid": "00000000-0000-4000-8000-000000010035",
+      "yaw_byte": 160
+    },
+    {
+      "entity_id": 154,
+      "fixed_position_32": [
+        -16,
+        2048,
+        48
+      ],
+      "profile_properties": "empty_default_skin",
+      "username": "E1P054",
+      "uuid": "00000000-0000-4000-8000-000000010036",
+      "yaw_byte": 192
+    },
+    {
+      "entity_id": 155,
+      "fixed_position_32": [
+        48,
+        2048,
+        48
+      ],
+      "profile_properties": "empty_default_skin",
+      "username": "E1P055",
+      "uuid": "00000000-0000-4000-8000-000000010037",
+      "yaw_byte": 224
+    },
+    {
+      "entity_id": 156,
+      "fixed_position_32": [
+        112,
+        2048,
+        48
+      ],
+      "profile_properties": "empty_default_skin",
+      "username": "E1P056",
+      "uuid": "00000000-0000-4000-8000-000000010038",
+      "yaw_byte": 0
+    },
+    {
+      "entity_id": 157,
+      "fixed_position_32": [
+        176,
+        2048,
+        48
+      ],
+      "profile_properties": "empty_default_skin",
+      "username": "E1P057",
+      "uuid": "00000000-0000-4000-8000-000000010039",
+      "yaw_byte": 32
+    },
+    {
+      "entity_id": 158,
+      "fixed_position_32": [
+        240,
+        2048,
+        48
+      ],
+      "profile_properties": "empty_default_skin",
+      "username": "E1P058",
+      "uuid": "00000000-0000-4000-8000-00000001003a",
+      "yaw_byte": 64
+    },
+    {
+      "entity_id": 159,
+      "fixed_position_32": [
+        304,
+        2048,
+        48
+      ],
+      "profile_properties": "empty_default_skin",
+      "username": "E1P059",
+      "uuid": "00000000-0000-4000-8000-00000001003b",
+      "yaw_byte": 96
+    },
+    {
+      "entity_id": 160,
+      "fixed_position_32": [
+        -272,
+        2048,
+        112
+      ],
+      "profile_properties": "empty_default_skin",
+      "username": "E1P060",
+      "uuid": "00000000-0000-4000-8000-00000001003c",
+      "yaw_byte": 128
+    },
+    {
+      "entity_id": 161,
+      "fixed_position_32": [
+        -208,
+        2048,
+        112
+      ],
+      "profile_properties": "empty_default_skin",
+      "username": "E1P061",
+      "uuid": "00000000-0000-4000-8000-00000001003d",
+      "yaw_byte": 160
+    },
+    {
+      "entity_id": 162,
+      "fixed_position_32": [
+        -144,
+        2048,
+        112
+      ],
+      "profile_properties": "empty_default_skin",
+      "username": "E1P062",
+      "uuid": "00000000-0000-4000-8000-00000001003e",
+      "yaw_byte": 192
+    },
+    {
+      "entity_id": 163,
+      "fixed_position_32": [
+        -80,
+        2048,
+        112
+      ],
+      "profile_properties": "empty_default_skin",
+      "username": "E1P063",
+      "uuid": "00000000-0000-4000-8000-00000001003f",
+      "yaw_byte": 224
+    },
+    {
+      "entity_id": 164,
+      "fixed_position_32": [
+        -16,
+        2048,
+        112
+      ],
+      "profile_properties": "empty_default_skin",
+      "username": "E1P064",
+      "uuid": "00000000-0000-4000-8000-000000010040",
+      "yaw_byte": 0
+    },
+    {
+      "entity_id": 165,
+      "fixed_position_32": [
+        48,
+        2048,
+        112
+      ],
+      "profile_properties": "empty_default_skin",
+      "username": "E1P065",
+      "uuid": "00000000-0000-4000-8000-000000010041",
+      "yaw_byte": 32
+    },
+    {
+      "entity_id": 166,
+      "fixed_position_32": [
+        112,
+        2048,
+        112
+      ],
+      "profile_properties": "empty_default_skin",
+      "username": "E1P066",
+      "uuid": "00000000-0000-4000-8000-000000010042",
+      "yaw_byte": 64
+    },
+    {
+      "entity_id": 167,
+      "fixed_position_32": [
+        176,
+        2048,
+        112
+      ],
+      "profile_properties": "empty_default_skin",
+      "username": "E1P067",
+      "uuid": "00000000-0000-4000-8000-000000010043",
+      "yaw_byte": 96
+    },
+    {
+      "entity_id": 168,
+      "fixed_position_32": [
+        240,
+        2048,
+        112
+      ],
+      "profile_properties": "empty_default_skin",
+      "username": "E1P068",
+      "uuid": "00000000-0000-4000-8000-000000010044",
+      "yaw_byte": 128
+    },
+    {
+      "entity_id": 169,
+      "fixed_position_32": [
+        304,
+        2048,
+        112
+      ],
+      "profile_properties": "empty_default_skin",
+      "username": "E1P069",
+      "uuid": "00000000-0000-4000-8000-000000010045",
+      "yaw_byte": 160
+    },
+    {
+      "entity_id": 170,
+      "fixed_position_32": [
+        -272,
+        2048,
+        176
+      ],
+      "profile_properties": "empty_default_skin",
+      "username": "E1P070",
+      "uuid": "00000000-0000-4000-8000-000000010046",
+      "yaw_byte": 192
+    },
+    {
+      "entity_id": 171,
+      "fixed_position_32": [
+        -208,
+        2048,
+        176
+      ],
+      "profile_properties": "empty_default_skin",
+      "username": "E1P071",
+      "uuid": "00000000-0000-4000-8000-000000010047",
+      "yaw_byte": 224
+    },
+    {
+      "entity_id": 172,
+      "fixed_position_32": [
+        -144,
+        2048,
+        176
+      ],
+      "profile_properties": "empty_default_skin",
+      "username": "E1P072",
+      "uuid": "00000000-0000-4000-8000-000000010048",
+      "yaw_byte": 0
+    },
+    {
+      "entity_id": 173,
+      "fixed_position_32": [
+        -80,
+        2048,
+        176
+      ],
+      "profile_properties": "empty_default_skin",
+      "username": "E1P073",
+      "uuid": "00000000-0000-4000-8000-000000010049",
+      "yaw_byte": 32
+    },
+    {
+      "entity_id": 174,
+      "fixed_position_32": [
+        -16,
+        2048,
+        176
+      ],
+      "profile_properties": "empty_default_skin",
+      "username": "E1P074",
+      "uuid": "00000000-0000-4000-8000-00000001004a",
+      "yaw_byte": 64
+    },
+    {
+      "entity_id": 175,
+      "fixed_position_32": [
+        48,
+        2048,
+        176
+      ],
+      "profile_properties": "empty_default_skin",
+      "username": "E1P075",
+      "uuid": "00000000-0000-4000-8000-00000001004b",
+      "yaw_byte": 96
+    },
+    {
+      "entity_id": 176,
+      "fixed_position_32": [
+        112,
+        2048,
+        176
+      ],
+      "profile_properties": "empty_default_skin",
+      "username": "E1P076",
+      "uuid": "00000000-0000-4000-8000-00000001004c",
+      "yaw_byte": 128
+    },
+    {
+      "entity_id": 177,
+      "fixed_position_32": [
+        176,
+        2048,
+        176
+      ],
+      "profile_properties": "empty_default_skin",
+      "username": "E1P077",
+      "uuid": "00000000-0000-4000-8000-00000001004d",
+      "yaw_byte": 160
+    },
+    {
+      "entity_id": 178,
+      "fixed_position_32": [
+        240,
+        2048,
+        176
+      ],
+      "profile_properties": "empty_default_skin",
+      "username": "E1P078",
+      "uuid": "00000000-0000-4000-8000-00000001004e",
+      "yaw_byte": 192
+    },
+    {
+      "entity_id": 179,
+      "fixed_position_32": [
+        304,
+        2048,
+        176
+      ],
+      "profile_properties": "empty_default_skin",
+      "username": "E1P079",
+      "uuid": "00000000-0000-4000-8000-00000001004f",
+      "yaw_byte": 224
+    },
+    {
+      "entity_id": 180,
+      "fixed_position_32": [
+        -272,
+        2048,
+        240
+      ],
+      "profile_properties": "empty_default_skin",
+      "username": "E1P080",
+      "uuid": "00000000-0000-4000-8000-000000010050",
+      "yaw_byte": 0
+    },
+    {
+      "entity_id": 181,
+      "fixed_position_32": [
+        -208,
+        2048,
+        240
+      ],
+      "profile_properties": "empty_default_skin",
+      "username": "E1P081",
+      "uuid": "00000000-0000-4000-8000-000000010051",
+      "yaw_byte": 32
+    },
+    {
+      "entity_id": 182,
+      "fixed_position_32": [
+        -144,
+        2048,
+        240
+      ],
+      "profile_properties": "empty_default_skin",
+      "username": "E1P082",
+      "uuid": "00000000-0000-4000-8000-000000010052",
+      "yaw_byte": 64
+    },
+    {
+      "entity_id": 183,
+      "fixed_position_32": [
+        -80,
+        2048,
+        240
+      ],
+      "profile_properties": "empty_default_skin",
+      "username": "E1P083",
+      "uuid": "00000000-0000-4000-8000-000000010053",
+      "yaw_byte": 96
+    },
+    {
+      "entity_id": 184,
+      "fixed_position_32": [
+        -16,
+        2048,
+        240
+      ],
+      "profile_properties": "empty_default_skin",
+      "username": "E1P084",
+      "uuid": "00000000-0000-4000-8000-000000010054",
+      "yaw_byte": 128
+    },
+    {
+      "entity_id": 185,
+      "fixed_position_32": [
+        48,
+        2048,
+        240
+      ],
+      "profile_properties": "empty_default_skin",
+      "username": "E1P085",
+      "uuid": "00000000-0000-4000-8000-000000010055",
+      "yaw_byte": 160
+    },
+    {
+      "entity_id": 186,
+      "fixed_position_32": [
+        112,
+        2048,
+        240
+      ],
+      "profile_properties": "empty_default_skin",
+      "username": "E1P086",
+      "uuid": "00000000-0000-4000-8000-000000010056",
+      "yaw_byte": 192
+    },
+    {
+      "entity_id": 187,
+      "fixed_position_32": [
+        176,
+        2048,
+        240
+      ],
+      "profile_properties": "empty_default_skin",
+      "username": "E1P087",
+      "uuid": "00000000-0000-4000-8000-000000010057",
+      "yaw_byte": 224
+    },
+    {
+      "entity_id": 188,
+      "fixed_position_32": [
+        240,
+        2048,
+        240
+      ],
+      "profile_properties": "empty_default_skin",
+      "username": "E1P088",
+      "uuid": "00000000-0000-4000-8000-000000010058",
+      "yaw_byte": 0
+    },
+    {
+      "entity_id": 189,
+      "fixed_position_32": [
+        304,
+        2048,
+        240
+      ],
+      "profile_properties": "empty_default_skin",
+      "username": "E1P089",
+      "uuid": "00000000-0000-4000-8000-000000010059",
+      "yaw_byte": 32
+    },
+    {
+      "entity_id": 190,
+      "fixed_position_32": [
+        -272,
+        2048,
+        304
+      ],
+      "profile_properties": "empty_default_skin",
+      "username": "E1P090",
+      "uuid": "00000000-0000-4000-8000-00000001005a",
+      "yaw_byte": 64
+    },
+    {
+      "entity_id": 191,
+      "fixed_position_32": [
+        -208,
+        2048,
+        304
+      ],
+      "profile_properties": "empty_default_skin",
+      "username": "E1P091",
+      "uuid": "00000000-0000-4000-8000-00000001005b",
+      "yaw_byte": 96
+    },
+    {
+      "entity_id": 192,
+      "fixed_position_32": [
+        -144,
+        2048,
+        304
+      ],
+      "profile_properties": "empty_default_skin",
+      "username": "E1P092",
+      "uuid": "00000000-0000-4000-8000-00000001005c",
+      "yaw_byte": 128
+    },
+    {
+      "entity_id": 193,
+      "fixed_position_32": [
+        -80,
+        2048,
+        304
+      ],
+      "profile_properties": "empty_default_skin",
+      "username": "E1P093",
+      "uuid": "00000000-0000-4000-8000-00000001005d",
+      "yaw_byte": 160
+    },
+    {
+      "entity_id": 194,
+      "fixed_position_32": [
+        -16,
+        2048,
+        304
+      ],
+      "profile_properties": "empty_default_skin",
+      "username": "E1P094",
+      "uuid": "00000000-0000-4000-8000-00000001005e",
+      "yaw_byte": 192
+    },
+    {
+      "entity_id": 195,
+      "fixed_position_32": [
+        48,
+        2048,
+        304
+      ],
+      "profile_properties": "empty_default_skin",
+      "username": "E1P095",
+      "uuid": "00000000-0000-4000-8000-00000001005f",
+      "yaw_byte": 224
+    },
+    {
+      "entity_id": 196,
+      "fixed_position_32": [
+        112,
+        2048,
+        304
+      ],
+      "profile_properties": "empty_default_skin",
+      "username": "E1P096",
+      "uuid": "00000000-0000-4000-8000-000000010060",
+      "yaw_byte": 0
+    },
+    {
+      "entity_id": 197,
+      "fixed_position_32": [
+        176,
+        2048,
+        304
+      ],
+      "profile_properties": "empty_default_skin",
+      "username": "E1P097",
+      "uuid": "00000000-0000-4000-8000-000000010061",
+      "yaw_byte": 32
+    },
+    {
+      "entity_id": 198,
+      "fixed_position_32": [
+        240,
+        2048,
+        304
+      ],
+      "profile_properties": "empty_default_skin",
+      "username": "E1P098",
+      "uuid": "00000000-0000-4000-8000-000000010062",
+      "yaw_byte": 64
+    },
+    {
+      "entity_id": 199,
+      "fixed_position_32": [
+        304,
+        2048,
+        304
+      ],
+      "profile_properties": "empty_default_skin",
+      "username": "E1P099",
+      "uuid": "00000000-0000-4000-8000-000000010063",
+      "yaw_byte": 96
+    }
+  ],
+  "protocol": 47,
+  "scoring_eligible": false,
+  "spawn_player_metadata": [
+    {
+      "index": 0,
+      "meaning": "vanilla Entity flags default",
+      "type": "Byte",
+      "value": 0
+    }
+  ],
+  "status": "UNQUALIFIED_DIAGNOSTIC",
+  "version": 1,
+  "world": {
+    "biome": {
+      "id": 1,
+      "name": "Plains"
+    },
+    "block_light_nibble": 0,
+    "block_states": {
+      "dirt": 48,
+      "grass": 32,
+      "stone": 16
+    },
+    "chunk_columns": [
+      {
+        "chunk_x": -2,
+        "chunk_z": -2,
+        "section_mask": 31
+      },
+      {
+        "chunk_x": -2,
+        "chunk_z": -1,
+        "section_mask": 31
+      },
+      {
+        "chunk_x": -2,
+        "chunk_z": 0,
+        "section_mask": 31
+      },
+      {
+        "chunk_x": -2,
+        "chunk_z": 1,
+        "section_mask": 31
+      },
+      {
+        "chunk_x": -2,
+        "chunk_z": 2,
+        "section_mask": 31
+      },
+      {
+        "chunk_x": -1,
+        "chunk_z": -2,
+        "section_mask": 31
+      },
+      {
+        "chunk_x": -1,
+        "chunk_z": -1,
+        "section_mask": 31
+      },
+      {
+        "chunk_x": -1,
+        "chunk_z": 0,
+        "section_mask": 31
+      },
+      {
+        "chunk_x": -1,
+        "chunk_z": 1,
+        "section_mask": 31
+      },
+      {
+        "chunk_x": -1,
+        "chunk_z": 2,
+        "section_mask": 31
+      },
+      {
+        "chunk_x": 0,
+        "chunk_z": -2,
+        "section_mask": 31
+      },
+      {
+        "chunk_x": 0,
+        "chunk_z": -1,
+        "section_mask": 31
+      },
+      {
+        "chunk_x": 0,
+        "chunk_z": 0,
+        "section_mask": 31
+      },
+      {
+        "chunk_x": 0,
+        "chunk_z": 1,
+        "section_mask": 31
+      },
+      {
+        "chunk_x": 0,
+        "chunk_z": 2,
+        "section_mask": 31
+      },
+      {
+        "chunk_x": 1,
+        "chunk_z": -2,
+        "section_mask": 31
+      },
+      {
+        "chunk_x": 1,
+        "chunk_z": -1,
+        "section_mask": 31
+      },
+      {
+        "chunk_x": 1,
+        "chunk_z": 0,
+        "section_mask": 31
+      },
+      {
+        "chunk_x": 1,
+        "chunk_z": 1,
+        "section_mask": 31
+      },
+      {
+        "chunk_x": 1,
+        "chunk_z": 2,
+        "section_mask": 31
+      },
+      {
+        "chunk_x": 2,
+        "chunk_z": -2,
+        "section_mask": 31
+      },
+      {
+        "chunk_x": 2,
+        "chunk_z": -1,
+        "section_mask": 31
+      },
+      {
+        "chunk_x": 2,
+        "chunk_z": 0,
+        "section_mask": 31
+      },
+      {
+        "chunk_x": 2,
+        "chunk_z": 1,
+        "section_mask": 31
+      },
+      {
+        "chunk_x": 2,
+        "chunk_z": 2,
+        "section_mask": 31
+      }
+    ],
+    "ground_up_continuous": true,
+    "island_radius_blocks": 20,
+    "loaded_air_section_count": 113,
+    "loaded_column_count": 25,
+    "sky_light_nibble_above_surface": 15,
+    "solid_block_count": 5028,
+    "solid_y_range": [
+      60,
+      63
+    ],
+    "surface_y": 63
+  }
+}

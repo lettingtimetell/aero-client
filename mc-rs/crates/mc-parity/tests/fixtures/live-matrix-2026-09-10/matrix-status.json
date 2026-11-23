@@ -1,0 +1,31 @@
+{
+  "schema": 1,
+  "generated": "2026-09-10",
+  "status_vocabulary": {"PASS":"direct evidence retained and replay verified", "N_A":"not applicable to a direct server target"},
+  "consolidated": {"targets":4,"captures":17,"pass":29,"not_applicable":3,"replay_log":"scratchpad/parity-completion-2026-09-10/live_matrix_fixture_verified.log"},
+  "targets": {
+    "vanilla-1.8.9": {
+      "M1":"PASS", "M2":"PASS", "M3":"PASS", "M4":"PASS", "M5":"PASS", "M6":"PASS", "M7":"PASS", "M8":"N_A",
+      "evidence":"manifest.json; m1-status.json; vanilla-online-encrypted-latest.mccap; matrix-m4-guarded-vanilla.mccap; matrix-m5-vanilla-latest.mccap; matrix-m6-guarded-vanilla-final.mccap"
+    },
+    "paper-1.8.8-445": {
+      "M1":"PASS", "M2":"PASS", "M3":"PASS", "M4":"PASS", "M5":"PASS", "M6":"PASS", "M7":"PASS", "M8":"N_A",
+      "evidence":"manifest.json; m1-status.json; online-s21-paper-auth.mccap; matrix-m4-guarded-paper.mccap; matrix-m5-paper-build7.mccap; matrix-m6-paper-final.mccap"
+    },
+    "bungeecord-2089": {
+      "M1":"PASS", "M2":"PASS", "M3":"PASS", "M4":"PASS", "M5":"PASS", "M6":"PASS", "M7":"PASS", "M8":"PASS",
+      "evidence":"manifest.json; m1-status.json; online-s21-bungee-paper-auth.mccap; matrix-m4-bungee.mccap; matrix-m5-bungee-build7.mccap; matrix-m6-guarded-bungee-final.mccap; matrix-m8-bungee.mccap"
+    },
+    "spigot-1.8.8-buildtools": {
+      "M1":"PASS", "M2":"PASS", "M3":"PASS", "M4":"PASS", "M5":"PASS", "M6":"PASS", "M7":"PASS", "M8":"N_A",
+      "evidence":"manifest.json; m1-status.json; online-s21-spigot-auth.mccap; matrix-m4-spigot-offline.mccap; matrix-m5-spigot-offline.mccap; matrix-m6-spigot-offline.mccap"
+    }
+  },
+  "boundaries": [
+    "M8 is a proxy switching gate and is recorded only for BungeeCord.",
+    "M7 is PASS only because the staged Rust integration test replayed all 17 captures byte-identically; see replay_log.",
+    "Online Bungee uses ip_forward=true with the dedicated offline Paper backend whose spigot.yml enables bungeecord=true; direct Vanilla forwarding is retained only as a configuration diagnostic.",
+    "Server artifact and fixture provenance: scratchpad/parity-completion-2026-09-10/servers/compatibility-manifest.json and servers/spigot-build/provenance.json.",
+    "Linux and macOS packaging are user-deferred for this pass."
+  ]
+}

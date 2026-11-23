@@ -1,0 +1,21 @@
+{
+  "files": {
+    "sky-end-precondition-v1.mccap": {
+      "bytes": 266,
+      "sha256": "664a4e8a9b5ee51634454aee92fbd308aae879e9a9fad392467cc6451766c643"
+    },
+    "sky-end-precondition-v1.recipe.json": {
+      "bytes": 3090,
+      "sha256": "98a0ce6f52c8acd67797d3bd7d387e2dd245b289fd959e4748a4d06fb85e9ba8"
+    }
+  },
+  "schema": "mc-rs.optimization.end-preconditioning-fixture-provenance",
+  "schema_version": 1,
+  "scoring_eligible": false,
+  "source": "{repo}\\mc-rs\\optimization\\fixtures\\generated-sky-end-v1-002-1",
+  "source_pins": {
+    "sky-end-v1.mccap": "664a4e8a9b5ee51634454aee92fbd308aae879e9a9fad392467cc6451766c643",
+    "sky-end-v1.recipe.json": "25c5d81075c00674182d73f1f2c3f3146f8d48f329a8b0349d42005bfeb46f43"
+  },
+  "status": "UNQUALIFIED_DIAGNOSTIC"
+}

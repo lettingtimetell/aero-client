@@ -1,0 +1,32 @@
+[package]
+name        = "mc-nbt"
+description = "Named Binary Tag read/write matching Java DataInput semantics."
+version.workspace = true
+edition.workspace = true
+publish.workspace = true
+license.workspace = true
+repository.workspace = true
+
+[features]
+default = []
+# S02 task: "serde integration behind a feature flag".
+serde = ["dep:serde"]
+
+[dependencies]
+mc-core.workspace   = true
+thiserror.workspace = true
+flate2.workspace    = true
+serde = { workspace = true, optional = true }
+
+[dev-dependencies]
+proptest.workspace   = true
+serde.workspace      = true
+serde_json.workspace = true
+tempfile.workspace    = true
+# The golden test decompresses the reference `.dat` files itself so it can compare the
+# *decompressed* payload byte-for-byte; integration tests cannot see normal dependencies.
+flate2.workspace   = true
+
+[[test]]
+name = "serde_support"
+required-features = ["serde"]

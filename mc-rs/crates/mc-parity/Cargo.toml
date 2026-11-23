@@ -1,0 +1,32 @@
+[package]
+name        = "mc-parity"
+description = "Vanilla parity harness: capture, replay, and diff."
+version.workspace = true
+edition.workspace = true
+publish.workspace = true
+license.workspace = true
+repository.workspace = true
+
+[dependencies]
+mc-core.workspace   = true
+thiserror.workspace = true
+
+# The harness reads and replays every wire and simulation format the client uses.
+mc-protocol.workspace = true
+mc-nbt.workspace      = true
+mc-world.workspace    = true
+mc-physics.workspace  = true
+mc-math.workspace     = true
+mc-data.workspace     = true
+mc-assets.workspace   = true
+mc-render.workspace   = true
+serde_json.workspace  = true
+image.workspace       = true          # render-snapshot perceptual diff
+flate2.workspace      = true          # captures are stored compressed
+tracing.workspace     = true
+uuid.workspace        = true          # names `Uuid` directly instead of decoding one
+
+[dev-dependencies]
+sha2.workspace = true
+proptest.workspace = true             # round-trip fuzzing in CI
+tracing-subscriber.workspace = true

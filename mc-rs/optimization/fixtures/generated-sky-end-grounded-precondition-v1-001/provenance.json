@@ -1,0 +1,26 @@
+{
+  "files": {
+    "sky-end-grounded-precondition-v1.mccap": {
+      "bytes": 274,
+      "sha256": "a1599bbb55e0185d80e91c0c7cbe1af1bfa6a0db1123e3c6f015664e0e4cf86c"
+    },
+    "sky-end-grounded-precondition-v1.recipe.json": {
+      "bytes": 3192,
+      "sha256": "56840ee6c1d6533507dc0ade3a7905f83d0a1638daedf4757b11dfec3916f3db"
+    }
+  },
+  "generation_result": "{repo}\\mc-rs\\optimization\\scratch\\sky-end-grounded-fixture-checks-001\\result.json",
+  "generation_result_sha256": "331b4b3af8cbbed9803b528463418c56c4362518c1f6bfaf99f48b607a86b3c8",
+  "generator_sha256": "4e7ef641478012fdd331b5b6979a86ad7645dad84bc27f1408e4cb56dc9d55c4",
+  "schema": "mc-rs.optimization.end-grounded-preconditioning-fixture-provenance",
+  "schema_version": 1,
+  "scoring_eligible": false,
+  "source_capture": "{repo}\\mc-rs\\optimization\\fixtures\\generated-sky-end-grounded-v1-001-1\\sky-end-grounded-v1.mccap",
+  "source_pins": {
+    "sky-end-grounded-v1.mccap": "a1599bbb55e0185d80e91c0c7cbe1af1bfa6a0db1123e3c6f015664e0e4cf86c",
+    "sky-end-grounded-v1.recipe.json": "26d4218053dc0becabd3d84aaaea7643b27d2aca5a9cd9799f639a8b7065693a"
+  },
+  "source_recipe": "{repo}\\mc-rs\\optimization\\fixtures\\generated-sky-end-grounded-v1-001-1\\sky-end-grounded-v1.recipe.json",
+  "status": "UNQUALIFIED_DIAGNOSTIC",
+  "validator_sha256": "fa0763d9cc8f5231fc3060c1b73a1bd9ae216d23fec4ea6a2e32d870a7b1ac94"
+}

@@ -1,0 +1,10 @@
+rows=7806
+grid_width=89
+grid_height=88
+unique_raw_storage_ids=1394
+duplicate_raw_storage_rows=6412
+duplicate_raw_storage_ids=486
+max_rows_per_raw_storage_id=192
+registry_order=nondecreasing Block.blockRegistry id
+state_order=Block.getBlockState().getValidStates() per registry entry
+property_order=BlockState sorted IProperty name, then getAllowedValues iterator

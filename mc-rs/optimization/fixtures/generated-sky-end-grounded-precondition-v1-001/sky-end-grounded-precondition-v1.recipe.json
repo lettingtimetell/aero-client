@@ -1,0 +1,101 @@
+{
+  "camera": {
+    "above_loaded_column": [
+      0,
+      0
+    ],
+    "eye_position": [
+      0.5,
+      66.62000000476837,
+      0.5
+    ],
+    "fixed_position_32": [
+      16,
+      2080,
+      16
+    ],
+    "fov_semantics": "Java GameSettings.fovSetting passed to Project.gluPerspective; no horizontal_or_vertical claim",
+    "fov_setting_degrees": 70.0,
+    "intent": "Camera feet are exactly on the top face of the single solid end-stone floor at y=64; ordinary physics can preserve this anchor while mesh readiness is checked by the runtime receipt.",
+    "pitch_degrees": 6.0,
+    "position": [
+      0.5,
+      65.0,
+      0.5
+    ],
+    "position_semantics": "player_feet_from_PlayerPositionLook",
+    "projection_fov_argument_degrees": 70.0,
+    "viewport": [
+      854,
+      480
+    ],
+    "yaw_degrees": 0.0
+  },
+  "contract": "mc-rs.optimization.sky-end-fixture",
+  "dimension": 1,
+  "disclaimer": "Synthetic typed-packet diagnostic input only; no image, visibility, asset, or performance qualification is claimed.",
+  "fixture_id": "SKY_END_GROUNDED_PRECONDITION_V1",
+  "frozen_frames": 64,
+  "generation": "mc-protocol Packet::write, mc-data registry lookups, and mc-world expected_chunk_data_len; no raw invented packet or block-state bytes",
+  "java_harness": {
+    "asset_path": "textures/environment/end_sky.png",
+    "expected_columns": 1,
+    "required_dimension_receipt": 1,
+    "required_sky_stage": "renderSkyEnd",
+    "source_paths": [
+      "src/minecraft/net/minecraft/client/renderer/RenderGlobal.java",
+      "src/minecraft/net/minecraft/client/renderer/EntityRenderer.java"
+    ]
+  },
+  "measured_warmup_frames": 120,
+  "packet_order": [
+    "LoginSuccess",
+    "JoinGame",
+    "TimeUpdate",
+    "UpdateHealth",
+    "SpawnPosition",
+    "ChunkData",
+    "PlayerPositionLook"
+  ],
+  "parent_fixture": {
+    "capture_sha256": "a1599bbb55e0185d80e91c0c7cbe1af1bfa6a0db1123e3c6f015664e0e4cf86c",
+    "fixture_id": "SKY_END_GROUNDED_V1",
+    "packet_bytes_unchanged": true,
+    "recipe_sha256": "26d4218053dc0becabd3d84aaaea7643b27d2aca5a9cd9799f639a8b7065693a"
+  },
+  "preconditioning": {
+    "after_replay_exhausted": true,
+    "packet_policy": "no packets after replay exhaustion",
+    "tick_micros": 50000,
+    "ticks": 15000
+  },
+  "preconditioning_boundary_semantics": "Exclude the frame that delivers the final replay packet; count the next 15000 ordinary ticks and rendered frames. Check readiness after the last render and before the first measured warmup tick. No adaptive extension.",
+  "protocol": 47,
+  "scoring_eligible": false,
+  "status": "UNQUALIFIED_DIAGNOSTIC",
+  "steady_frame_budget": 4096,
+  "version": 1,
+  "world": {
+    "biome": {
+      "id": 9,
+      "name": "The End"
+    },
+    "block_light_nibble": 0,
+    "chunk_columns": [
+      {
+        "chunk_x": 0,
+        "chunk_z": 0,
+        "section_mask": 16
+      }
+    ],
+    "floor_block": "end_stone",
+    "floor_block_state": 1936,
+    "ground_up_continuous": true,
+    "has_sky_light": false,
+    "loaded_column_count": 1,
+    "payload_layout": "blocks + block_light + biomes; no sky_light region",
+    "section_mask": 16,
+    "solid_block_count": 256,
+    "solid_floor_y": 64
+  }
+}

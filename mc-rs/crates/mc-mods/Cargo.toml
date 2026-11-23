@@ -1,0 +1,17 @@
+[package]
+name        = "mc-mods"
+description = "PvP mod framework data: catalog, option descriptors, settings store, HUD layout."
+version.workspace = true
+edition.workspace = true
+publish.workspace = true
+license.workspace = true
+repository.workspace = true
+
+[dependencies]
+# The settings file is parsed as a `serde_json::Value` tree by hand, so every value can be
+# coerced or clamped individually instead of failing the whole load (no derive, no `serde`).
+serde_json.workspace = true
+# The settings, profile and waypoint files are written through
+# `mc_core::durable::write_atomic` (flushed to the disk before the rename). mc-core is in every
+# build of the client already; this adds no crate.
+mc-core.workspace = true

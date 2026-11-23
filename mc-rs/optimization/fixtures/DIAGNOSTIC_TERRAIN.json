@@ -1,0 +1,151 @@
+{
+  "schema": "mc-rs.optimization.fixture",
+  "schema_version": 1,
+  "fixture_id": "DIAGNOSTIC_TERRAIN",
+  "title": "Deterministic synthetic terrain lifecycle diagnostic",
+  "status": "DIAGNOSTIC",
+  "scoring_eligible": false,
+  "path_root": "../../..",
+  "inputs": {
+    "capture": {
+      "path": "mc-rs/optimization/fixtures/generated-lifecycle-v2/lifecycle.mccap",
+      "sha256": "b65ea303f94be8f8a723023fb873ccecfe31833db4c77ca9129ccb1da6d6b4ce",
+      "required": true,
+      "missing_reason": "The generated lifecycle-v2 capture is present and pinned; it is a typed diagnostic capture, not a scored renderer run."
+    },
+    "camera_input_script": {
+      "path": "mc-rs/optimization/fixtures/generated-lifecycle-v2/lifecycle.recipe.json",
+      "sha256": "679ffaa1d0837ea0bebac21355d6c4c0bdc2071097ba212ed8479188f024a1df",
+      "required": true,
+      "missing_reason": "The fixed camera and checkpoint recipe is pinned; broader parity coverage remains open even though the bounded post-fix lifecycle comparison passes."
+    },
+    "settings": {
+      "path": null,
+      "sha256": null,
+      "required": true,
+      "missing_reason": "No standalone host settings export is pinned; fixed-step and camera declarations are recorded in visual_profile.settings and the recipe."
+    },
+    "assets_manifest": {
+      "path": null,
+      "sha256": null,
+      "required": true,
+      "missing_reason": "This synthetic protocol fixture has no complete Java asset or image manifest; asset completeness is intentionally unclaimed."
+    }
+  },
+  "clocks": {
+    "simulation": {
+      "mode": "fixed_tick",
+      "semantics": "Synthetic protocol simulation advances exactly one 20 Hz tick of 50000 microseconds per frame; readiness does not extend the declared checkpoint range."
+    },
+    "input": {
+      "mode": "scripted",
+      "semantics": "Camera positions and look angles come only from the pinned recipe; no OS input is part of this diagnostic."
+    },
+    "capture": {
+      "mode": "frame_index",
+      "semantics": "Capture rows are associated with deterministic simulation frame indices and explicit microsecond packet ordering."
+    },
+    "rng": {
+      "mode": "none",
+      "semantics": "The synthetic fixture has no entities, particles, emitters, or random visual actors."
+    }
+  },
+  "visual_profile": {
+    "name": "Parity",
+    "settings": {
+      "diagnostic_mode": "frozen_steady_state",
+      "simulation_step_micros": 50000,
+      "camera_mode": "fixed_script",
+      "camera_script_labels": ["A_plus_x", "A_plus_z", "B_minus_x", "C_minus_z"],
+      "checkpoint_ticks": [200, 320, 440, 560, 680, 800, 920, 1040, 1160, 1280],
+      "scoring_eligible": false
+    },
+    "settings_fingerprint": "8ffe3328a7a0f0bf405fce2518aeb2a59a057db95f2b9c13ef443accc8094a9a"
+  },
+  "readiness": [
+    {
+      "id": "input_script_ready",
+      "kind": "input_script_ready",
+      "required": true,
+      "status": "pass",
+      "description": "The fixed camera script and checkpoint declarations are present in the pinned lifecycle recipe.",
+      "evidence": "mc-rs/optimization/fixtures/generated-lifecycle-v2/lifecycle.recipe.json",
+      "missing_reason": null
+    },
+    {
+      "id": "world_loaded",
+      "kind": "world_loaded",
+      "required": true,
+      "status": "pass",
+      "description": "The post-fix diagnostic comparisons loaded the declared synthetic world and matched world-light state at every checkpoint.",
+      "evidence": "mc-rs/optimization/reports/o0-lifecycle-aa-001.json",
+      "missing_reason": null
+    },
+    {
+      "id": "sections_resident",
+      "kind": "sections_resident",
+      "required": true,
+      "status": "pass",
+      "description": "The post-fix diagnostic comparisons matched resident sections and ordered visible sections through unload and reload transitions.",
+      "evidence": "mc-rs/optimization/reports/o0-lifecycle-aa-001.json",
+      "missing_reason": null
+    },
+    {
+      "id": "telemetry_ready",
+      "kind": "telemetry_ready",
+      "required": true,
+      "status": "pass",
+      "description": "The post-fix diagnostic comparisons matched work cardinality and strict terrain visibility records at all ten checkpoints.",
+      "evidence": "mc-rs/optimization/reports/o0-lifecycle-aa-001.json",
+      "missing_reason": null
+    }
+  ],
+  "intervals": {
+    "warmup": {
+      "unit": "frames",
+      "value": 200,
+      "semantics": "Frames through the initial_ready checkpoint are setup and readiness coverage; exclude them from any future measurement claim.",
+      "missing_reason": null
+    },
+    "measurement": {
+      "unit": "frames",
+      "value": 1080,
+      "semantics": "The declared diagnostic span runs from frame 201 through frame 1280 inclusive; this is a structural interval, not a performance sample.",
+      "missing_reason": null
+    }
+  },
+  "checks": {
+    "image": [
+      {
+        "id": "lifecycle_reference",
+        "required": true,
+        "status": "pass",
+        "frame": 560,
+        "path": "mc-rs/optimization/reports/o0-lifecycle-aa-001.json",
+        "sha256": "008ab815b2e6833397ee0c163eb32d37359fef877adebf400425548e616709ec",
+        "description": "Diagnostic image identity comparison at the unload_B visibility transition; this is not a Java image reference.",
+        "missing_reason": null
+      }
+    ],
+    "visibility": [
+      {
+        "id": "unload_b_remote_a",
+        "required": true,
+        "status": "pass",
+        "frame": 560,
+        "path": "mc-rs/optimization/reports/o0-lifecycle-aa-001.json",
+        "sha256": "008ab815b2e6833397ee0c163eb32d37359fef877adebf400425548e616709ec",
+        "description": "Remote A must remain visible after camera section B unload while resident identities remain exact.",
+        "missing_reason": null
+      }
+    ]
+  },
+  "known_limitations": [
+    "Diagnostic only: this is a typed synthetic protocol lifecycle and does not claim Java renderer parity, image parity, or performance.",
+    "Scoring remains disabled because standalone host settings and complete asset provenance are not pinned, the runs are contended diagnostics, and broader loaded-camera/unloaded-corridor coverage remains open.",
+    "No complete asset manifest is supplied and no Java image reference is used.",
+    "Lifecycle-v1 remains preserved as the failed historical case; lifecycle-v2 changes the shared A sentinel recipe target while retaining byte-identical capture bytes.",
+    "The before-fix-001 receipt was invalidated for a harness column-count defect; before-fix-002 was invalidated as a pre-fix failure receipt despite valid source/executable and 320 resident sections.",
+    "The phase-level missing-camera fallback and the ten-checkpoint lifecycle comparison pass in the bounded diagnostic scope; the broader loaded-camera/unloaded-corridor case remains open."
+  ]
+}

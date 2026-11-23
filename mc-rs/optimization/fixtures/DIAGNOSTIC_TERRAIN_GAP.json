@@ -1,0 +1,201 @@
+{
+  "schema": "mc-rs.optimization.fixture",
+  "schema_version": 1,
+  "fixture_id": "DIAGNOSTIC_TERRAIN",
+  "title": "Deterministic synthetic terrain unloaded-corridor gap diagnostic",
+  "status": "DIAGNOSTIC",
+  "scoring_eligible": false,
+  "path_root": "../../..",
+  "inputs": {
+    "capture": {
+      "path": "mc-rs/optimization/fixtures/generated-lifecycle-gap-v1/lifecycle-gap.mccap",
+      "sha256": "d884eafd60323ef42452c7fc45ca0dbc678ae670ad372aa782b44eab738b4d28",
+      "required": true,
+      "missing_reason": "The lifecycle gap capture is pinned as an invalid correctness diagnostic; it is not a performance run."
+    },
+    "camera_input_script": {
+      "path": "mc-rs/optimization/fixtures/generated-lifecycle-gap-v1/lifecycle-gap.recipe.json",
+      "sha256": "900e44524d6053e320378f693c99bffba667eb0a9b3aa0bfba88b948e478ad9c",
+      "required": true,
+      "missing_reason": "The unloaded-corridor recipe is pinned; its failure at tick 1401 remains unqualified."
+    },
+    "settings": {
+      "path": null,
+      "sha256": null,
+      "required": true,
+      "missing_reason": "No standalone host settings export is pinned; fixed-step and camera declarations are recorded in visual_profile.settings and the recipe."
+    },
+    "assets_manifest": {
+      "path": null,
+      "sha256": null,
+      "required": true,
+      "missing_reason": "This synthetic protocol fixture has no complete Java asset or image manifest; asset completeness is intentionally unclaimed."
+    }
+  },
+  "clocks": {
+    "simulation": {
+      "mode": "fixed_tick",
+      "semantics": "Synthetic protocol simulation advances exactly one 20 Hz tick of 50000 microseconds per frame; readiness does not extend the declared checkpoint range."
+    },
+    "input": {
+      "mode": "scripted",
+      "semantics": "Camera positions and look angles come only from the pinned recipe; no OS input is part of this diagnostic."
+    },
+    "capture": {
+      "mode": "frame_index",
+      "semantics": "Capture rows are associated with deterministic simulation frame indices and explicit microsecond packet ordering."
+    },
+    "rng": {
+      "mode": "none",
+      "semantics": "The synthetic fixture has no entities, particles, emitters, or random visual actors."
+    }
+  },
+  "visual_profile": {
+    "name": "Parity",
+    "settings": {
+      "diagnostic_mode": "frozen_steady_state",
+      "simulation_step_micros": 50000,
+      "camera_mode": "fixed_script",
+      "camera_script_labels": [
+        "A_plus_x",
+        "A_plus_z",
+        "B_minus_x",
+        "C_minus_z"
+      ],
+      "checkpoint_ticks": [
+        200,
+        320,
+        440,
+        560,
+        680,
+        800,
+        920,
+        1040,
+        1160,
+        1280
+      ],
+      "scoring_eligible": false,
+      "fixture_variant": "unloaded_corridor",
+      "gap_checkpoint_ticks": [
+        1401,
+        1521
+      ]
+    },
+    "settings_fingerprint": "48040cd94a687483badb92e415ad2c367dd7e4c29e4540b55440834ec00d6edd"
+  },
+  "readiness": [
+    {
+      "id": "input_script_ready",
+      "kind": "input_script_ready",
+      "required": true,
+      "status": "pass",
+      "description": "The fixed camera script and checkpoint declarations are present in the pinned lifecycle recipe.",
+      "evidence": "mc-rs/optimization/fixtures/generated-lifecycle-v2/lifecycle.recipe.json",
+      "missing_reason": null
+    },
+    {
+      "id": "world_loaded",
+      "kind": "world_loaded",
+      "required": true,
+      "status": "pass",
+      "description": "The synthetic world is loaded through the gap transition.",
+      "evidence": "mc-rs/optimization/runs/lifecycle-gap-before-authority-001-checkpoints/checkpoints/1401-unload_Hx-FAILED.json",
+      "missing_reason": null
+    },
+    {
+      "id": "sections_resident",
+      "kind": "sections_resident",
+      "required": true,
+      "status": "pass",
+      "description": "The failure checkpoint observed 368 resident sections across 23 columns, with no mesh queues pending.",
+      "evidence": "mc-rs/optimization/runs/lifecycle-gap-before-authority-001-checkpoints/checkpoints/1401-unload_Hx-FAILED.json",
+      "missing_reason": null
+    },
+    {
+      "id": "telemetry_ready",
+      "kind": "telemetry_ready",
+      "required": true,
+      "status": "pass",
+      "description": "The failure checkpoint contains terrain, visibility, work, and world-light observations.",
+      "evidence": "mc-rs/optimization/runs/lifecycle-gap-before-authority-001-checkpoints/checkpoints/1401-unload_Hx-FAILED.json",
+      "missing_reason": null
+    },
+    {
+      "id": "authority_visibility_diagnostic",
+      "kind": "custom",
+      "required": true,
+      "status": "pass",
+      "description": "The live authoritative world-column path restores the unloaded-corridor visibility at ticks 1401 and 1521 in strict A/A diagnostics.",
+      "evidence": "mc-rs/optimization/reports/o0-lifecycle-gap-aa-001.json",
+      "missing_reason": null
+    }
+  ],
+  "intervals": {
+    "warmup": {
+      "unit": "frames",
+      "value": 200,
+      "semantics": "Frames through the initial_ready checkpoint are setup and readiness coverage; exclude them from any future measurement claim.",
+      "missing_reason": null
+    },
+    "measurement": {
+      "unit": "frames",
+      "value": 1321,
+      "semantics": "The diagnostic span runs from frame 201 through the gap final checkpoint at frame 1521; it is a correctness interval, not a performance sample.",
+      "missing_reason": null
+    }
+  },
+  "checks": {
+    "image": [
+      {
+        "id": "unload_hx_failure_image",
+        "required": true,
+        "status": "fail",
+        "frame": 1401,
+        "path": "mc-rs/optimization/runs/lifecycle-gap-before-authority-001-checkpoints/checkpoints/1401-unload_Hx.png",
+        "sha256": "1f047e79f2a346e6097321a35116a5ee172f94ba2b5903ddb1832368bba1e77c",
+        "description": "Preserved diagnostic screenshot at the unloaded-corridor failure checkpoint; it is not a Java image reference.",
+        "missing_reason": "The run is an invalid correctness diagnostic, so this image cannot qualify parity or scoring."
+      }
+    ],
+    "visibility": [
+      {
+        "id": "unload_hx_remote_b_failure",
+        "required": true,
+        "status": "fail",
+        "frame": 1401,
+        "path": "mc-rs/optimization/runs/lifecycle-gap-before-authority-001-checkpoints/checkpoints/1401-unload_Hx-FAILED.json",
+        "sha256": "b43523cf939aff5b7f2ae7765428cb7bccfbd155e00af2262d2b4e4ad72e1f99",
+        "description": "Remote B [8,4,0] must remain visible after Hx unload; this receipt records the observed failure.",
+        "missing_reason": "Expected remote B [8,4,0] was invisible with 14 visible sections despite 368 resident sections and settled lighting."
+      },
+      {
+        "id": "authority_unload_hx_remote_b_restored",
+        "required": true,
+        "status": "pass",
+        "frame": 1401,
+        "path": "mc-rs/optimization/runs/lifecycle-gap-after-authority-001-checkpoints/checkpoints/1401-unload_Hx.json",
+        "sha256": "ec064712337ca47320287eb5057f119469e5047b271b266c873b868da2262c6d",
+        "description": "The live authority diagnostic restores remote B visibility after Hx unload with the expected resident world state.",
+        "missing_reason": null
+      },
+      {
+        "id": "authority_reload_hx_visibility_restored",
+        "required": true,
+        "status": "pass",
+        "frame": 1521,
+        "path": "mc-rs/optimization/runs/lifecycle-gap-after-authority-001-checkpoints/checkpoints/1521-reload_Hx.json",
+        "sha256": "0aa66a3763b7a19a0193d3792310f976680d11e8bb2f4c2f5d51e842a4ebe19d",
+        "description": "The live authority diagnostic preserves visibility after Hx reload at the final gap checkpoint.",
+        "missing_reason": null
+      }
+    ]
+  },
+  "known_limitations": [
+    "Diagnostic only: unloaded-corridor correctness failure, not a performance measurement or Java parity claim.",
+    "This variant preserves lifecycle-gap-before-authority-001 as INVALID evidence; its child exited non-zero after the visibility assertion.",
+    "The failure occurred at tick 1401 after the first ten base checkpoints passed: expected 368 resident sections were present, lighting was settled, queues were empty, and remote B [8,4,0] was absent from 14 visible sections.",
+    "The authoritative world-column membership path is integrated and passes the strict 12-checkpoint visibility A/A diagnostic; the preserved pre-authority failure remains historical control evidence.",
+    "The E1 authority image comparison passes, but its paired mesh validator failed with mesh_enqueued=0 because JoinedGame queue construction reset diagnostic frame events/options; a new runtime receipt is required after the queue-preservation fix.",
+    "No complete asset manifest, standalone host settings export, Java image reference, or scoring eligibility is claimed."
+  ]
+}

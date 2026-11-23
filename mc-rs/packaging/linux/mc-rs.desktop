@@ -1,0 +1,13 @@
+[Desktop Entry]
+Type=Application
+Name=mc-rs
+GenericName=Minecraft 1.8.9 client
+Comment=Native Rust client for Minecraft 1.8.9 servers. Uses your own Minecraft installation.
+# Rewritten to an absolute path at install time; a relative Exec is not valid for a launcher
+# started from a menu. The archive is not an installer, so this file ships as a template.
+Exec=mc-rs
+Terminal=false
+Categories=Game;
+# No icon is shipped: every plausible icon here would be Minecraft's, and this artefact carries
+# none of Mojang's files. `applications-games` is the freedesktop generic.
+Icon=applications-games

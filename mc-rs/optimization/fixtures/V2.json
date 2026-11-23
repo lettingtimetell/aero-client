@@ -1,0 +1,35 @@
+{
+  "schema": "mc-rs.optimization.fixture",
+  "schema_version": 1,
+  "fixture_id": "V2",
+  "title": "Bridge fighting and interaction tails",
+  "status": "DRAFT",
+  "scoring_eligible": false,
+  "path_root": "../../..",
+  "inputs": {
+    "capture": {"path": null, "sha256": null, "required": true, "missing_reason": "A V2 interaction capture with edits, combat, particles and effects has not been produced."},
+    "camera_input_script": {"path": null, "sha256": null, "required": true, "missing_reason": "The bridge-fight camera and action script has not been produced."},
+    "settings": {"path": null, "sha256": null, "required": true, "missing_reason": "The complete parity settings export has not been frozen."},
+    "assets_manifest": {"path": null, "sha256": null, "required": true, "missing_reason": "The texture, skin and particle asset manifest has not been frozen."}
+  },
+  "clocks": {
+    "simulation": {"mode": "unknown", "semantics": "Simulation tick cadence and edit-to-visible boundaries must be pinned."},
+    "input": {"mode": "unknown", "semantics": "Combat, placement, breaking and camera actions must be owned by a pinned script."},
+    "capture": {"mode": "unknown", "semantics": "The telemetry clock and interval semantics are not selected."},
+    "rng": {"mode": "unknown", "semantics": "Particle and gameplay RNG ownership has not been captured."}
+  },
+  "visual_profile": {"name": "Parity", "settings": null, "settings_fingerprint": null},
+  "readiness": [
+    {"id": "world_loaded", "kind": "world_loaded", "required": true, "status": "not_checked", "description": "The bridge arena is loaded before warmup.", "evidence": null, "missing_reason": "No V2 capture exists."},
+    {"id": "telemetry_ready", "kind": "telemetry_ready", "required": true, "status": "not_checked", "description": "Frame, edit-to-visible and work telemetry is available.", "evidence": null, "missing_reason": "The telemetry adapter is not yet qualified."}
+  ],
+  "intervals": {
+    "warmup": {"unit": "frames", "value": null, "semantics": "Discard the declared warmup frame range before interaction measurement.", "missing_reason": "Warmup frame count has not been selected."},
+    "measurement": {"unit": "frames", "value": null, "semantics": "Include exactly the declared contiguous interaction measurement frames.", "missing_reason": "Measurement frame count has not been selected."}
+  },
+  "checks": {
+    "image": [{"id": "bridge_reference", "required": true, "status": "not_checked", "frame": 0, "path": null, "sha256": null, "description": "Pinned bridge/combat image checkpoint.", "missing_reason": "No reference image has been captured."}],
+    "visibility": [{"id": "edit_visible_sections", "required": true, "status": "not_checked", "frame": 0, "path": null, "sha256": null, "description": "Section identities after block edits and worker completion.", "missing_reason": "No visibility checkpoint has been captured."}]
+  },
+  "known_limitations": ["Draft only; no interaction timings or event counts are asserted.", "A dense terrain capture cannot stand in for V2 combat and edit behavior."]
+}

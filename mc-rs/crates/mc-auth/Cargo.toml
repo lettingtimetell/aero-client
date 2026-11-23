@@ -1,0 +1,37 @@
+[package]
+name        = "mc-auth"
+description = "Microsoft-account authentication and the server-join handshake."
+version.workspace = true
+edition.workspace = true
+publish.workspace = true
+license.workspace = true
+repository.workspace = true
+
+[features]
+default = []
+# Dev-only: skip Microsoft entirely and synthesise a vanilla offline-mode session.
+# Servers in online mode will reject it. Never enable this in a release build.
+offline = []
+
+[dependencies]
+mc-core.workspace     = true
+mc-nbt.workspace      = true
+thiserror.workspace   = true
+tracing.workspace     = true
+serde.workspace       = true
+serde_json.workspace  = true
+reqwest.workspace     = true
+tokio.workspace       = true
+uuid.workspace        = true
+sha1.workspace        = true
+base64.workspace      = true
+rsa.workspace         = true
+aes-gcm.workspace     = true
+getrandom.workspace   = true
+directories.workspace = true
+md-5.workspace        = true
+
+[dev-dependencies]
+wiremock.workspace = true
+tempfile.workspace = true
+tokio              = { workspace = true, features = ["rt-multi-thread"] }

@@ -1,0 +1,128 @@
+[package]
+name        = "mc-client"
+description = "The game binary: config, login, menus, session lifecycle, mods."
+version.workspace = true
+edition.workspace = true
+publish.workspace = true
+license.workspace = true
+repository.workspace = true
+
+[dependencies]
+# `subscriber` is enabled here and nowhere else: libraries emit spans, the binary installs
+# the collector.
+mc-core = { workspace = true, features = ["subscriber"] }
+
+# `anyhow` is permitted in this crate only.
+anyhow.workspace  = true
+tracing.workspace = true
+
+mc-data.workspace     = true
+mc-nbt.workspace      = true
+mc-auth.workspace     = true
+mc-assets.workspace   = true
+mc-math.workspace     = true
+mc-protocol.workspace = true
+mc-world.workspace    = true
+mc-render.workspace   = true
+mc-physics.workspace  = true
+mc-audio.workspace    = true
+mc-ui.workspace       = true
+# The PvP mod catalog, settings store and HUD layout.
+mc-mods.workspace     = true
+# Spotify now-playing and media controls.
+mc-media.workspace    = true
+# The replay container and the export encoder.
+mc-replay.workspace   = true
+mc-video.workspace    = true
+# The portable client's updater (GitHub releases, verified, swap on
+# restart). Every crate it uses is already in this graph (reqwest, rustls's ring, zip, semver).
+mc-update.workspace   = true
+# The video export's progress panel rasterises Segoe UI on the CPU
+# (the window shows it over the live preview while the frame graph renders offscreen). Already in
+# the graph through mc-ui; no new crate.
+ab_glyph.workspace    = true
+
+# The root table gives tokio ["rt","time","macros"]. The connection task additionally needs a
+# real multi-threaded runtime it can own, the socket, the AsyncRead/AsyncWrite extension
+# traits, and the channels that carry packets to and from the synchronous game loop
+# ("tokio for network only; the game loop is synchronous").
+tokio        = { workspace = true, features = ["net", "io-util", "rt-multi-thread", "sync"] }
+# Chat components and the server-list status response are JSON on the wire.
+serde_json.workspace = true
+# Tab-list entries and the login profile are keyed by UUID.
+uuid.workspace       = true
+# Server-list favicons are base64 PNG inside the status JSON.
+base64.workspace     = true
+image.workspace      = true
+bytes.workspace      = true
+reqwest.workspace     = true
+# "one `thiserror` enum per crate". `anyhow` alone cannot satisfy that for `mc-client`'s
+# library half, which has to return a typed error (`ClientError`) to the game loop.
+thiserror.workspace  = true
+
+# The `Shared<T>` phase wrapper implements `mc_render::RenderPhase`, whose methods name
+# `wgpu::CommandEncoder` and `wgpu::TextureView`; `mc-render` deliberately does not re-export
+# wgpu, so it is a direct dependency here.
+wgpu.workspace = true
+# The session recorder. `mc-parity` deliberately does not depend on
+# `mc-client`, so this direction is the only one that exists and there is no cycle. See
+# `net::capture` for what is recorded and where.
+mc-parity.workspace = true
+
+# `mc-ui` cannot host clipboard FFI under
+# `#![forbid(unsafe_code)]`. Default features off drops the X11 and Wayland back-ends, which are
+# `cfg(unix)`-gated and unused on every platform this is built for today.
+copypasta = { version = "0.10", default-features = false }
+
+# `app::input` maps physical keys to characters and diffs the held set to recover key-down
+# edges, both of which name `winit::keyboard::KeyCode` — the type `mc_render::InputState`
+# speaks and which `mc-render` does not re-export. This was already a dev-dependency for the
+# same reason; promoting it adds nothing to the build graph, since `mc-render` pulls the same
+# version.
+winit.workspace = true
+
+# The binary's global allocator (see `main.rs`). The crate's own `unsafe impl
+# GlobalAlloc` lives inside `mimalloc`, so `main.rs` keeps `#![forbid(unsafe_code)]`. Declared
+# here rather than in the workspace table because only the binary may install an allocator.
+# - `v2`: the long-standing mimalloc 2.x line (2.3.2 in libmimalloc-sys 0.1.49). 0.1.49+ default
+#   to the newer 3.x line; A/B `v3` (drop this feature) only after a baseline exists.
+# - no `secure` (guard pages + encrypted free lists, ~10% slower), no `override` (C malloc stays
+#   the CRT's), no `debug`/`debug_in_debug`, no `local_dynamic_tls` (only for dlopen'ed libraries),
+#   no `win_direct_tls` (v3 only; breaks if the process holds more than 64 TlsAlloc slots, and
+#   GPU drivers take some), no `extended`.
+# - Builds C (C++17 on MSVC) via `cc`: needs the same "Desktop development with C++" MSVC tools the
+#   Rust MSVC target already needs for `link.exe`. MinGW and Linux need a C compiler.
+mimalloc = { version = "0.1.52", default-features = false, features = ["v2"], optional = true }
+# Opt-in measurement build (`--features dhat-heap`): dhat replaces the allocator, counts every
+# allocation and prints the total per frame at exit (see `main.rs`). Never in a shipped build:
+# it records a backtrace per allocation and slows the client down by an order of magnitude.
+dhat = { version = "0.3.3", optional = true }
+
+[features]
+# Offline mode (no sign-in) is dev-only. It is on by default
+# because this workspace has no Azure app registration and it is the only way to reach any
+# server at all; a release build should turn it off.
+#
+# `mimalloc` is on by default: the A arm of the allocator A/B is
+# `cargo build --release --no-default-features --features offline` (system allocator).
+default = ["offline", "mimalloc"]
+offline = ["mc-auth/offline"]
+mimalloc = ["dep:mimalloc", "mc-render/mimalloc"]
+# Allocation counting for the reuse patches' A/B (ALLOC-*); takes precedence over `mimalloc`.
+dhat-heap = ["dep:dhat"]
+
+[dev-dependencies]
+sha1.workspace = true
+sha2.workspace = true
+tempfile.workspace = true
+tracing-subscriber.workspace = true
+# The leak harness names allocation sites from the test binary's
+# symbols, which are v0-mangled. Test-only, and already in Cargo.lock (no new crate).
+rustc-demangle = "0.1"
+
+# The F2 chat line's [COPY] puts the screenshot on the clipboard as
+# CF_DIB plus the registered PNG format. `copypasta` above already pulls clipboard-win 5.4.1 in
+# on Windows, so this adds no crate to the build; its safe `raw::set` keeps this crate
+# `forbid(unsafe_code)`.
+[target.'cfg(windows)'.dependencies]
+clipboard-win = "5.4"

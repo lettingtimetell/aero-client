@@ -1,0 +1,5782 @@
+{
+  "anchor": {
+    "best_open_radius_within_15_blocks": 2,
+    "column": [
+      -3892,
+      73,
+      2059
+    ],
+    "columns_considered": 8825,
+    "distance_from_centre": 29.504,
+    "feet": [
+      -3891.5,
+      74.0,
+      2059.5
+    ],
+    "mid_chests_10_to_15_blocks": 2,
+    "note": "no column within 15 blocks of the centre has open radius >= 7 (best there: 2); the centre is the fortress plaza, a 9x7 floor with void quarter-holes. Anchor moved to the nearest open ring ground.",
+    "open_radius_blocks": 7,
+    "requested": "open, flat mid-island ground within 15 blocks of manifest.centre",
+    "rule": "walkable mid-island column with every column within R walkable and within 1 block of its height, R >= 7; then most mid chests 10-15 blocks away, nearest the centre, then x, z"
+  },
+  "clocks": {
+    "capture": "every packet of server tick T stamped T*50000 us; JoinGame at 0 us; frames in non-decreasing time",
+    "rng": "SplitMix64 streams derived from the seed, one per actor",
+    "wall_time": "not used"
+  },
+  "counters": {
+    "arrows_shot": 48,
+    "arrows_stuck": 41,
+    "bridge_blocks": 24,
+    "chat_lines": 10,
+    "chest_opens": 4,
+    "crit_arrows": 30,
+    "crit_echoes": 236,
+    "dropped_items": 40,
+    "hits_on_viewer": 73,
+    "magic_crit_echoes": 446,
+    "object_spawns": 107,
+    "player_spawns": 12,
+    "projectile_hits": 9,
+    "remote_hits": 281,
+    "rod_casts": 2,
+    "sounds": 762,
+    "sprint_toggles": 1093,
+    "step_sounds": 670,
+    "swing_broadcasts": 1240,
+    "throwables": 8,
+    "trail_particle_packets": 314,
+    "viewer_hits": 92,
+    "xp_collected": 6,
+    "xp_orbs": 6
+  },
+  "entities": [
+    {
+      "alive_at_fight_start": true,
+      "entity_id": 1,
+      "name": "BenchBot",
+      "role": "V",
+      "scene_body": true,
+      "team": 0,
+      "uuid": "00000000-0000-4000-8000-000000000001"
+    },
+    {
+      "alive_at_fight_start": true,
+      "entity_id": 101,
+      "name": "BenchAlly",
+      "role": "T",
+      "scene_body": true,
+      "team": 0,
+      "uuid": "00000000-0000-4000-8000-535700000001"
+    },
+    {
+      "alive_at_fight_start": true,
+      "entity_id": 102,
+      "name": "Rival_E1",
+      "role": "E1",
+      "scene_body": true,
+      "team": 1,
+      "uuid": "00000000-0000-4000-8000-535700000002"
+    },
+    {
+      "alive_at_fight_start": true,
+      "entity_id": 103,
+      "name": "Rodder_E2",
+      "role": "E2",
+      "scene_body": true,
+      "team": 1,
+      "uuid": "00000000-0000-4000-8000-535700000003"
+    },
+    {
+      "alive_at_fight_start": true,
+      "entity_id": 104,
+      "name": "Brawl_E3",
+      "role": "E3",
+      "scene_body": true,
+      "team": 2,
+      "uuid": "00000000-0000-4000-8000-535700000004"
+    },
+    {
+      "alive_at_fight_start": true,
+      "entity_id": 105,
+      "name": "Brawl_E4",
+      "role": "E4",
+      "scene_body": true,
+      "team": 2,
+      "uuid": "00000000-0000-4000-8000-535700000005"
+    },
+    {
+      "alive_at_fight_start": true,
+      "entity_id": 106,
+      "name": "Brawl_E5",
+      "role": "E5",
+      "scene_body": true,
+      "team": 3,
+      "uuid": "00000000-0000-4000-8000-535700000006"
+    },
+    {
+      "alive_at_fight_start": true,
+      "entity_id": 107,
+      "name": "Brawl_E6",
+      "role": "E6",
+      "scene_body": true,
+      "team": 3,
+      "uuid": "00000000-0000-4000-8000-535700000007"
+    },
+    {
+      "alive_at_fight_start": true,
+      "entity_id": 108,
+      "name": "Archer_E7",
+      "role": "E7",
+      "scene_body": true,
+      "team": 4,
+      "uuid": "00000000-0000-4000-8000-535700000008"
+    },
+    {
+      "alive_at_fight_start": true,
+      "entity_id": 109,
+      "name": "Archer_E8",
+      "role": "E8",
+      "scene_body": true,
+      "team": 5,
+      "uuid": "00000000-0000-4000-8000-535700000009"
+    },
+    {
+      "alive_at_fight_start": true,
+      "entity_id": 110,
+      "name": "Bridger_E9",
+      "role": "E9",
+      "scene_body": true,
+      "team": 6,
+      "uuid": "00000000-0000-4000-8000-53570000000a"
+    },
+    {
+      "alive_at_fight_start": true,
+      "entity_id": 111,
+      "name": "Looter_E10",
+      "role": "E10",
+      "scene_body": true,
+      "team": 7,
+      "uuid": "00000000-0000-4000-8000-53570000000b"
+    },
+    {
+      "alive_at_fight_start": true,
+      "entity_id": 112,
+      "name": "Rival_E11",
+      "role": "E11",
+      "scene_body": true,
+      "team": 6,
+      "uuid": "00000000-0000-4000-8000-53570000000c"
+    },
+    {
+      "alive_at_fight_start": true,
+      "entity_id": 120,
+      "name": "Mossy_Fern",
+      "role": "F1",
+      "scene_body": false,
+      "team": 4,
+      "uuid": "00000000-0000-4000-8000-53570000000d"
+    },
+    {
+      "alive_at_fight_start": true,
+      "entity_id": 121,
+      "name": "QuietLark",
+      "role": "F2",
+      "scene_body": false,
+      "team": 5,
+      "uuid": "00000000-0000-4000-8000-53570000000e"
+    },
+    {
+      "alive_at_fight_start": true,
+      "entity_id": 122,
+      "name": "Ember_Wick",
+      "role": "F3",
+      "scene_body": false,
+      "team": 7,
+      "uuid": "00000000-0000-4000-8000-53570000000f"
+    },
+    {
+      "alive_at_fight_start": true,
+      "entity_id": 123,
+      "name": "TidalHollow",
+      "role": "F4",
+      "scene_body": false,
+      "team": 8,
+      "uuid": "00000000-0000-4000-8000-535700000010"
+    },
+    {
+      "alive_at_fight_start": true,
+      "entity_id": 124,
+      "name": "Kestrel_Nine",
+      "role": "F5",
+      "scene_body": false,
+      "team": 8,
+      "uuid": "00000000-0000-4000-8000-535700000011"
+    },
+    {
+      "alive_at_fight_start": true,
+      "entity_id": 125,
+      "name": "Pale_Juniper",
+      "role": "F6",
+      "scene_body": false,
+      "team": 9,
+      "uuid": "00000000-0000-4000-8000-535700000012"
+    },
+    {
+      "alive_at_fight_start": true,
+      "entity_id": 126,
+      "name": "Copper_Vane",
+      "role": "F7",
+      "scene_body": false,
+      "team": 9,
+      "uuid": "00000000-0000-4000-8000-535700000013"
+    },
+    {
+      "alive_at_fight_start": true,
+      "entity_id": 127,
+      "name": "Hollow_Brook",
+      "role": "F8",
+      "scene_body": false,
+      "team": 10,
+      "uuid": "00000000-0000-4000-8000-535700000014"
+    },
+    {
+      "alive_at_fight_start": true,
+      "entity_id": 128,
+      "name": "NightOwlz",
+      "role": "F9",
+      "scene_body": false,
+      "team": 10,
+      "uuid": "00000000-0000-4000-8000-535700000015"
+    },
+    {
+      "alive_at_fight_start": true,
+      "entity_id": 129,
+      "name": "Slate_Rider",
+      "role": "F10",
+      "scene_body": false,
+      "team": 11,
+      "uuid": "00000000-0000-4000-8000-535700000016"
+    },
+    {
+      "alive_at_fight_start": true,
+      "entity_id": 130,
+      "name": "Amber_Quill",
+      "role": "F11",
+      "scene_body": false,
+      "team": 11,
+      "uuid": "00000000-0000-4000-8000-535700000017"
+    },
+    {
+      "alive_at_fight_start": true,
+      "entity_id": 131,
+      "name": "FrostLantern",
+      "role": "F12",
+      "scene_body": false,
+      "team": 12,
+      "uuid": "00000000-0000-4000-8000-535700000018"
+    },
+    {
+      "alive_at_fight_start": true,
+      "entity_id": 132,
+      "name": "Gravel_Kid",
+      "role": "F13",
+      "scene_body": false,
+      "team": 12,
+      "uuid": "00000000-0000-4000-8000-535700000019"
+    },
+    {
+      "alive_at_fight_start": false,
+      "entity_id": 133,
+      "name": "Linden_Ash",
+      "role": "F14",
+      "scene_body": false,
+      "team": 13,
+      "uuid": "00000000-0000-4000-8000-53570000001a"
+    },
+    {
+      "alive_at_fight_start": false,
+      "entity_id": 134,
+      "name": "Rook_Ninety",
+      "role": "F15",
+      "scene_body": false,
+      "team": 13,
+      "uuid": "00000000-0000-4000-8000-53570000001b"
+    },
+    {
+      "alive_at_fight_start": false,
+      "entity_id": 135,
+      "name": "Salt_Marsh",
+      "role": "F16",
+      "scene_body": false,
+      "team": 14,
+      "uuid": "00000000-0000-4000-8000-53570000001c"
+    },
+    {
+      "alive_at_fight_start": false,
+      "entity_id": 136,
+      "name": "Velvet_Comet",
+      "role": "F17",
+      "scene_body": false,
+      "team": 14,
+      "uuid": "00000000-0000-4000-8000-53570000001d"
+    },
+    {
+      "alive_at_fight_start": false,
+      "entity_id": 137,
+      "name": "Briar_Patch",
+      "role": "F18",
+      "scene_body": false,
+      "team": 15,
+      "uuid": "00000000-0000-4000-8000-53570000001e"
+    },
+    {
+      "alive_at_fight_start": false,
+      "entity_id": 138,
+      "name": "Ninefold",
+      "role": "F19",
+      "scene_body": false,
+      "team": 15,
+      "uuid": "00000000-0000-4000-8000-53570000001f"
+    },
+    {
+      "alive_at_fight_start": false,
+      "entity_id": 139,
+      "name": "Thistle_Pup",
+      "role": "F20",
+      "scene_body": false,
+      "team": 16,
+      "uuid": "00000000-0000-4000-8000-535700000020"
+    },
+    {
+      "alive_at_fight_start": false,
+      "entity_id": 140,
+      "name": "Cobalt_Sun",
+      "role": "F21",
+      "scene_body": false,
+      "team": 16,
+      "uuid": "00000000-0000-4000-8000-535700000021"
+    },
+    {
+      "alive_at_fight_start": false,
+      "entity_id": 141,
+      "name": "Drift_Willow",
+      "role": "F22",
+      "scene_body": false,
+      "team": 17,
+      "uuid": "00000000-0000-4000-8000-535700000022"
+    },
+    {
+      "alive_at_fight_start": false,
+      "entity_id": 142,
+      "name": "Larkspur_K",
+      "role": "F23",
+      "scene_body": false,
+      "team": 17,
+      "uuid": "00000000-0000-4000-8000-535700000023"
+    },
+    {
+      "alive_at_fight_start": false,
+      "entity_id": 143,
+      "name": "Onyx_Harbor",
+      "role": "F24",
+      "scene_body": false,
+      "team": 18,
+      "uuid": "00000000-0000-4000-8000-535700000024"
+    },
+    {
+      "alive_at_fight_start": false,
+      "entity_id": 144,
+      "name": "Pebble_Duke",
+      "role": "F25",
+      "scene_body": false,
+      "team": 18,
+      "uuid": "00000000-0000-4000-8000-535700000025"
+    },
+    {
+      "alive_at_fight_start": false,
+      "entity_id": 145,
+      "name": "Quarry_Fox",
+      "role": "F26",
+      "scene_body": false,
+      "team": 19,
+      "uuid": "00000000-0000-4000-8000-535700000026"
+    },
+    {
+      "alive_at_fight_start": false,
+      "entity_id": 146,
+      "name": "Wren_Tally",
+      "role": "F27",
+      "scene_body": false,
+      "team": 19,
+      "uuid": "00000000-0000-4000-8000-535700000027"
+    }
+  ],
+  "events": [
+    {
+      "detail": {
+        "anchor": [
+          -3891.5,
+          74.0,
+          2059.5
+        ]
+      },
+      "event": "join",
+      "tick": 0
+    },
+    {
+      "detail": {
+        "pos": [
+          -3900,
+          74,
+          2053
+        ]
+      },
+      "event": "chest_open",
+      "tick": 321
+    },
+    {
+      "detail": {
+        "at": "BenchBot",
+        "by": "Rival_E1",
+        "hit": true,
+        "kind": "snowball",
+        "trail": 34
+      },
+      "event": "throw",
+      "tick": 380
+    },
+    {
+      "detail": "§cQuietLark §ewas killed by §cNightOwlz§e.",
+      "event": "chat",
+      "tick": 400
+    },
+    {
+      "detail": {
+        "pos": [
+          -3884,
+          74,
+          2053
+        ]
+      },
+      "event": "chest_open",
+      "tick": 437
+    },
+    {
+      "detail": {
+        "by": "Rodder_E2",
+        "hit": true
+      },
+      "event": "rod_cast",
+      "tick": 460
+    },
+    {
+      "detail": {
+        "on": "BenchAlly"
+      },
+      "event": "rod_hit",
+      "tick": 463
+    },
+    {
+      "detail": {
+        "by": "Rodder_E2"
+      },
+      "event": "rod_retract",
+      "tick": 480
+    },
+    {
+      "detail": {
+        "at": "Brawl_E5",
+        "by": "Brawl_E3",
+        "hit": true,
+        "kind": "egg",
+        "trail": null
+      },
+      "event": "throw",
+      "tick": 490
+    },
+    {
+      "detail": "§cBrawl_E5 §ewas killed by §cBrawl_E3§e.",
+      "event": "chat",
+      "tick": 541
+    },
+    {
+      "detail": {
+        "killer": "Brawl_E3",
+        "pos": [
+          -3905.855,
+          74.42,
+          2061.931
+        ],
+        "victim": "Brawl_E5",
+        "void": false
+      },
+      "event": "death",
+      "tick": 541
+    },
+    {
+      "detail": {
+        "at": [
+          -3905.855,
+          74.42,
+          2061.931
+        ],
+        "kind": "Lightning"
+      },
+      "event": "kill_effect",
+      "tick": 541
+    },
+    {
+      "detail": {
+        "at": "Rodder_E2",
+        "by": "BenchAlly",
+        "hit": true,
+        "kind": "snowball",
+        "trail": 3
+      },
+      "event": "throw",
+      "tick": 600
+    },
+    {
+      "detail": {
+        "pos": [
+          -3892,
+          81,
+          2087
+        ]
+      },
+      "event": "chest_open",
+      "tick": 622
+    },
+    {
+      "detail": "§cPale_Juniper §ewas thrown into the void by §cSlate_Rider§e.",
+      "event": "chat",
+      "tick": 640
+    },
+    {
+      "detail": {
+        "by": "Rival_E1",
+        "towards": [
+          -3885.5,
+          74.0,
+          2059.5
+        ]
+      },
+      "event": "pearl_throw",
+      "tick": 700
+    },
+    {
+      "detail": {
+        "at": [
+          -3885.034,
+          74.0,
+          2059.572
+        ]
+      },
+      "event": "pearl_landed",
+      "tick": 703
+    },
+    {
+      "detail": {
+        "pos": [
+          -3902,
+          77,
+          2081
+        ]
+      },
+      "event": "chest_open",
+      "tick": 736
+    },
+    {
+      "detail": {
+        "at": "BenchAlly",
+        "by": "Rodder_E2",
+        "hit": false,
+        "kind": "egg",
+        "trail": null
+      },
+      "event": "throw",
+      "tick": 740
+    },
+    {
+      "detail": {
+        "at": "BenchAlly",
+        "by": "Rodder_E2"
+      },
+      "event": "potion_throw",
+      "tick": 800
+    },
+    {
+      "detail": {
+        "at": [
+          -3892.72,
+          74.889,
+          2065.541
+        ],
+        "damage": 16417
+      },
+      "event": "potion_splash",
+      "tick": 808
+    },
+    {
+      "detail": {
+        "at": "Brawl_E6",
+        "by": "Brawl_E4",
+        "hit": true,
+        "kind": "snowball",
+        "trail": null
+      },
+      "event": "throw",
+      "tick": 850
+    },
+    {
+      "detail": "§cAmber_Quill §ewas killed by §cFrostLantern§e.",
+      "event": "chat",
+      "tick": 880
+    },
+    {
+      "detail": {
+        "by": "Rival_E1"
+      },
+      "event": "gapple_start",
+      "tick": 900
+    },
+    {
+      "detail": {
+        "by": "Rival_E1"
+      },
+      "event": "gapple_eaten",
+      "tick": 932
+    },
+    {
+      "detail": {
+        "at": "BenchBot",
+        "by": "Rival_E1",
+        "hit": false,
+        "kind": "egg",
+        "trail": 23
+      },
+      "event": "throw",
+      "tick": 970
+    },
+    {
+      "detail": {
+        "by": "Brawl_E4",
+        "victim": "Brawl_E6"
+      },
+      "event": "void_knock",
+      "tick": 1000
+    },
+    {
+      "detail": "§cBrawl_E6 §ewas thrown into the void by §cBrawl_E4§e.",
+      "event": "chat",
+      "tick": 1054
+    },
+    {
+      "detail": {
+        "killer": "Brawl_E4",
+        "pos": [
+          -3909.758,
+          -0.92,
+          2080.534
+        ],
+        "victim": "Brawl_E6",
+        "void": true
+      },
+      "event": "death",
+      "tick": 1054
+    },
+    {
+      "detail": {
+        "by": "Rodder_E2",
+        "hit": false
+      },
+      "event": "rod_cast",
+      "tick": 1060
+    },
+    {
+      "detail": {
+        "by": "Rodder_E2"
+      },
+      "event": "rod_retract",
+      "tick": 1080
+    },
+    {
+      "detail": "§9[TEAM] §aBenchAlly§f: they are low, push mid",
+      "event": "chat",
+      "tick": 1100
+    },
+    {
+      "detail": {
+        "at": "BenchAlly",
+        "by": "Rodder_E2",
+        "hit": true,
+        "kind": "snowball",
+        "trail": null
+      },
+      "event": "throw",
+      "tick": 1180
+    },
+    {
+      "detail": "§cRival_E1 §ewas killed by §aBenchBot§e.",
+      "event": "chat",
+      "tick": 1200
+    },
+    {
+      "detail": {
+        "killer": "BenchBot",
+        "pos": [
+          -3889.377,
+          74.0,
+          2058.891
+        ],
+        "victim": "Rival_E1",
+        "void": false
+      },
+      "event": "death",
+      "tick": 1200
+    },
+    {
+      "detail": {
+        "at": [
+          -3889.377,
+          75.0,
+          2058.891
+        ],
+        "kind": "Firework"
+      },
+      "event": "kill_effect",
+      "tick": 1200
+    },
+    {
+      "detail": "§6+5 coins!",
+      "event": "chat",
+      "tick": 1200
+    },
+    {
+      "detail": "§b+1 Soul",
+      "event": "chat",
+      "tick": 1200
+    },
+    {
+      "detail": {
+        "victim": "Rival_E1"
+      },
+      "event": "viewer_kill",
+      "tick": 1200
+    },
+    {
+      "detail": {
+        "eid": 2105
+      },
+      "event": "firework_explode",
+      "tick": 1212
+    },
+    {
+      "detail": {
+        "to": "Rival_E11"
+      },
+      "event": "opponent_switch",
+      "tick": 1260
+    },
+    {
+      "detail": {
+        "at": "Rodder_E2",
+        "by": "BenchAlly",
+        "hit": true,
+        "kind": "snowball",
+        "trail": null
+      },
+      "event": "throw",
+      "tick": 1340
+    },
+    {
+      "detail": "§cTidalHollow §ewas killed by §cCopper_Vane§e.",
+      "event": "chat",
+      "tick": 1340
+    }
+  ],
+  "expected_packets": {
+    "sw_fight": {
+      "S02 Chat": 10,
+      "S03 TimeUpdate": 60,
+      "S04 EntityEquipment": 1903,
+      "S06 UpdateHealth": 133,
+      "S0B Animation": 1922,
+      "S0C SpawnPlayer": 2,
+      "S0D CollectItem": 6,
+      "S0E SpawnObject": 101,
+      "S11 SpawnXPOrb": 6,
+      "S12 EntityVelocity": 271,
+      "S13 DestroyEntities": 28,
+      "S15 EntityRelMove": 2240,
+      "S16 EntityLook": 410,
+      "S17 EntityLookMove": 3515,
+      "S18 EntityTeleport": 795,
+      "S19 EntityHeadLook": 1325,
+      "S19 EntityStatus (0x1A)": 460,
+      "S1C EntityMetadata": 1666,
+      "S1F SetExperience": 3,
+      "S20 EntityProperties": 889,
+      "S23 BlockChange": 24,
+      "S24 BlockAction": 8,
+      "S28 Effect": 1,
+      "S29 SoundEffect": 597,
+      "S2A Particles": 314,
+      "S2C SpawnGlobalEntity": 1,
+      "S2F SetSlot": 384,
+      "S38 PlayerListItem": 9,
+      "S3E Teams": 68,
+      "_bytes": 245178,
+      "_total": 17151
+    },
+    "sw_join": {
+      "S01 JoinGame": 1,
+      "S03 TimeUpdate": 15,
+      "S04 EntityEquipment": 49,
+      "S05 SpawnPosition": 1,
+      "S06 UpdateHealth": 1,
+      "S08 PlayerPosLook": 1,
+      "S09 HeldItemChange": 1,
+      "S0C SpawnPlayer": 10,
+      "S15 EntityRelMove": 363,
+      "S16 EntityLook": 35,
+      "S17 EntityLookMove": 855,
+      "S18 EntityTeleport": 103,
+      "S19 EntityHeadLook": 876,
+      "S1C EntityMetadata": 10,
+      "S1D EntityEffect": 2,
+      "S1F SetExperience": 1,
+      "S20 EntityProperties": 10,
+      "S26 MapChunkBulk": 29,
+      "S29 SoundEffect": 165,
+      "S30 WindowItems": 1,
+      "S38 PlayerListItem": 1,
+      "S39 PlayerAbilities": 1,
+      "S3B ScoreboardObjective": 1,
+      "S3C UpdateScore": 13,
+      "S3D DisplayScoreboard": 1,
+      "S3E Teams": 37,
+      "S41 ServerDifficulty": 1,
+      "S44 WorldBorder": 1,
+      "S47 PlayerListHeaderFooter": 1,
+      "_bytes": 3428239,
+      "_total": 2586
+    },
+    "sw_tail": {
+      "S03 TimeUpdate": 5,
+      "S06 UpdateHealth": 5,
+      "S15 EntityRelMove": 90,
+      "S16 EntityLook": 36,
+      "S17 EntityLookMove": 219,
+      "S18 EntityTeleport": 4,
+      "S19 EntityHeadLook": 52,
+      "S1C EntityMetadata": 16,
+      "S20 EntityProperties": 1,
+      "S3E Teams": 5,
+      "_bytes": 3548,
+      "_total": 433
+    }
+  },
+  "fight_packets_per_second": 285.85,
+  "fight_packets_per_second_series": [
+    351,
+    332,
+    318,
+    304,
+    351,
+    310,
+    311,
+    325,
+    349,
+    358,
+    327,
+    378,
+    395,
+    355,
+    312,
+    297,
+    300,
+    319,
+    339,
+    294,
+    274,
+    331,
+    330,
+    299,
+    338,
+    320,
+    276,
+    370,
+    302,
+    275,
+    284,
+    322,
+    274,
+    313,
+    269,
+    298,
+    282,
+    241,
+    258,
+    304,
+    219,
+    208,
+    305,
+    191,
+    191,
+    359,
+    191,
+    156,
+    308,
+    194,
+    179,
+    293,
+    193,
+    207,
+    310,
+    189,
+    190,
+    290,
+    183,
+    210
+  ],
+  "generation": "skywars_fixture.rs: mc-protocol Packet::write, mc-data registry lookups, mc_world chunk decode; EntityTrackerEntry emulation",
+  "k": 50,
+  "local": {
+    "approach": [
+      {
+        "entity": 102,
+        "from": 300,
+        "keep_within": 2.6,
+        "sprint": true,
+        "to": 1200
+      },
+      {
+        "entity": 112,
+        "from": 1260,
+        "keep_within": 2.6,
+        "sprint": true,
+        "to": 1500
+      }
+    ],
+    "attack_presses": [
+      [
+        300,
+        1
+      ],
+      [
+        301,
+        1
+      ],
+      [
+        304,
+        1
+      ],
+      [
+        307,
+        1
+      ],
+      [
+        308,
+        1
+      ],
+      [
+        309,
+        1
+      ],
+      [
+        311,
+        1
+      ],
+      [
+        312,
+        1
+      ],
+      [
+        313,
+        1
+      ],
+      [
+        314,
+        1
+      ],
+      [
+        317,
+        1
+      ],
+      [
+        318,
+        1
+      ],
+      [
+        323,
+        2
+      ],
+      [
+        324,
+        1
+      ],
+      [
+        326,
+        2
+      ],
+      [
+        327,
+        1
+      ],
+      [
+        328,
+        1
+      ],
+      [
+        330,
+        1
+      ],
+      [
+        331,
+        1
+      ],
+      [
+        333,
+        1
+      ],
+      [
+        335,
+        1
+      ],
+      [
+        336,
+        1
+      ],
+      [
+        339,
+        1
+      ],
+      [
+        340,
+        1
+      ],
+      [
+        341,
+        1
+      ],
+      [
+        344,
+        1
+      ],
+      [
+        346,
+        1
+      ],
+      [
+        347,
+        1
+      ],
+      [
+        352,
+        1
+      ],
+      [
+        353,
+        1
+      ],
+      [
+        354,
+        1
+      ],
+      [
+        356,
+        1
+      ],
+      [
+        358,
+        2
+      ],
+      [
+        359,
+        1
+      ],
+      [
+        361,
+        1
+      ],
+      [
+        362,
+        1
+      ],
+      [
+        363,
+        1
+      ],
+      [
+        365,
+        1
+      ],
+      [
+        366,
+        1
+      ],
+      [
+        367,
+        1
+      ],
+      [
+        369,
+        1
+      ],
+      [
+        371,
+        1
+      ],
+      [
+        372,
+        1
+      ],
+      [
+        373,
+        2
+      ],
+      [
+        376,
+        1
+      ],
+      [
+        377,
+        1
+      ],
+      [
+        378,
+        1
+      ],
+      [
+        379,
+        1
+      ],
+      [
+        380,
+        1
+      ],
+      [
+        381,
+        1
+      ],
+      [
+        382,
+        1
+      ],
+      [
+        383,
+        1
+      ],
+      [
+        384,
+        1
+      ],
+      [
+        385,
+        1
+      ],
+      [
+        386,
+        1
+      ],
+      [
+        387,
+        1
+      ],
+      [
+        388,
+        1
+      ],
+      [
+        390,
+        1
+      ],
+      [
+        392,
+        1
+      ],
+      [
+        393,
+        1
+      ],
+      [
+        394,
+        1
+      ],
+      [
+        395,
+        1
+      ],
+      [
+        396,
+        1
+      ],
+      [
+        398,
+        1
+      ],
+      [
+        399,
+        1
+      ],
+      [
+        400,
+        1
+      ],
+      [
+        401,
+        1
+      ],
+      [
+        404,
+        1
+      ],
+      [
+        405,
+        1
+      ],
+      [
+        406,
+        1
+      ],
+      [
+        407,
+        1
+      ],
+      [
+        409,
+        1
+      ],
+      [
+        414,
+        1
+      ],
+      [
+        415,
+        1
+      ],
+      [
+        419,
+        1
+      ],
+      [
+        420,
+        1
+      ],
+      [
+        421,
+        1
+      ],
+      [
+        426,
+        1
+      ],
+      [
+        427,
+        1
+      ],
+      [
+        430,
+        1
+      ],
+      [
+        432,
+        1
+      ],
+      [
+        433,
+        1
+      ],
+      [
+        434,
+        1
+      ],
+      [
+        435,
+        1
+      ],
+      [
+        436,
+        2
+      ],
+      [
+        437,
+        1
+      ],
+      [
+        438,
+        1
+      ],
+      [
+        439,
+        1
+      ],
+      [
+        441,
+        1
+      ],
+      [
+        442,
+        1
+      ],
+      [
+        443,
+        1
+      ],
+      [
+        445,
+        1
+      ],
+      [
+        446,
+        1
+      ],
+      [
+        449,
+        1
+      ],
+      [
+        450,
+        1
+      ],
+      [
+        451,
+        1
+      ],
+      [
+        452,
+        1
+      ],
+      [
+        453,
+        1
+      ],
+      [
+        456,
+        1
+      ],
+      [
+        457,
+        1
+      ],
+      [
+        459,
+        1
+      ],
+      [
+        460,
+        2
+      ],
+      [
+        462,
+        1
+      ],
+      [
+        463,
+        1
+      ],
+      [
+        464,
+        1
+      ],
+      [
+        465,
+        1
+      ],
+      [
+        466,
+        2
+      ],
+      [
+        468,
+        1
+      ],
+      [
+        469,
+        1
+      ],
+      [
+        470,
+        1
+      ],
+      [
+        472,
+        1
+      ],
+      [
+        474,
+        1
+      ],
+      [
+        476,
+        1
+      ],
+      [
+        477,
+        2
+      ],
+      [
+        478,
+        1
+      ],
+      [
+        480,
+        1
+      ],
+      [
+        481,
+        1
+      ],
+      [
+        482,
+        1
+      ],
+      [
+        484,
+        1
+      ],
+      [
+        487,
+        1
+      ],
+      [
+        488,
+        1
+      ],
+      [
+        489,
+        1
+      ],
+      [
+        491,
+        1
+      ],
+      [
+        492,
+        1
+      ],
+      [
+        493,
+        1
+      ],
+      [
+        495,
+        1
+      ],
+      [
+        497,
+        1
+      ],
+      [
+        498,
+        2
+      ],
+      [
+        499,
+        1
+      ],
+      [
+        502,
+        1
+      ],
+      [
+        504,
+        1
+      ],
+      [
+        508,
+        1
+      ],
+      [
+        509,
+        1
+      ],
+      [
+        510,
+        1
+      ],
+      [
+        512,
+        1
+      ],
+      [
+        513,
+        1
+      ],
+      [
+        514,
+        1
+      ],
+      [
+        515,
+        1
+      ],
+      [
+        516,
+        1
+      ],
+      [
+        517,
+        1
+      ],
+      [
+        518,
+        2
+      ],
+      [
+        522,
+        1
+      ],
+      [
+        523,
+        1
+      ],
+      [
+        524,
+        1
+      ],
+      [
+        526,
+        1
+      ],
+      [
+        527,
+        1
+      ],
+      [
+        528,
+        1
+      ],
+      [
+        529,
+        1
+      ],
+      [
+        530,
+        1
+      ],
+      [
+        533,
+        1
+      ],
+      [
+        534,
+        1
+      ],
+      [
+        537,
+        1
+      ],
+      [
+        538,
+        1
+      ],
+      [
+        540,
+        1
+      ],
+      [
+        544,
+        1
+      ],
+      [
+        545,
+        2
+      ],
+      [
+        547,
+        1
+      ],
+      [
+        550,
+        1
+      ],
+      [
+        552,
+        1
+      ],
+      [
+        555,
+        1
+      ],
+      [
+        556,
+        1
+      ],
+      [
+        559,
+        1
+      ],
+      [
+        562,
+        1
+      ],
+      [
+        563,
+        1
+      ],
+      [
+        564,
+        1
+      ],
+      [
+        565,
+        1
+      ],
+      [
+        566,
+        1
+      ],
+      [
+        567,
+        1
+      ],
+      [
+        569,
+        1
+      ],
+      [
+        570,
+        1
+      ],
+      [
+        571,
+        1
+      ],
+      [
+        573,
+        1
+      ],
+      [
+        574,
+        1
+      ],
+      [
+        575,
+        1
+      ],
+      [
+        576,
+        1
+      ],
+      [
+        577,
+        1
+      ],
+      [
+        579,
+        1
+      ],
+      [
+        581,
+        1
+      ],
+      [
+        584,
+        1
+      ],
+      [
+        585,
+        1
+      ],
+      [
+        586,
+        1
+      ],
+      [
+        587,
+        1
+      ],
+      [
+        588,
+        1
+      ],
+      [
+        589,
+        1
+      ],
+      [
+        590,
+        1
+      ],
+      [
+        591,
+        2
+      ],
+      [
+        592,
+        1
+      ],
+      [
+        594,
+        1
+      ],
+      [
+        597,
+        2
+      ],
+      [
+        598,
+        1
+      ],
+      [
+        599,
+        1
+      ],
+      [
+        600,
+        1
+      ],
+      [
+        604,
+        1
+      ],
+      [
+        605,
+        1
+      ],
+      [
+        607,
+        1
+      ],
+      [
+        609,
+        2
+      ],
+      [
+        611,
+        2
+      ],
+      [
+        612,
+        1
+      ],
+      [
+        615,
+        1
+      ],
+      [
+        617,
+        1
+      ],
+      [
+        618,
+        1
+      ],
+      [
+        619,
+        1
+      ],
+      [
+        620,
+        1
+      ],
+      [
+        623,
+        1
+      ],
+      [
+        624,
+        1
+      ],
+      [
+        625,
+        1
+      ],
+      [
+        626,
+        1
+      ],
+      [
+        628,
+        1
+      ],
+      [
+        629,
+        1
+      ],
+      [
+        631,
+        1
+      ],
+      [
+        632,
+        1
+      ],
+      [
+        633,
+        1
+      ],
+      [
+        636,
+        1
+      ],
+      [
+        637,
+        1
+      ],
+      [
+        638,
+        2
+      ],
+      [
+        641,
+        1
+      ],
+      [
+        642,
+        1
+      ],
+      [
+        643,
+        1
+      ],
+      [
+        647,
+        1
+      ],
+      [
+        648,
+        1
+      ],
+      [
+        650,
+        1
+      ],
+      [
+        653,
+        1
+      ],
+      [
+        655,
+        1
+      ],
+      [
+        657,
+        1
+      ],
+      [
+        659,
+        1
+      ],
+      [
+        660,
+        1
+      ],
+      [
+        661,
+        1
+      ],
+      [
+        663,
+        1
+      ],
+      [
+        664,
+        1
+      ],
+      [
+        667,
+        1
+      ],
+      [
+        668,
+        1
+      ],
+      [
+        673,
+        1
+      ],
+      [
+        674,
+        1
+      ],
+      [
+        675,
+        1
+      ],
+      [
+        676,
+        1
+      ],
+      [
+        678,
+        1
+      ],
+      [
+        679,
+        1
+      ],
+      [
+        680,
+        1
+      ],
+      [
+        681,
+        1
+      ],
+      [
+        682,
+        1
+      ],
+      [
+        683,
+        1
+      ],
+      [
+        686,
+        1
+      ],
+      [
+        688,
+        1
+      ],
+      [
+        689,
+        1
+      ],
+      [
+        690,
+        1
+      ],
+      [
+        691,
+        1
+      ],
+      [
+        694,
+        1
+      ],
+      [
+        697,
+        2
+      ],
+      [
+        698,
+        1
+      ],
+      [
+        699,
+        1
+      ],
+      [
+        704,
+        1
+      ],
+      [
+        705,
+        1
+      ],
+      [
+        706,
+        1
+      ],
+      [
+        707,
+        1
+      ],
+      [
+        708,
+        1
+      ],
+      [
+        710,
+        1
+      ],
+      [
+        711,
+        1
+      ],
+      [
+        712,
+        1
+      ],
+      [
+        713,
+        1
+      ],
+      [
+        714,
+        1
+      ],
+      [
+        718,
+        1
+      ],
+      [
+        719,
+        1
+      ],
+      [
+        720,
+        1
+      ],
+      [
+        721,
+        1
+      ],
+      [
+        723,
+        1
+      ],
+      [
+        724,
+        1
+      ],
+      [
+        725,
+        1
+      ],
+      [
+        726,
+        1
+      ],
+      [
+        731,
+        1
+      ],
+      [
+        732,
+        1
+      ],
+      [
+        733,
+        1
+      ],
+      [
+        736,
+        1
+      ],
+      [
+        737,
+        1
+      ],
+      [
+        738,
+        1
+      ],
+      [
+        739,
+        1
+      ],
+      [
+        740,
+        1
+      ],
+      [
+        742,
+        2
+      ],
+      [
+        743,
+        1
+      ],
+      [
+        744,
+        1
+      ],
+      [
+        745,
+        1
+      ],
+      [
+        746,
+        1
+      ],
+      [
+        747,
+        1
+      ],
+      [
+        749,
+        1
+      ],
+      [
+        753,
+        1
+      ],
+      [
+        755,
+        1
+      ],
+      [
+        756,
+        1
+      ],
+      [
+        757,
+        1
+      ],
+      [
+        758,
+        1
+      ],
+      [
+        759,
+        1
+      ],
+      [
+        761,
+        1
+      ],
+      [
+        762,
+        1
+      ],
+      [
+        763,
+        2
+      ],
+      [
+        764,
+        1
+      ],
+      [
+        765,
+        1
+      ],
+      [
+        767,
+        1
+      ],
+      [
+        768,
+        1
+      ],
+      [
+        771,
+        1
+      ],
+      [
+        772,
+        1
+      ],
+      [
+        773,
+        1
+      ],
+      [
+        774,
+        1
+      ],
+      [
+        775,
+        1
+      ],
+      [
+        776,
+        1
+      ],
+      [
+        777,
+        1
+      ],
+      [
+        779,
+        1
+      ],
+      [
+        780,
+        1
+      ],
+      [
+        781,
+        1
+      ],
+      [
+        782,
+        1
+      ],
+      [
+        783,
+        1
+      ],
+      [
+        786,
+        1
+      ],
+      [
+        790,
+        1
+      ],
+      [
+        791,
+        1
+      ],
+      [
+        792,
+        1
+      ],
+      [
+        795,
+        1
+      ],
+      [
+        796,
+        2
+      ],
+      [
+        797,
+        1
+      ],
+      [
+        798,
+        1
+      ],
+      [
+        799,
+        1
+      ],
+      [
+        800,
+        1
+      ],
+      [
+        801,
+        1
+      ],
+      [
+        803,
+        1
+      ],
+      [
+        804,
+        1
+      ],
+      [
+        805,
+        1
+      ],
+      [
+        807,
+        1
+      ],
+      [
+        810,
+        1
+      ],
+      [
+        811,
+        1
+      ],
+      [
+        812,
+        2
+      ],
+      [
+        814,
+        1
+      ],
+      [
+        815,
+        1
+      ],
+      [
+        816,
+        2
+      ],
+      [
+        819,
+        2
+      ],
+      [
+        820,
+        1
+      ],
+      [
+        821,
+        2
+      ],
+      [
+        822,
+        1
+      ],
+      [
+        823,
+        1
+      ],
+      [
+        826,
+        1
+      ],
+      [
+        827,
+        1
+      ],
+      [
+        828,
+        1
+      ],
+      [
+        829,
+        1
+      ],
+      [
+        830,
+        1
+      ],
+      [
+        831,
+        1
+      ],
+      [
+        832,
+        1
+      ],
+      [
+        834,
+        1
+      ],
+      [
+        835,
+        1
+      ],
+      [
+        836,
+        1
+      ],
+      [
+        837,
+        1
+      ],
+      [
+        839,
+        1
+      ],
+      [
+        841,
+        1
+      ],
+      [
+        842,
+        1
+      ],
+      [
+        843,
+        1
+      ],
+      [
+        844,
+        1
+      ],
+      [
+        845,
+        1
+      ],
+      [
+        849,
+        1
+      ],
+      [
+        850,
+        1
+      ],
+      [
+        851,
+        1
+      ],
+      [
+        852,
+        1
+      ],
+      [
+        853,
+        1
+      ],
+      [
+        854,
+        1
+      ],
+      [
+        855,
+        1
+      ],
+      [
+        856,
+        1
+      ],
+      [
+        858,
+        1
+      ],
+      [
+        860,
+        2
+      ],
+      [
+        861,
+        1
+      ],
+      [
+        862,
+        1
+      ],
+      [
+        864,
+        1
+      ],
+      [
+        865,
+        1
+      ],
+      [
+        866,
+        1
+      ],
+      [
+        868,
+        1
+      ],
+      [
+        869,
+        1
+      ],
+      [
+        870,
+        2
+      ],
+      [
+        872,
+        1
+      ],
+      [
+        873,
+        1
+      ],
+      [
+        874,
+        1
+      ],
+      [
+        875,
+        1
+      ],
+      [
+        877,
+        1
+      ],
+      [
+        878,
+        1
+      ],
+      [
+        879,
+        1
+      ],
+      [
+        880,
+        1
+      ],
+      [
+        883,
+        1
+      ],
+      [
+        884,
+        1
+      ],
+      [
+        885,
+        1
+      ],
+      [
+        886,
+        1
+      ],
+      [
+        887,
+        1
+      ],
+      [
+        888,
+        1
+      ],
+      [
+        890,
+        2
+      ],
+      [
+        891,
+        1
+      ],
+      [
+        892,
+        1
+      ],
+      [
+        893,
+        1
+      ],
+      [
+        895,
+        1
+      ],
+      [
+        896,
+        1
+      ],
+      [
+        897,
+        1
+      ],
+      [
+        898,
+        1
+      ],
+      [
+        899,
+        1
+      ],
+      [
+        900,
+        1
+      ],
+      [
+        904,
+        1
+      ],
+      [
+        905,
+        1
+      ],
+      [
+        906,
+        1
+      ],
+      [
+        907,
+        2
+      ],
+      [
+        909,
+        1
+      ],
+      [
+        912,
+        1
+      ],
+      [
+        913,
+        1
+      ],
+      [
+        914,
+        1
+      ],
+      [
+        915,
+        1
+      ],
+      [
+        916,
+        1
+      ],
+      [
+        917,
+        1
+      ],
+      [
+        918,
+        1
+      ],
+      [
+        919,
+        1
+      ],
+      [
+        921,
+        1
+      ],
+      [
+        923,
+        1
+      ],
+      [
+        924,
+        1
+      ],
+      [
+        925,
+        1
+      ],
+      [
+        926,
+        1
+      ],
+      [
+        927,
+        1
+      ],
+      [
+        931,
+        1
+      ],
+      [
+        932,
+        1
+      ],
+      [
+        933,
+        1
+      ],
+      [
+        935,
+        1
+      ],
+      [
+        938,
+        1
+      ],
+      [
+        939,
+        1
+      ],
+      [
+        940,
+        1
+      ],
+      [
+        943,
+        1
+      ],
+      [
+        944,
+        1
+      ],
+      [
+        945,
+        1
+      ],
+      [
+        946,
+        1
+      ],
+      [
+        948,
+        1
+      ],
+      [
+        949,
+        2
+      ],
+      [
+        950,
+        1
+      ],
+      [
+        951,
+        1
+      ],
+      [
+        957,
+        1
+      ],
+      [
+        960,
+        1
+      ],
+      [
+        961,
+        1
+      ],
+      [
+        963,
+        1
+      ],
+      [
+        964,
+        1
+      ],
+      [
+        967,
+        1
+      ],
+      [
+        968,
+        1
+      ],
+      [
+        970,
+        1
+      ],
+      [
+        972,
+        1
+      ],
+      [
+        974,
+        1
+      ],
+      [
+        975,
+        2
+      ],
+      [
+        976,
+        1
+      ],
+      [
+        978,
+        1
+      ],
+      [
+        979,
+        1
+      ],
+      [
+        980,
+        1
+      ],
+      [
+        981,
+        1
+      ],
+      [
+        982,
+        1
+      ],
+      [
+        983,
+        1
+      ],
+      [
+        986,
+        1
+      ],
+      [
+        987,
+        1
+      ],
+      [
+        989,
+        1
+      ],
+      [
+        990,
+        1
+      ],
+      [
+        991,
+        1
+      ],
+      [
+        992,
+        1
+      ],
+      [
+        993,
+        1
+      ],
+      [
+        995,
+        1
+      ],
+      [
+        996,
+        1
+      ],
+      [
+        997,
+        1
+      ],
+      [
+        998,
+        1
+      ],
+      [
+        1000,
+        1
+      ],
+      [
+        1001,
+        1
+      ],
+      [
+        1004,
+        1
+      ],
+      [
+        1005,
+        1
+      ],
+      [
+        1007,
+        1
+      ],
+      [
+        1010,
+        1
+      ],
+      [
+        1011,
+        1
+      ],
+      [
+        1013,
+        1
+      ],
+      [
+        1015,
+        1
+      ],
+      [
+        1016,
+        1
+      ],
+      [
+        1017,
+        1
+      ],
+      [
+        1018,
+        1
+      ],
+      [
+        1019,
+        1
+      ],
+      [
+        1020,
+        1
+      ],
+      [
+        1021,
+        1
+      ],
+      [
+        1023,
+        1
+      ],
+      [
+        1026,
+        1
+      ],
+      [
+        1027,
+        1
+      ],
+      [
+        1029,
+        1
+      ],
+      [
+        1030,
+        1
+      ],
+      [
+        1031,
+        1
+      ],
+      [
+        1033,
+        1
+      ],
+      [
+        1034,
+        1
+      ],
+      [
+        1035,
+        1
+      ],
+      [
+        1036,
+        1
+      ],
+      [
+        1037,
+        1
+      ],
+      [
+        1038,
+        1
+      ],
+      [
+        1039,
+        2
+      ],
+      [
+        1040,
+        1
+      ],
+      [
+        1041,
+        1
+      ],
+      [
+        1042,
+        1
+      ],
+      [
+        1043,
+        1
+      ],
+      [
+        1044,
+        1
+      ],
+      [
+        1046,
+        1
+      ],
+      [
+        1047,
+        1
+      ],
+      [
+        1049,
+        1
+      ],
+      [
+        1050,
+        1
+      ],
+      [
+        1053,
+        1
+      ],
+      [
+        1055,
+        1
+      ],
+      [
+        1056,
+        1
+      ],
+      [
+        1057,
+        1
+      ],
+      [
+        1060,
+        1
+      ],
+      [
+        1061,
+        1
+      ],
+      [
+        1062,
+        1
+      ],
+      [
+        1063,
+        2
+      ],
+      [
+        1064,
+        1
+      ],
+      [
+        1065,
+        1
+      ],
+      [
+        1067,
+        1
+      ],
+      [
+        1068,
+        1
+      ],
+      [
+        1069,
+        1
+      ],
+      [
+        1070,
+        2
+      ],
+      [
+        1071,
+        1
+      ],
+      [
+        1072,
+        1
+      ],
+      [
+        1074,
+        1
+      ],
+      [
+        1077,
+        1
+      ],
+      [
+        1079,
+        1
+      ],
+      [
+        1081,
+        1
+      ],
+      [
+        1082,
+        1
+      ],
+      [
+        1083,
+        1
+      ],
+      [
+        1084,
+        1
+      ],
+      [
+        1086,
+        1
+      ],
+      [
+        1087,
+        1
+      ],
+      [
+        1088,
+        2
+      ],
+      [
+        1089,
+        1
+      ],
+      [
+        1090,
+        1
+      ],
+      [
+        1091,
+        1
+      ],
+      [
+        1092,
+        1
+      ],
+      [
+        1094,
+        1
+      ],
+      [
+        1095,
+        1
+      ],
+      [
+        1096,
+        1
+      ],
+      [
+        1097,
+        2
+      ],
+      [
+        1099,
+        1
+      ],
+      [
+        1104,
+        1
+      ],
+      [
+        1105,
+        1
+      ],
+      [
+        1106,
+        1
+      ],
+      [
+        1107,
+        1
+      ],
+      [
+        1108,
+        1
+      ],
+      [
+        1109,
+        1
+      ],
+      [
+        1113,
+        1
+      ],
+      [
+        1115,
+        1
+      ],
+      [
+        1116,
+        1
+      ],
+      [
+        1117,
+        1
+      ],
+      [
+        1118,
+        1
+      ],
+      [
+        1119,
+        1
+      ],
+      [
+        1120,
+        1
+      ],
+      [
+        1122,
+        1
+      ],
+      [
+        1123,
+        1
+      ],
+      [
+        1124,
+        1
+      ],
+      [
+        1125,
+        1
+      ],
+      [
+        1127,
+        1
+      ],
+      [
+        1128,
+        1
+      ],
+      [
+        1129,
+        1
+      ],
+      [
+        1132,
+        1
+      ],
+      [
+        1134,
+        1
+      ],
+      [
+        1135,
+        1
+      ],
+      [
+        1136,
+        1
+      ],
+      [
+        1137,
+        1
+      ],
+      [
+        1139,
+        1
+      ],
+      [
+        1140,
+        1
+      ],
+      [
+        1141,
+        1
+      ],
+      [
+        1143,
+        1
+      ],
+      [
+        1144,
+        1
+      ],
+      [
+        1145,
+        1
+      ],
+      [
+        1146,
+        1
+      ],
+      [
+        1147,
+        1
+      ],
+      [
+        1148,
+        1
+      ],
+      [
+        1149,
+        1
+      ],
+      [
+        1151,
+        1
+      ],
+      [
+        1153,
+        1
+      ],
+      [
+        1154,
+        1
+      ],
+      [
+        1158,
+        1
+      ],
+      [
+        1160,
+        1
+      ],
+      [
+        1161,
+        1
+      ],
+      [
+        1162,
+        1
+      ],
+      [
+        1165,
+        1
+      ],
+      [
+        1166,
+        1
+      ],
+      [
+        1167,
+        1
+      ],
+      [
+        1168,
+        1
+      ],
+      [
+        1170,
+        1
+      ],
+      [
+        1171,
+        1
+      ],
+      [
+        1172,
+        1
+      ],
+      [
+        1173,
+        1
+      ],
+      [
+        1174,
+        1
+      ],
+      [
+        1175,
+        1
+      ],
+      [
+        1176,
+        1
+      ],
+      [
+        1178,
+        1
+      ],
+      [
+        1179,
+        1
+      ],
+      [
+        1180,
+        1
+      ],
+      [
+        1181,
+        1
+      ],
+      [
+        1182,
+        1
+      ],
+      [
+        1183,
+        1
+      ],
+      [
+        1184,
+        1
+      ],
+      [
+        1185,
+        1
+      ],
+      [
+        1187,
+        1
+      ],
+      [
+        1188,
+        2
+      ],
+      [
+        1189,
+        1
+      ],
+      [
+        1191,
+        1
+      ],
+      [
+        1192,
+        1
+      ],
+      [
+        1193,
+        1
+      ],
+      [
+        1195,
+        1
+      ],
+      [
+        1197,
+        2
+      ],
+      [
+        1198,
+        1
+      ],
+      [
+        1199,
+        1
+      ],
+      [
+        1262,
+        1
+      ],
+      [
+        1264,
+        2
+      ],
+      [
+        1266,
+        1
+      ],
+      [
+        1270,
+        1
+      ],
+      [
+        1272,
+        1
+      ],
+      [
+        1273,
+        1
+      ],
+      [
+        1274,
+        1
+      ],
+      [
+        1275,
+        1
+      ],
+      [
+        1277,
+        1
+      ],
+      [
+        1278,
+        1
+      ],
+      [
+        1280,
+        1
+      ],
+      [
+        1281,
+        1
+      ],
+      [
+        1283,
+        1
+      ],
+      [
+        1284,
+        1
+      ],
+      [
+        1285,
+        1
+      ],
+      [
+        1287,
+        1
+      ],
+      [
+        1288,
+        1
+      ],
+      [
+        1289,
+        1
+      ],
+      [
+        1290,
+        2
+      ],
+      [
+        1292,
+        1
+      ],
+      [
+        1293,
+        1
+      ],
+      [
+        1294,
+        1
+      ],
+      [
+        1296,
+        2
+      ],
+      [
+        1297,
+        1
+      ],
+      [
+        1298,
+        1
+      ],
+      [
+        1303,
+        1
+      ],
+      [
+        1306,
+        1
+      ],
+      [
+        1307,
+        1
+      ],
+      [
+        1309,
+        1
+      ],
+      [
+        1310,
+        1
+      ],
+      [
+        1311,
+        1
+      ],
+      [
+        1312,
+        1
+      ],
+      [
+        1313,
+        1
+      ],
+      [
+        1317,
+        1
+      ],
+      [
+        1318,
+        1
+      ],
+      [
+        1319,
+        1
+      ],
+      [
+        1322,
+        1
+      ],
+      [
+        1324,
+        1
+      ],
+      [
+        1325,
+        1
+      ],
+      [
+        1326,
+        2
+      ],
+      [
+        1327,
+        1
+      ],
+      [
+        1328,
+        1
+      ],
+      [
+        1329,
+        1
+      ],
+      [
+        1332,
+        1
+      ],
+      [
+        1334,
+        1
+      ],
+      [
+        1335,
+        2
+      ],
+      [
+        1337,
+        1
+      ],
+      [
+        1339,
+        1
+      ],
+      [
+        1341,
+        1
+      ],
+      [
+        1342,
+        1
+      ],
+      [
+        1343,
+        2
+      ],
+      [
+        1344,
+        1
+      ],
+      [
+        1345,
+        1
+      ],
+      [
+        1347,
+        1
+      ],
+      [
+        1349,
+        1
+      ],
+      [
+        1350,
+        1
+      ],
+      [
+        1353,
+        1
+      ],
+      [
+        1355,
+        1
+      ],
+      [
+        1356,
+        1
+      ],
+      [
+        1361,
+        1
+      ],
+      [
+        1363,
+        1
+      ],
+      [
+        1365,
+        1
+      ],
+      [
+        1370,
+        1
+      ],
+      [
+        1371,
+        1
+      ],
+      [
+        1373,
+        1
+      ],
+      [
+        1374,
+        1
+      ],
+      [
+        1375,
+        1
+      ],
+      [
+        1376,
+        1
+      ],
+      [
+        1378,
+        1
+      ],
+      [
+        1379,
+        1
+      ],
+      [
+        1381,
+        1
+      ],
+      [
+        1382,
+        1
+      ],
+      [
+        1385,
+        1
+      ],
+      [
+        1386,
+        2
+      ],
+      [
+        1387,
+        1
+      ],
+      [
+        1388,
+        1
+      ],
+      [
+        1389,
+        1
+      ],
+      [
+        1392,
+        1
+      ],
+      [
+        1393,
+        1
+      ],
+      [
+        1396,
+        1
+      ],
+      [
+        1397,
+        1
+      ],
+      [
+        1398,
+        2
+      ],
+      [
+        1399,
+        2
+      ],
+      [
+        1400,
+        1
+      ],
+      [
+        1401,
+        1
+      ],
+      [
+        1402,
+        1
+      ],
+      [
+        1403,
+        1
+      ],
+      [
+        1404,
+        1
+      ],
+      [
+        1405,
+        1
+      ],
+      [
+        1406,
+        1
+      ],
+      [
+        1407,
+        1
+      ],
+      [
+        1409,
+        2
+      ],
+      [
+        1410,
+        1
+      ],
+      [
+        1411,
+        1
+      ],
+      [
+        1412,
+        1
+      ],
+      [
+        1413,
+        1
+      ],
+      [
+        1415,
+        1
+      ],
+      [
+        1416,
+        1
+      ],
+      [
+        1419,
+        1
+      ],
+      [
+        1422,
+        1
+      ],
+      [
+        1424,
+        1
+      ],
+      [
+        1425,
+        1
+      ],
+      [
+        1427,
+        1
+      ],
+      [
+        1428,
+        1
+      ],
+      [
+        1430,
+        1
+      ],
+      [
+        1431,
+        1
+      ],
+      [
+        1433,
+        1
+      ],
+      [
+        1438,
+        1
+      ],
+      [
+        1439,
+        1
+      ],
+      [
+        1441,
+        1
+      ],
+      [
+        1442,
+        2
+      ],
+      [
+        1444,
+        1
+      ],
+      [
+        1445,
+        1
+      ],
+      [
+        1447,
+        1
+      ],
+      [
+        1448,
+        1
+      ],
+      [
+        1450,
+        1
+      ],
+      [
+        1452,
+        2
+      ],
+      [
+        1454,
+        1
+      ],
+      [
+        1455,
+        1
+      ],
+      [
+        1457,
+        2
+      ],
+      [
+        1458,
+        2
+      ],
+      [
+        1459,
+        1
+      ],
+      [
+        1461,
+        1
+      ],
+      [
+        1462,
+        1
+      ],
+      [
+        1463,
+        1
+      ],
+      [
+        1464,
+        1
+      ],
+      [
+        1466,
+        1
+      ],
+      [
+        1467,
+        1
+      ],
+      [
+        1470,
+        1
+      ],
+      [
+        1472,
+        1
+      ],
+      [
+        1477,
+        1
+      ],
+      [
+        1478,
+        1
+      ],
+      [
+        1480,
+        1
+      ],
+      [
+        1483,
+        1
+      ],
+      [
+        1484,
+        1
+      ],
+      [
+        1486,
+        1
+      ],
+      [
+        1487,
+        1
+      ],
+      [
+        1489,
+        1
+      ],
+      [
+        1490,
+        1
+      ],
+      [
+        1493,
+        1
+      ],
+      [
+        1495,
+        1
+      ],
+      [
+        1496,
+        1
+      ],
+      [
+        1497,
+        1
+      ],
+      [
+        1499,
+        1
+      ]
+    ],
+    "entity_id": 1,
+    "hotbar": [
+      [
+        300,
+        0
+      ]
+    ],
+    "keys": [
+      {
+        "down": [
+          "jump"
+        ],
+        "from": 305,
+        "to": 306
+      },
+      {
+        "down": [
+          "jump"
+        ],
+        "from": 319,
+        "to": 320
+      },
+      {
+        "down": [
+          "jump"
+        ],
+        "from": 331,
+        "to": 332
+      },
+      {
+        "down": [
+          "jump"
+        ],
+        "from": 345,
+        "to": 346
+      },
+      {
+        "down": [
+          "jump"
+        ],
+        "from": 356,
+        "to": 357
+      },
+      {
+        "down": [
+          "jump"
+        ],
+        "from": 368,
+        "to": 369
+      },
+      {
+        "down": [
+          "jump"
+        ],
+        "from": 382,
+        "to": 383
+      },
+      {
+        "down": [
+          "jump"
+        ],
+        "from": 394,
+        "to": 395
+      },
+      {
+        "down": [
+          "jump"
+        ],
+        "from": 406,
+        "to": 407
+      },
+      {
+        "down": [
+          "jump"
+        ],
+        "from": 419,
+        "to": 420
+      },
+      {
+        "down": [
+          "jump"
+        ],
+        "from": 430,
+        "to": 431
+      },
+      {
+        "down": [
+          "jump"
+        ],
+        "from": 440,
+        "to": 441
+      },
+      {
+        "down": [
+          "jump"
+        ],
+        "from": 451,
+        "to": 452
+      },
+      {
+        "down": [
+          "jump"
+        ],
+        "from": 462,
+        "to": 463
+      },
+      {
+        "down": [
+          "jump"
+        ],
+        "from": 476,
+        "to": 477
+      },
+      {
+        "down": [
+          "jump"
+        ],
+        "from": 490,
+        "to": 491
+      },
+      {
+        "down": [
+          "jump"
+        ],
+        "from": 503,
+        "to": 504
+      },
+      {
+        "down": [
+          "jump"
+        ],
+        "from": 516,
+        "to": 517
+      },
+      {
+        "down": [
+          "jump"
+        ],
+        "from": 526,
+        "to": 527
+      },
+      {
+        "down": [
+          "jump"
+        ],
+        "from": 538,
+        "to": 539
+      },
+      {
+        "down": [
+          "jump"
+        ],
+        "from": 551,
+        "to": 552
+      },
+      {
+        "down": [
+          "jump"
+        ],
+        "from": 565,
+        "to": 566
+      },
+      {
+        "down": [
+          "jump"
+        ],
+        "from": 576,
+        "to": 577
+      },
+      {
+        "down": [
+          "jump"
+        ],
+        "from": 589,
+        "to": 590
+      },
+      {
+        "down": [
+          "jump"
+        ],
+        "from": 601,
+        "to": 602
+      },
+      {
+        "down": [
+          "jump"
+        ],
+        "from": 613,
+        "to": 614
+      },
+      {
+        "down": [
+          "jump"
+        ],
+        "from": 625,
+        "to": 626
+      },
+      {
+        "down": [
+          "jump"
+        ],
+        "from": 636,
+        "to": 637
+      },
+      {
+        "down": [
+          "jump"
+        ],
+        "from": 646,
+        "to": 647
+      },
+      {
+        "down": [
+          "jump"
+        ],
+        "from": 660,
+        "to": 661
+      },
+      {
+        "down": [
+          "jump"
+        ],
+        "from": 673,
+        "to": 674
+      },
+      {
+        "down": [
+          "jump"
+        ],
+        "from": 683,
+        "to": 684
+      },
+      {
+        "down": [
+          "jump"
+        ],
+        "from": 693,
+        "to": 694
+      },
+      {
+        "down": [
+          "jump"
+        ],
+        "from": 704,
+        "to": 705
+      },
+      {
+        "down": [
+          "jump"
+        ],
+        "from": 717,
+        "to": 718
+      },
+      {
+        "down": [
+          "jump"
+        ],
+        "from": 730,
+        "to": 731
+      },
+      {
+        "down": [
+          "jump"
+        ],
+        "from": 744,
+        "to": 745
+      },
+      {
+        "down": [
+          "jump"
+        ],
+        "from": 754,
+        "to": 755
+      },
+      {
+        "down": [
+          "jump"
+        ],
+        "from": 765,
+        "to": 766
+      },
+      {
+        "down": [
+          "jump"
+        ],
+        "from": 775,
+        "to": 776
+      },
+      {
+        "down": [
+          "jump"
+        ],
+        "from": 785,
+        "to": 786
+      },
+      {
+        "down": [
+          "jump"
+        ],
+        "from": 797,
+        "to": 798
+      },
+      {
+        "down": [
+          "jump"
+        ],
+        "from": 811,
+        "to": 812
+      },
+      {
+        "down": [
+          "jump"
+        ],
+        "from": 823,
+        "to": 824
+      },
+      {
+        "down": [
+          "jump"
+        ],
+        "from": 837,
+        "to": 838
+      },
+      {
+        "down": [
+          "jump"
+        ],
+        "from": 850,
+        "to": 851
+      },
+      {
+        "down": [
+          "jump"
+        ],
+        "from": 861,
+        "to": 862
+      },
+      {
+        "down": [
+          "jump"
+        ],
+        "from": 871,
+        "to": 872
+      },
+      {
+        "down": [
+          "jump"
+        ],
+        "from": 883,
+        "to": 884
+      },
+      {
+        "down": [
+          "jump"
+        ],
+        "from": 895,
+        "to": 896
+      },
+      {
+        "down": [
+          "jump"
+        ],
+        "from": 905,
+        "to": 906
+      },
+      {
+        "down": [
+          "jump"
+        ],
+        "from": 917,
+        "to": 918
+      },
+      {
+        "down": [
+          "jump"
+        ],
+        "from": 931,
+        "to": 932
+      },
+      {
+        "down": [
+          "jump"
+        ],
+        "from": 944,
+        "to": 945
+      },
+      {
+        "down": [
+          "jump"
+        ],
+        "from": 955,
+        "to": 956
+      },
+      {
+        "down": [
+          "jump"
+        ],
+        "from": 966,
+        "to": 967
+      },
+      {
+        "down": [
+          "jump"
+        ],
+        "from": 977,
+        "to": 978
+      },
+      {
+        "down": [
+          "jump"
+        ],
+        "from": 988,
+        "to": 989
+      },
+      {
+        "down": [
+          "jump"
+        ],
+        "from": 1001,
+        "to": 1002
+      },
+      {
+        "down": [
+          "jump"
+        ],
+        "from": 1015,
+        "to": 1016
+      },
+      {
+        "down": [
+          "jump"
+        ],
+        "from": 1029,
+        "to": 1030
+      },
+      {
+        "down": [
+          "jump"
+        ],
+        "from": 1042,
+        "to": 1043
+      },
+      {
+        "down": [
+          "jump"
+        ],
+        "from": 1053,
+        "to": 1054
+      },
+      {
+        "down": [
+          "jump"
+        ],
+        "from": 1063,
+        "to": 1064
+      },
+      {
+        "down": [
+          "jump"
+        ],
+        "from": 1073,
+        "to": 1074
+      },
+      {
+        "down": [
+          "jump"
+        ],
+        "from": 1086,
+        "to": 1087
+      },
+      {
+        "down": [
+          "jump"
+        ],
+        "from": 1097,
+        "to": 1098
+      },
+      {
+        "down": [
+          "jump"
+        ],
+        "from": 1111,
+        "to": 1112
+      },
+      {
+        "down": [
+          "jump"
+        ],
+        "from": 1125,
+        "to": 1126
+      },
+      {
+        "down": [
+          "jump"
+        ],
+        "from": 1137,
+        "to": 1138
+      },
+      {
+        "down": [
+          "jump"
+        ],
+        "from": 1151,
+        "to": 1152
+      },
+      {
+        "down": [
+          "jump"
+        ],
+        "from": 1163,
+        "to": 1164
+      },
+      {
+        "down": [
+          "jump"
+        ],
+        "from": 1173,
+        "to": 1174
+      },
+      {
+        "down": [
+          "jump"
+        ],
+        "from": 1184,
+        "to": 1185
+      },
+      {
+        "down": [
+          "jump"
+        ],
+        "from": 1196,
+        "to": 1197
+      },
+      {
+        "down": [
+          "jump"
+        ],
+        "from": 1210,
+        "to": 1211
+      },
+      {
+        "down": [
+          "jump"
+        ],
+        "from": 1222,
+        "to": 1223
+      },
+      {
+        "down": [
+          "jump"
+        ],
+        "from": 1233,
+        "to": 1234
+      },
+      {
+        "down": [
+          "jump"
+        ],
+        "from": 1243,
+        "to": 1244
+      },
+      {
+        "down": [
+          "jump"
+        ],
+        "from": 1257,
+        "to": 1258
+      },
+      {
+        "down": [
+          "jump"
+        ],
+        "from": 1267,
+        "to": 1268
+      },
+      {
+        "down": [
+          "jump"
+        ],
+        "from": 1277,
+        "to": 1278
+      },
+      {
+        "down": [
+          "jump"
+        ],
+        "from": 1288,
+        "to": 1289
+      },
+      {
+        "down": [
+          "jump"
+        ],
+        "from": 1301,
+        "to": 1302
+      },
+      {
+        "down": [
+          "jump"
+        ],
+        "from": 1313,
+        "to": 1314
+      },
+      {
+        "down": [
+          "jump"
+        ],
+        "from": 1327,
+        "to": 1328
+      },
+      {
+        "down": [
+          "jump"
+        ],
+        "from": 1341,
+        "to": 1342
+      },
+      {
+        "down": [
+          "jump"
+        ],
+        "from": 1355,
+        "to": 1356
+      },
+      {
+        "down": [
+          "jump"
+        ],
+        "from": 1369,
+        "to": 1370
+      },
+      {
+        "down": [
+          "jump"
+        ],
+        "from": 1380,
+        "to": 1381
+      },
+      {
+        "down": [
+          "jump"
+        ],
+        "from": 1393,
+        "to": 1394
+      },
+      {
+        "down": [
+          "jump"
+        ],
+        "from": 1405,
+        "to": 1406
+      },
+      {
+        "down": [
+          "jump"
+        ],
+        "from": 1418,
+        "to": 1419
+      },
+      {
+        "down": [
+          "jump"
+        ],
+        "from": 1432,
+        "to": 1433
+      },
+      {
+        "down": [
+          "jump"
+        ],
+        "from": 1445,
+        "to": 1446
+      },
+      {
+        "down": [
+          "jump"
+        ],
+        "from": 1457,
+        "to": 1458
+      },
+      {
+        "down": [
+          "jump"
+        ],
+        "from": 1469,
+        "to": 1470
+      },
+      {
+        "down": [
+          "jump"
+        ],
+        "from": 1480,
+        "to": 1481
+      },
+      {
+        "down": [
+          "jump"
+        ],
+        "from": 1492,
+        "to": 1493
+      },
+      {
+        "down": [
+          "playerlist"
+        ],
+        "from": 900,
+        "to": 940
+      }
+    ],
+    "look": [
+      {
+        "aim_entity": 102,
+        "from": 300,
+        "to": 1200
+      },
+      {
+        "aim_entity": 112,
+        "from": 1260,
+        "to": 1500
+      }
+    ],
+    "look_track": [
+      [
+        1200,
+        -133.174,
+        2.687
+      ],
+      [
+        1205,
+        -133.164,
+        -20.099
+      ],
+      [
+        1210,
+        -133.161,
+        -24.996
+      ],
+      [
+        1215,
+        -133.16,
+        -23.984
+      ],
+      [
+        1220,
+        -133.16,
+        -41.617
+      ],
+      [
+        1225,
+        -133.16,
+        -39.277
+      ],
+      [
+        1230,
+        127.499,
+        19.365
+      ],
+      [
+        1235,
+        127.517,
+        7.903
+      ],
+      [
+        1240,
+        127.519,
+        7.903
+      ],
+      [
+        1245,
+        127.519,
+        22.102
+      ],
+      [
+        1250,
+        127.519,
+        22.405
+      ],
+      [
+        1255,
+        127.519,
+        7.903
+      ],
+      [
+        1500,
+        -89.831,
+        -5.266
+      ],
+      [
+        1505,
+        -82.13,
+        7.543
+      ],
+      [
+        1510,
+        -81.218,
+        7.504
+      ],
+      [
+        1515,
+        -81.174,
+        7.502
+      ],
+      [
+        1520,
+        -81.172,
+        7.502
+      ],
+      [
+        1525,
+        -81.172,
+        7.502
+      ],
+      [
+        1530,
+        -81.172,
+        7.502
+      ],
+      [
+        1535,
+        -81.172,
+        7.502
+      ],
+      [
+        1540,
+        -81.172,
+        7.502
+      ],
+      [
+        1545,
+        -81.172,
+        7.502
+      ],
+      [
+        1550,
+        -81.172,
+        7.502
+      ],
+      [
+        1555,
+        -81.172,
+        7.502
+      ],
+      [
+        1560,
+        -81.172,
+        7.502
+      ],
+      [
+        1565,
+        -81.172,
+        7.502
+      ],
+      [
+        1570,
+        -81.172,
+        7.502
+      ],
+      [
+        1575,
+        -81.172,
+        7.502
+      ],
+      [
+        1580,
+        -81.172,
+        7.502
+      ],
+      [
+        1585,
+        -81.172,
+        7.502
+      ],
+      [
+        1590,
+        -81.172,
+        7.502
+      ],
+      [
+        1595,
+        -81.172,
+        7.502
+      ]
+    ],
+    "notes": "presses are taps; the server reacts to a press at tick T at tick T+1 (S0B 5/4 echo, S19 hurt, S1C/S04, target knockback in its path). Hotbar stays on slot 0 (Sharpness III diamond sword)."
+  },
+  "local_knockback": true,
+  "lockstep_micros": 1000,
+  "map": {
+    "antixray": false,
+    "bulk_columns_max": 10,
+    "bulk_packets": 29,
+    "cage_blocks_stripped": 1960,
+    "cage_blocks_stripped_by_block": {
+      "glass": 1960
+    },
+    "cage_sections_dropped": 4,
+    "cages": 20,
+    "chunks_file": "chunks.bin",
+    "chunks_sha256": "b2663296df1e850d13f22535e4118197c309e6ea5383ef9062cd28a11363e8c9",
+    "columns_sent": 289,
+    "display_name": "Dwarf Fortress",
+    "last_chunk_tick": 29,
+    "name": "dwarf_fortress",
+    "sections_sent": 267,
+    "tile_entity_packets": 0,
+    "time": {
+      "every_ticks": 20,
+      "weather": "clear",
+      "world_time": -6000
+    },
+    "view_distance_chebyshev": 8,
+    "viewer_chunk": [
+      -244,
+      128
+    ]
+  },
+  "placements": {
+    "ally_home": [
+      -3893.5,
+      75.0,
+      2065.5
+    ],
+    "archer_e7": [
+      -3923.5,
+      73.0,
+      2051.5
+    ],
+    "archer_e8": [
+      -3933.5,
+      74.0,
+      2075.5
+    ],
+    "archer_separation": 26.0,
+    "archers_distance_from_anchor": [
+      32.985,
+      44.944
+    ],
+    "bridge": {
+      "blocks": 24,
+      "island_spawn": [
+        -3949.5,
+        74.0,
+        2038.5
+      ],
+      "landing": [
+        -3926.5,
+        72.0,
+        2047.5
+      ],
+      "start": [
+        -3944.5,
+        72.0,
+        2040.5
+      ]
+    },
+    "chests": [
+      {
+        "distance_from_anchor": 10.0,
+        "pos": [
+          -3900,
+          74,
+          2053
+        ]
+      },
+      {
+        "distance_from_anchor": 10.0,
+        "pos": [
+          -3884,
+          74,
+          2053
+        ]
+      },
+      {
+        "distance_from_anchor": 28.0,
+        "pos": [
+          -3892,
+          81,
+          2087
+        ]
+      },
+      {
+        "distance_from_anchor": 24.166,
+        "pos": [
+          -3902,
+          77,
+          2081
+        ]
+      }
+    ],
+    "e11_start": [
+      -3946.5,
+      73.0,
+      2039.5
+    ],
+    "e1_start": [
+      -3888.5,
+      74.0,
+      2059.5
+    ],
+    "group_b_centre": [
+      -3907.5,
+      74.0,
+      2065.5
+    ],
+    "group_b_distance_from_anchor": 17.088,
+    "group_b_void_edge": [
+      -3909.5,
+      74.0,
+      2070.5
+    ],
+    "open_direction": [
+      1.0,
+      0.0,
+      0.0
+    ],
+    "pearl_landing": [
+      -3885.5,
+      74.0,
+      2059.5
+    ]
+  },
+  "replay_args": [
+    "--replayCamera",
+    "fixed",
+    "--replayStep",
+    "1000",
+    "--lockstepMicros",
+    "1000"
+  ],
+  "scene": "sw-mega-doubles-mid",
+  "schema": "mc-rs-skywars-scene/1",
+  "scoring_eligible": false,
+  "scoring_note": "false until the A/A gate (two identical wrapper runs, identical sidecar rows) passes",
+  "screenshots": [
+    [
+      280,
+      "join_settled"
+    ],
+    [
+      305,
+      "fight_start"
+    ],
+    [
+      543,
+      "lightning_kill"
+    ],
+    [
+      620,
+      "mid_fight"
+    ],
+    [
+      920,
+      "tab_held"
+    ],
+    [
+      1213,
+      "firework_kill"
+    ],
+    [
+      1400,
+      "late_fight"
+    ],
+    [
+      1590,
+      "tail"
+    ]
+  ],
+  "seed": 1,
+  "segment_ticks": {
+    "sw_fight": [
+      300,
+      1500
+    ],
+    "sw_join": [
+      0,
+      300
+    ],
+    "sw_tail": [
+      1500,
+      1600
+    ]
+  },
+  "segments": [
+    {
+      "end_tick": 300,
+      "name": "sw_join",
+      "start_tick": 0
+    },
+    {
+      "end_tick": 1500,
+      "name": "sw_fight",
+      "start_tick": 300
+    },
+    {
+      "end_tick": 1600,
+      "name": "sw_tail",
+      "start_tick": 1500
+    }
+  ],
+  "skins": "single-signed",
+  "sounds_used": [
+    "fireworks.launch",
+    "game.player.die",
+    "game.player.hurt",
+    "random.bow",
+    "random.burp",
+    "random.chestclosed",
+    "random.chestopen",
+    "random.eat",
+    "random.orb",
+    "step.grass",
+    "step.gravel",
+    "step.stone",
+    "step.wood"
+  ],
+  "status": "UNQUALIFIED_DIAGNOSTIC",
+  "tracked_entities": [
+    {
+      "items": 0,
+      "other": 0,
+      "players": 0,
+      "projectiles": 0,
+      "tick": 0,
+      "total": 0,
+      "xp_orbs": 0
+    },
+    {
+      "items": 0,
+      "other": 0,
+      "players": 10,
+      "projectiles": 0,
+      "tick": 20,
+      "total": 10,
+      "xp_orbs": 0
+    },
+    {
+      "items": 0,
+      "other": 0,
+      "players": 10,
+      "projectiles": 0,
+      "tick": 40,
+      "total": 10,
+      "xp_orbs": 0
+    },
+    {
+      "items": 0,
+      "other": 0,
+      "players": 10,
+      "projectiles": 0,
+      "tick": 60,
+      "total": 10,
+      "xp_orbs": 0
+    },
+    {
+      "items": 0,
+      "other": 0,
+      "players": 10,
+      "projectiles": 0,
+      "tick": 80,
+      "total": 10,
+      "xp_orbs": 0
+    },
+    {
+      "items": 0,
+      "other": 0,
+      "players": 10,
+      "projectiles": 0,
+      "tick": 100,
+      "total": 10,
+      "xp_orbs": 0
+    },
+    {
+      "items": 0,
+      "other": 0,
+      "players": 10,
+      "projectiles": 0,
+      "tick": 120,
+      "total": 10,
+      "xp_orbs": 0
+    },
+    {
+      "items": 0,
+      "other": 0,
+      "players": 10,
+      "projectiles": 0,
+      "tick": 140,
+      "total": 10,
+      "xp_orbs": 0
+    },
+    {
+      "items": 0,
+      "other": 0,
+      "players": 10,
+      "projectiles": 0,
+      "tick": 160,
+      "total": 10,
+      "xp_orbs": 0
+    },
+    {
+      "items": 0,
+      "other": 0,
+      "players": 10,
+      "projectiles": 0,
+      "tick": 180,
+      "total": 10,
+      "xp_orbs": 0
+    },
+    {
+      "items": 0,
+      "other": 0,
+      "players": 10,
+      "projectiles": 0,
+      "tick": 200,
+      "total": 10,
+      "xp_orbs": 0
+    },
+    {
+      "items": 0,
+      "other": 0,
+      "players": 10,
+      "projectiles": 0,
+      "tick": 220,
+      "total": 10,
+      "xp_orbs": 0
+    },
+    {
+      "items": 0,
+      "other": 0,
+      "players": 10,
+      "projectiles": 0,
+      "tick": 240,
+      "total": 10,
+      "xp_orbs": 0
+    },
+    {
+      "items": 0,
+      "other": 0,
+      "players": 10,
+      "projectiles": 0,
+      "tick": 260,
+      "total": 10,
+      "xp_orbs": 0
+    },
+    {
+      "items": 0,
+      "other": 0,
+      "players": 10,
+      "projectiles": 0,
+      "tick": 280,
+      "total": 10,
+      "xp_orbs": 0
+    },
+    {
+      "items": 0,
+      "other": 0,
+      "players": 10,
+      "projectiles": 0,
+      "tick": 300,
+      "total": 10,
+      "xp_orbs": 0
+    },
+    {
+      "items": 0,
+      "other": 0,
+      "players": 10,
+      "projectiles": 0,
+      "tick": 320,
+      "total": 10,
+      "xp_orbs": 0
+    },
+    {
+      "items": 0,
+      "other": 0,
+      "players": 10,
+      "projectiles": 0,
+      "tick": 340,
+      "total": 10,
+      "xp_orbs": 0
+    },
+    {
+      "items": 0,
+      "other": 0,
+      "players": 10,
+      "projectiles": 2,
+      "tick": 360,
+      "total": 12,
+      "xp_orbs": 0
+    },
+    {
+      "items": 0,
+      "other": 0,
+      "players": 10,
+      "projectiles": 3,
+      "tick": 380,
+      "total": 13,
+      "xp_orbs": 0
+    },
+    {
+      "items": 0,
+      "other": 0,
+      "players": 10,
+      "projectiles": 4,
+      "tick": 400,
+      "total": 14,
+      "xp_orbs": 0
+    },
+    {
+      "items": 0,
+      "other": 0,
+      "players": 10,
+      "projectiles": 6,
+      "tick": 420,
+      "total": 16,
+      "xp_orbs": 0
+    },
+    {
+      "items": 0,
+      "other": 0,
+      "players": 10,
+      "projectiles": 8,
+      "tick": 440,
+      "total": 18,
+      "xp_orbs": 0
+    },
+    {
+      "items": 0,
+      "other": 0,
+      "players": 10,
+      "projectiles": 9,
+      "tick": 460,
+      "total": 19,
+      "xp_orbs": 0
+    },
+    {
+      "items": 0,
+      "other": 0,
+      "players": 11,
+      "projectiles": 10,
+      "tick": 480,
+      "total": 21,
+      "xp_orbs": 0
+    },
+    {
+      "items": 0,
+      "other": 0,
+      "players": 11,
+      "projectiles": 13,
+      "tick": 500,
+      "total": 24,
+      "xp_orbs": 0
+    },
+    {
+      "items": 0,
+      "other": 0,
+      "players": 11,
+      "projectiles": 15,
+      "tick": 520,
+      "total": 26,
+      "xp_orbs": 0
+    },
+    {
+      "items": 0,
+      "other": 0,
+      "players": 11,
+      "projectiles": 15,
+      "tick": 540,
+      "total": 26,
+      "xp_orbs": 0
+    },
+    {
+      "items": 20,
+      "other": 0,
+      "players": 11,
+      "projectiles": 16,
+      "tick": 560,
+      "total": 50,
+      "xp_orbs": 3
+    },
+    {
+      "items": 20,
+      "other": 0,
+      "players": 10,
+      "projectiles": 18,
+      "tick": 580,
+      "total": 48,
+      "xp_orbs": 0
+    },
+    {
+      "items": 20,
+      "other": 0,
+      "players": 10,
+      "projectiles": 19,
+      "tick": 600,
+      "total": 49,
+      "xp_orbs": 0
+    },
+    {
+      "items": 20,
+      "other": 0,
+      "players": 10,
+      "projectiles": 19,
+      "tick": 620,
+      "total": 49,
+      "xp_orbs": 0
+    },
+    {
+      "items": 20,
+      "other": 0,
+      "players": 10,
+      "projectiles": 21,
+      "tick": 640,
+      "total": 51,
+      "xp_orbs": 0
+    },
+    {
+      "items": 20,
+      "other": 0,
+      "players": 10,
+      "projectiles": 23,
+      "tick": 660,
+      "total": 53,
+      "xp_orbs": 0
+    },
+    {
+      "items": 20,
+      "other": 0,
+      "players": 10,
+      "projectiles": 24,
+      "tick": 680,
+      "total": 54,
+      "xp_orbs": 0
+    },
+    {
+      "items": 20,
+      "other": 0,
+      "players": 10,
+      "projectiles": 24,
+      "tick": 700,
+      "total": 54,
+      "xp_orbs": 0
+    },
+    {
+      "items": 20,
+      "other": 0,
+      "players": 10,
+      "projectiles": 23,
+      "tick": 720,
+      "total": 53,
+      "xp_orbs": 0
+    },
+    {
+      "items": 20,
+      "other": 0,
+      "players": 10,
+      "projectiles": 24,
+      "tick": 740,
+      "total": 54,
+      "xp_orbs": 0
+    },
+    {
+      "items": 20,
+      "other": 0,
+      "players": 10,
+      "projectiles": 23,
+      "tick": 760,
+      "total": 53,
+      "xp_orbs": 0
+    },
+    {
+      "items": 20,
+      "other": 0,
+      "players": 10,
+      "projectiles": 23,
+      "tick": 780,
+      "total": 53,
+      "xp_orbs": 0
+    },
+    {
+      "items": 20,
+      "other": 0,
+      "players": 10,
+      "projectiles": 24,
+      "tick": 800,
+      "total": 54,
+      "xp_orbs": 0
+    },
+    {
+      "items": 20,
+      "other": 0,
+      "players": 10,
+      "projectiles": 23,
+      "tick": 820,
+      "total": 53,
+      "xp_orbs": 0
+    },
+    {
+      "items": 20,
+      "other": 0,
+      "players": 10,
+      "projectiles": 23,
+      "tick": 840,
+      "total": 53,
+      "xp_orbs": 0
+    },
+    {
+      "items": 20,
+      "other": 0,
+      "players": 10,
+      "projectiles": 23,
+      "tick": 860,
+      "total": 53,
+      "xp_orbs": 0
+    },
+    {
+      "items": 20,
+      "other": 0,
+      "players": 10,
+      "projectiles": 23,
+      "tick": 880,
+      "total": 53,
+      "xp_orbs": 0
+    },
+    {
+      "items": 20,
+      "other": 0,
+      "players": 10,
+      "projectiles": 23,
+      "tick": 900,
+      "total": 53,
+      "xp_orbs": 0
+    },
+    {
+      "items": 20,
+      "other": 0,
+      "players": 10,
+      "projectiles": 23,
+      "tick": 920,
+      "total": 53,
+      "xp_orbs": 0
+    },
+    {
+      "items": 20,
+      "other": 0,
+      "players": 11,
+      "projectiles": 23,
+      "tick": 940,
+      "total": 54,
+      "xp_orbs": 0
+    },
+    {
+      "items": 20,
+      "other": 0,
+      "players": 11,
+      "projectiles": 23,
+      "tick": 960,
+      "total": 54,
+      "xp_orbs": 0
+    },
+    {
+      "items": 20,
+      "other": 0,
+      "players": 11,
+      "projectiles": 23,
+      "tick": 980,
+      "total": 54,
+      "xp_orbs": 0
+    },
+    {
+      "items": 20,
+      "other": 0,
+      "players": 11,
+      "projectiles": 25,
+      "tick": 1000,
+      "total": 56,
+      "xp_orbs": 0
+    },
+    {
+      "items": 20,
+      "other": 0,
+      "players": 11,
+      "projectiles": 26,
+      "tick": 1020,
+      "total": 57,
+      "xp_orbs": 0
+    },
+    {
+      "items": 20,
+      "other": 0,
+      "players": 11,
+      "projectiles": 27,
+      "tick": 1040,
+      "total": 58,
+      "xp_orbs": 0
+    },
+    {
+      "items": 20,
+      "other": 0,
+      "players": 10,
+      "projectiles": 30,
+      "tick": 1060,
+      "total": 60,
+      "xp_orbs": 0
+    },
+    {
+      "items": 20,
+      "other": 0,
+      "players": 10,
+      "projectiles": 31,
+      "tick": 1080,
+      "total": 61,
+      "xp_orbs": 0
+    },
+    {
+      "items": 20,
+      "other": 0,
+      "players": 10,
+      "projectiles": 33,
+      "tick": 1100,
+      "total": 63,
+      "xp_orbs": 0
+    },
+    {
+      "items": 20,
+      "other": 0,
+      "players": 10,
+      "projectiles": 35,
+      "tick": 1120,
+      "total": 65,
+      "xp_orbs": 0
+    },
+    {
+      "items": 20,
+      "other": 0,
+      "players": 10,
+      "projectiles": 36,
+      "tick": 1140,
+      "total": 66,
+      "xp_orbs": 0
+    },
+    {
+      "items": 20,
+      "other": 0,
+      "players": 10,
+      "projectiles": 38,
+      "tick": 1160,
+      "total": 68,
+      "xp_orbs": 0
+    },
+    {
+      "items": 20,
+      "other": 0,
+      "players": 10,
+      "projectiles": 40,
+      "tick": 1180,
+      "total": 70,
+      "xp_orbs": 0
+    },
+    {
+      "items": 40,
+      "other": 1,
+      "players": 10,
+      "projectiles": 41,
+      "tick": 1200,
+      "total": 95,
+      "xp_orbs": 3
+    },
+    {
+      "items": 40,
+      "other": 0,
+      "players": 9,
+      "projectiles": 42,
+      "tick": 1220,
+      "total": 94,
+      "xp_orbs": 3
+    },
+    {
+      "items": 40,
+      "other": 0,
+      "players": 9,
+      "projectiles": 41,
+      "tick": 1240,
+      "total": 91,
+      "xp_orbs": 1
+    },
+    {
+      "items": 40,
+      "other": 0,
+      "players": 9,
+      "projectiles": 41,
+      "tick": 1260,
+      "total": 91,
+      "xp_orbs": 1
+    },
+    {
+      "items": 40,
+      "other": 0,
+      "players": 9,
+      "projectiles": 41,
+      "tick": 1280,
+      "total": 90,
+      "xp_orbs": 0
+    },
+    {
+      "items": 40,
+      "other": 0,
+      "players": 9,
+      "projectiles": 41,
+      "tick": 1300,
+      "total": 90,
+      "xp_orbs": 0
+    },
+    {
+      "items": 40,
+      "other": 0,
+      "players": 9,
+      "projectiles": 41,
+      "tick": 1320,
+      "total": 90,
+      "xp_orbs": 0
+    },
+    {
+      "items": 40,
+      "other": 0,
+      "players": 9,
+      "projectiles": 42,
+      "tick": 1340,
+      "total": 91,
+      "xp_orbs": 0
+    },
+    {
+      "items": 40,
+      "other": 0,
+      "players": 9,
+      "projectiles": 41,
+      "tick": 1360,
+      "total": 90,
+      "xp_orbs": 0
+    },
+    {
+      "items": 40,
+      "other": 0,
+      "players": 9,
+      "projectiles": 41,
+      "tick": 1380,
+      "total": 90,
+      "xp_orbs": 0
+    },
+    {
+      "items": 40,
+      "other": 0,
+      "players": 9,
+      "projectiles": 41,
+      "tick": 1400,
+      "total": 90,
+      "xp_orbs": 0
+    },
+    {
+      "items": 40,
+      "other": 0,
+      "players": 9,
+      "projectiles": 41,
+      "tick": 1420,
+      "total": 90,
+      "xp_orbs": 0
+    },
+    {
+      "items": 40,
+      "other": 0,
+      "players": 9,
+      "projectiles": 41,
+      "tick": 1440,
+      "total": 90,
+      "xp_orbs": 0
+    },
+    {
+      "items": 40,
+      "other": 0,
+      "players": 9,
+      "projectiles": 41,
+      "tick": 1460,
+      "total": 90,
+      "xp_orbs": 0
+    },
+    {
+      "items": 40,
+      "other": 0,
+      "players": 9,
+      "projectiles": 41,
+      "tick": 1480,
+      "total": 90,
+      "xp_orbs": 0
+    },
+    {
+      "items": 40,
+      "other": 0,
+      "players": 9,
+      "projectiles": 41,
+      "tick": 1500,
+      "total": 90,
+      "xp_orbs": 0
+    },
+    {
+      "items": 40,
+      "other": 0,
+      "players": 9,
+      "projectiles": 41,
+      "tick": 1520,
+      "total": 90,
+      "xp_orbs": 0
+    },
+    {
+      "items": 40,
+      "other": 0,
+      "players": 9,
+      "projectiles": 41,
+      "tick": 1540,
+      "total": 90,
+      "xp_orbs": 0
+    },
+    {
+      "items": 40,
+      "other": 0,
+      "players": 9,
+      "projectiles": 41,
+      "tick": 1560,
+      "total": 90,
+      "xp_orbs": 0
+    },
+    {
+      "items": 40,
+      "other": 0,
+      "players": 9,
+      "projectiles": 41,
+      "tick": 1580,
+      "total": 90,
+      "xp_orbs": 0
+    }
+  ],
+  "tracking_ranges": {
+    "items_xp": 32.0,
+    "other": 64.0,
+    "players": 48.0
+  },
+  "variant": "mega-doubles-mid",
+  "warnings": []
+}

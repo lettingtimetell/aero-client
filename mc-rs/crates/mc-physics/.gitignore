@@ -1,0 +1,3 @@
+# javac output for the parity fixture generator. The generator source and the fixtures it
+# produces are committed; the class files are not — `javaref/generate.ps1` rebuilds them.
+javaref/build/

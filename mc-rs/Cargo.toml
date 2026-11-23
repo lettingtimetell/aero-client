@@ -1,0 +1,170 @@
+# Aero Client (mc-rs): the Minecraft 1.8.9 client, ported to Rust.
+#
+# New dependencies go at the end of their group; existing entries are never reordered, so that
+# parallel changes to this file merge cleanly.
+
+[workspace]
+resolver = "2"
+members = ["crates/*"]
+# A tool run from inside `crates/` (log4j in a Java oracle writes `logs/latest.log` into its
+# working directory) once made `crates/logs` a glob "member" without a Cargo.toml, and every
+# cargo command in the workspace failed until it was deleted.
+exclude = ["crates/logs"]
+
+[workspace.package]
+version = "0.1.0"
+edition = "2021"
+publish = false           # never published to crates.io
+license = "GPL-3.0-or-later"
+repository = "https://github.com/lettingtimetell/aero-client"
+
+[workspace.dependencies]
+# ---- internal crates ----
+mc-core     = { path = "crates/mc-core" }
+mc-data     = { path = "crates/mc-data" }
+mc-nbt      = { path = "crates/mc-nbt" }
+mc-auth     = { path = "crates/mc-auth" }
+mc-assets   = { path = "crates/mc-assets" }
+mc-math     = { path = "crates/mc-math" }
+mc-protocol = { path = "crates/mc-protocol" }
+mc-world    = { path = "crates/mc-world" }
+mc-render   = { path = "crates/mc-render" }
+mc-physics  = { path = "crates/mc-physics" }
+mc-audio    = { path = "crates/mc-audio" }
+mc-ui       = { path = "crates/mc-ui" }
+mc-parity   = { path = "crates/mc-parity" }
+mc-mods     = { path = "crates/mc-mods" }    # mod framework data
+mc-media    = { path = "crates/mc-media" }   # now-playing information and media controls
+mc-replay   = { path = "crates/mc-replay" }  # replay container, writer, reader
+mc-video    = { path = "crates/mc-video" }   # replay export encoder (Media Foundation)
+mc-update   = { path = "crates/mc-update" }  # the portable client's updater
+
+# ---- external ----
+thiserror          = "2.0"
+anyhow             = "1.0"
+tracing            = "0.1"
+tracing-subscriber = { version = "0.3", features = ["env-filter"] }
+bytes              = "1"
+hecs               = "0.11"          # entity storage
+slotmap            = "1"             # arena handles
+serde              = { version = "1", features = ["derive"] }
+serde_json         = { version = "1", features = ["arbitrary_precision"] }
+wgpu               = "30.0"          # the renderer
+winit              = "0.30"          # the window and input
+pollster           = "1"
+glam               = "0.33"
+bytemuck           = { version = "1", features = ["derive"] }   # GPU uniform/vertex POD casts
+reqwest            = { version = "0.12", default-features = false, features = ["json", "rustls-tls", "charset", "http2", "socks"] }  # resource packs, sign-in and session HTTP; SOCKS transport
+tokio              = { version = "1", features = ["rt", "time", "macros"] }
+uuid               = { version = "1", features = ["serde"] }
+sha1               = { version = "0.10", features = ["oid"] } # SHA1withRSA needs its PKCS#1 AlgorithmIdentifier
+sha2               = "0.10"          # verify immutable live-capture fixture hashes
+md-5               = "0.10"          # offline-mode UUIDs (dev feature)
+base64             = "0.22"
+aes-gcm            = "0.10"          # token cache at rest
+getrandom          = "0.2"
+directories        = "6"
+wiremock           = "0.6"           # dev-dependency
+tempfile           = "3"             # dev-dependency
+flate2             = "1"             # gzip/zlib (CompressedStreamTools)
+proptest           = "1"             # round-trip property tests
+# Zip resource packs (the vanilla jar and user .zip packs). Reading only, so the
+# compression back-ends beyond deflate are switched off: fewer C toolchain deps and a
+# smaller attack surface for untrusted packs.
+zip                = { version = "8.6", default-features = false, features = ["deflate"] }
+kira               = { version = "0.12", default-features = false, features = ["cpal"] }   # mixer/output backend (cpal); decode is our own (lewton), not kira's symphonia
+lewton             = "0.10"           # OGG Vorbis decoding
+tokio-util         = { version = "0.7", features = ["codec"] }   # length-prefixed frame codec
+image              = { version = "0.25", default-features = false, features = ["png"] }  # PNG decode for block/item textures
+rayon              = "1"             # background chunk meshing pool
+# The protocol's encryption: an AES-CFB8 stream (hazard H4) and RSA PKCS#1 v1.5 over the shared
+# secret. Verified (2026-08-15): these four resolve to aes 0.8.4 / cfb8 0.8.1 /
+# rsa 0.9.10 / rand 0.8.7 and expose exactly what the encryption needs. Newer majors exist but are
+# deliberately not taken: cfb8 0.9 moves to cipher 0.5 and would no longer pair with aes 0.8,
+# and rsa 0.10 is still a release candidate. The 0.8 line pins all three of aes/cfb8/cipher on
+# cipher 0.4, which is what makes `cfb8::Encryptor<Aes128>` usable as a *state-preserving*
+# `BlockEncryptMut` (block size U1) rather than only through the self-consuming
+# `AsyncStreamCipher::encrypt` — the difference hazard H4 turns on.
+aes                = "0.8"
+cfb8               = "0.8"
+rsa                = "0.9"           # also supplies DER/SPKI public-key parsing
+rand               = "0.8"           # 16-byte shared secret; rand_core 0.6 matches rsa 0.9
+# The real OS clipboard. `mc-ui` is `#![forbid(unsafe_code)]` (only `mc-render` may use `unsafe`)
+# and winit 0.30 has no clipboard API, so the FFI has to live behind a dependency of
+# `mc-client`. Default features off: the x11/wayland back-ends are `cfg(unix)`-gated and unused.
+copypasta          = { version = "0.10", default-features = false }
+# Java 8's `IDN.toASCII` compatibility mode for saved server addresses. `url` already brings
+# this exact crate/version into the graph; making it explicit lets mc-ui expose the one shared
+# conversion used by both status ping and login.
+idna               = "1.1"
+# Java Calendar's local month/day for the main-menu seasonal splash. `clock` uses the
+# platform timezone provider (including Windows DST rules) without shelling out from mc-ui.
+chrono             = { version = "0.4", default-features = false, features = ["clock"] }
+# The mod menu rasterises Segoe UI from C:\Windows\Fonts into a glyph
+# atlas. Already in the graph through winit's wayland back-end (0.2.32 in Cargo.lock).
+ab_glyph           = "0.2"
+
+# The mesher and physics are unusable at opt-level 0, but debuginfo on our own
+# crates is worth keeping. Dependencies are always optimised since we never step into them.
+[profile.dev]
+opt-level = 1
+
+[profile.dev.package."*"]
+opt-level = 3
+
+# Test binaries are large (especially `mc-client`) and Windows PDB generation was
+# dominating focused-test link time. Parity tests do not need debugger symbols;
+# keep workspace code incremental and lightly optimise dependencies so repeated
+# exact-test runs reuse a much smaller, faster-to-link artifact set.
+[profile.test]
+opt-level = 0
+debug = 0
+incremental = true
+
+[profile.test.package."*"]
+opt-level = 1
+debug = 0
+
+# ---- release profile ----
+#
+# `lto = "fat"` and `codegen-units = 1` are both taken: the frame loop crosses a crate boundary
+# on every call (`mc-client` -> `mc-render` -> `mc-assets`/`mc-world`), and cross-crate inlining
+# is exactly what fat LTO buys.
+#
+# `panic` is the third knob and it is deliberately left at the default. **This is a decision,
+# not an omission**, so it is written explicitly:
+#
+#   `mc-client` installs a panic hook (`app::crash::install_panic_hook`) that *records* a
+#   `CrashReport` and lets the game loop notice it later, mirroring `Minecraft.crashed`. Under
+#   `panic = "abort"` the process dies inside that hook, so:
+#     * a panic on a background thread (the rayon mesher pool, the tokio net task) kills the
+#       whole process instead of being reported — today it unwinds that one thread and the loop
+#       writes `crash-reports/crash-<stamp>.txt` on its next iteration;
+#     * no `Drop` runs, which the client goes out of its way to preserve by returning the
+#       exit code from `display_crash_report` instead of calling `System.exit`. The GPU device,
+#       the tokio runtime, `options.txt` and `servers.dat` all depend on it;
+#     * `mc-assets`' `vanilla_assets.rs` uses `std::panic::catch_unwind`, so `cargo test
+#       --release` would abort rather than fail.
+#   The saving would be a few tens of KB of landing pads in a binary whose size is dominated by
+#   `wgpu`/`naga`. That is not a trade worth a client that cannot report its own crashes.
+[profile.release]
+lto = "fat"
+codegen-units = 1
+panic = "unwind"
+
+# Packaging (`packaging/`) ships this profile. It is `release` plus a stripped binary and the
+# panic message table kept, so a crash report from a user still names a location. Separate from
+# `release` so that a developer's `cargo build --release` keeps its symbols.
+[profile.dist]
+inherits = "release"
+strip = "debuginfo"
+
+# Fast optimised builds for A/B timing runs (thin local LTO, many codegen units, incremental,
+# line tables for profilers). Indicative only: the shipped client is the PGO + fat-LTO `dist`
+# build, so measure that before trusting a result.
+[profile.perf-ab]
+inherits = "release"
+lto = false
+codegen-units = 16
+incremental = true
+debug = "line-tables-only"

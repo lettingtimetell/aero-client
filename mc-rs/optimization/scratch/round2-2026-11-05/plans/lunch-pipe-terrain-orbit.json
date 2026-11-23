@@ -1,0 +1,40 @@
+{
+  "batch": "lunch-pipe-terrain-orbit",
+  "lanes": {
+    "A": "{MC_RS}\\optimization\\scratch\\round2-2026-11-05\\bins\\pipe5\\mc-client.exe",
+    "B": "{MC_RS}\\optimization\\scratch\\round2-2026-11-05\\bins\\pipe5\\mc-client.exe"
+  },
+  "pairs": 3,
+  "warmup": true,
+  "timeout_s": 600,
+  "args": [
+    "--replay",
+    "{MC_RS}\\crates\\mc-parity\\captures\\spigot-1.8.8-perfworld-vd16.mccap",
+    "--replayCamera",
+    "orbit",
+    "--width",
+    "1280",
+    "--height",
+    "720",
+    "--offline",
+    "BenchBot",
+    "--frames",
+    "50000"
+  ],
+  "options": {
+    "renderDistance": "16"
+  },
+  "steady_frames": 10000,
+  "stable_counters": [
+    "terrain_loaded_sections",
+    "terrain_visible_sections",
+    "terrain_draw_items",
+    "terrain_quads",
+    "terrain_resident_bytes"
+  ],
+  "lane_env": {
+    "B": {
+      "MC_PIPELINED_SUBMIT": "1"
+    }
+  }
+}

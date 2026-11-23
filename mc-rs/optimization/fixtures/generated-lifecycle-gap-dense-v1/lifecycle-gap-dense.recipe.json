@@ -1,0 +1,596 @@
+{
+  "bounds": {
+    "final_checkpoint_tick": 1280,
+    "gap_checkpoint_tick": 1401,
+    "gap_final_checkpoint_tick": 1521,
+    "initial_checkpoint_tick": 200,
+    "max_tick": 1521,
+    "transition_window_ticks": 120
+  },
+  "camera_script": [
+    {
+      "label": "A_plus_x",
+      "pitch": 0.0,
+      "position": [
+        16.5,
+        65.0,
+        16.5
+      ],
+      "tick": 1,
+      "yaw": -90.0
+    },
+    {
+      "label": "A_plus_z",
+      "pitch": 0.0,
+      "position": [
+        16.5,
+        65.0,
+        16.5
+      ],
+      "tick": 201,
+      "yaw": 0.0
+    },
+    {
+      "label": "B_minus_x",
+      "pitch": 0.0,
+      "position": [
+        144.5,
+        65.0,
+        16.5
+      ],
+      "tick": 321,
+      "yaw": 90.0
+    },
+    {
+      "label": "C_minus_z",
+      "pitch": 0.0,
+      "position": [
+        16.5,
+        65.0,
+        144.5
+      ],
+      "tick": 801,
+      "yaw": 180.0
+    }
+  ],
+  "checkpoints": [
+    {
+      "forbidden_resident_groups": [],
+      "forbidden_visible_sentinels": [],
+      "identity_policy": "verify exact resident set and visible uniqueness/subset/sentinels; record visible order without reference-order qualification; track all-air corridors as residency",
+      "label": "initial_ready",
+      "required_resident_groups": [
+        "Hx"
+      ],
+      "required_visible_sentinels": [
+        "B"
+      ],
+      "resident_columns": 24,
+      "resident_sections": 384,
+      "tick": 200
+    },
+    {
+      "forbidden_resident_groups": [],
+      "forbidden_visible_sentinels": [],
+      "identity_policy": "verify exact resident set and visible uniqueness/subset/sentinels; record visible order without reference-order qualification; track all-air corridors as residency",
+      "label": "camera_turn_plus_z",
+      "required_resident_groups": [
+        "Hz"
+      ],
+      "required_visible_sentinels": [
+        "C"
+      ],
+      "resident_columns": 24,
+      "resident_sections": 384,
+      "tick": 320
+    },
+    {
+      "forbidden_resident_groups": [],
+      "forbidden_visible_sentinels": [],
+      "identity_policy": "verify exact resident set and visible uniqueness/subset/sentinels; record visible order without reference-order qualification; track all-air corridors as residency",
+      "label": "teleport_B",
+      "required_resident_groups": [
+        "Hx"
+      ],
+      "required_visible_sentinels": [
+        "A"
+      ],
+      "resident_columns": 24,
+      "resident_sections": 384,
+      "tick": 440
+    },
+    {
+      "forbidden_resident_groups": [
+        "B"
+      ],
+      "forbidden_visible_sentinels": [
+        "B"
+      ],
+      "identity_policy": "verify exact resident set and visible uniqueness/subset/sentinels; record visible order without reference-order qualification; track all-air corridors as residency",
+      "label": "unload_B",
+      "required_resident_groups": [
+        "Hx"
+      ],
+      "required_visible_sentinels": [
+        "A"
+      ],
+      "resident_columns": 20,
+      "resident_sections": 320,
+      "tick": 560
+    },
+    {
+      "forbidden_resident_groups": [],
+      "forbidden_visible_sentinels": [],
+      "identity_policy": "verify exact resident set and visible uniqueness/subset/sentinels; record visible order without reference-order qualification; track all-air corridors as residency",
+      "label": "reload_B",
+      "required_resident_groups": [
+        "Hx"
+      ],
+      "required_visible_sentinels": [
+        "A"
+      ],
+      "resident_columns": 24,
+      "resident_sections": 384,
+      "tick": 680
+    },
+    {
+      "forbidden_resident_groups": [],
+      "forbidden_visible_sentinels": [],
+      "identity_policy": "verify exact resident set and visible uniqueness/subset/sentinels; record visible order without reference-order qualification; track all-air corridors as residency",
+      "label": "edit_round_trip",
+      "required_resident_groups": [
+        "Hx"
+      ],
+      "required_visible_sentinels": [
+        "A"
+      ],
+      "resident_columns": 24,
+      "resident_sections": 384,
+      "tick": 800
+    },
+    {
+      "forbidden_resident_groups": [],
+      "forbidden_visible_sentinels": [],
+      "identity_policy": "verify exact resident set and visible uniqueness/subset/sentinels; record visible order without reference-order qualification; track all-air corridors as residency",
+      "label": "teleport_C",
+      "required_resident_groups": [
+        "Hz"
+      ],
+      "required_visible_sentinels": [
+        "A"
+      ],
+      "resident_columns": 24,
+      "resident_sections": 384,
+      "tick": 920
+    },
+    {
+      "forbidden_resident_groups": [
+        "A"
+      ],
+      "forbidden_visible_sentinels": [],
+      "identity_policy": "verify exact resident set and visible uniqueness/subset/sentinels; record visible order without reference-order qualification; track all-air corridors as residency",
+      "label": "unload_A",
+      "required_resident_groups": [
+        "Hz"
+      ],
+      "required_visible_sentinels": [],
+      "resident_columns": 20,
+      "resident_sections": 320,
+      "tick": 1040
+    },
+    {
+      "forbidden_resident_groups": [],
+      "forbidden_visible_sentinels": [],
+      "identity_policy": "verify exact resident set and visible uniqueness/subset/sentinels; record visible order without reference-order qualification; track all-air corridors as residency",
+      "label": "reload_A",
+      "required_resident_groups": [
+        "Hz"
+      ],
+      "required_visible_sentinels": [
+        "A"
+      ],
+      "resident_columns": 24,
+      "resident_sections": 384,
+      "tick": 1160
+    },
+    {
+      "forbidden_resident_groups": [],
+      "forbidden_visible_sentinels": [],
+      "identity_policy": "verify exact resident set and visible uniqueness/subset/sentinels; record visible order without reference-order qualification; track all-air corridors as residency",
+      "label": "final",
+      "required_resident_groups": [
+        "Hz"
+      ],
+      "required_visible_sentinels": [
+        "A"
+      ],
+      "resident_columns": 24,
+      "resident_sections": 384,
+      "tick": 1280
+    }
+  ],
+  "clock": {
+    "capture": "synthetic explicit microseconds with strict same-tick ordering",
+    "input": "scripted typed PositionLook camera positions; no OS input; local abilities hold flight",
+    "readiness": "fixed checkpoint; never extended by observed readiness",
+    "rng": "none (no entities, particles, or emitters)",
+    "simulation": "fixed_20hz",
+    "step_micros": 50000
+  },
+  "contract": "mc-rs.optimization.synthetic-lifecycle-fixture",
+  "disclaimer": "Typed protocol lifecycle diagnostic; it certifies packet/world identity contracts only and is not a Java renderer or performance reference.",
+  "fixture_id": "DIAGNOSTIC_TERRAIN",
+  "fixture_variant": "unloaded_corridor_dense",
+  "gap_extension": {
+    "camera": {
+      "pitch": 0.0,
+      "position": [
+        16.5,
+        65.0,
+        16.5
+      ],
+      "tick": 1281,
+      "yaw": -90.0
+    },
+    "checkpoints": [
+      {
+        "forbidden_resident_columns": [
+          {
+            "chunk_x": 4,
+            "chunk_z": 0,
+            "sections": 16
+          }
+        ],
+        "label": "unload_Hx",
+        "required_visible_sentinels": [
+          "B"
+        ],
+        "resident_columns": 23,
+        "resident_sections": 368,
+        "tick": 1401
+      },
+      {
+        "label": "reload_Hx",
+        "required_visible_sentinels": [
+          "B"
+        ],
+        "resident_columns": 24,
+        "resident_sections": 384,
+        "tick": 1521
+      }
+    ],
+    "reload": {
+      "chunk": [
+        4,
+        0
+      ],
+      "sections_restored": 16,
+      "tick": 1402
+    },
+    "unload": {
+      "chunk": [
+        4,
+        0
+      ],
+      "sections_removed": 16,
+      "tick": 1282
+    }
+  },
+  "generation": "mc-protocol Packet::write and mc-data registry lookups; corrected per-section sky nibble stride; no raw invented packet bytes; gap extension uses typed PositionLook and ChunkData unload/reload packets; dense variant uses registry stone/dirt/grass relief with deterministic cavities and section caps",
+  "protocol": 47,
+  "scoring_eligible": false,
+  "status": "DIAGNOSTIC",
+  "version": 1,
+  "world": {
+    "block_light": 0,
+    "camera_clearance_contract": true,
+    "column_order_policy": "LIFECYCLE_COLUMNS declaration order; packet ordinal follows this order",
+    "dense_gap_target_block_count": 0,
+    "dense_nonzero_block_count": 86474,
+    "dense_occupied_section_count": 46,
+    "gap_air_column": [
+      4,
+      0
+    ],
+    "gap_target_contract": "column [4,0] remains all-air in every section and is the unload/reload identity target",
+    "groups": {
+      "A": [
+        {
+          "chunk_x": 0,
+          "chunk_z": 0,
+          "sections": 16
+        },
+        {
+          "chunk_x": 1,
+          "chunk_z": 0,
+          "sections": 16
+        },
+        {
+          "chunk_x": 0,
+          "chunk_z": 1,
+          "sections": 16
+        },
+        {
+          "chunk_x": 1,
+          "chunk_z": 1,
+          "sections": 16
+        }
+      ],
+      "B": [
+        {
+          "chunk_x": 8,
+          "chunk_z": 0,
+          "sections": 16
+        },
+        {
+          "chunk_x": 9,
+          "chunk_z": 0,
+          "sections": 16
+        },
+        {
+          "chunk_x": 8,
+          "chunk_z": 1,
+          "sections": 16
+        },
+        {
+          "chunk_x": 9,
+          "chunk_z": 1,
+          "sections": 16
+        }
+      ],
+      "C": [
+        {
+          "chunk_x": 0,
+          "chunk_z": 8,
+          "sections": 16
+        },
+        {
+          "chunk_x": 1,
+          "chunk_z": 8,
+          "sections": 16
+        },
+        {
+          "chunk_x": 0,
+          "chunk_z": 9,
+          "sections": 16
+        },
+        {
+          "chunk_x": 1,
+          "chunk_z": 9,
+          "sections": 16
+        }
+      ],
+      "Hx": [
+        {
+          "chunk_x": 2,
+          "chunk_z": 0,
+          "sections": 16
+        },
+        {
+          "chunk_x": 3,
+          "chunk_z": 0,
+          "sections": 16
+        },
+        {
+          "chunk_x": 4,
+          "chunk_z": 0,
+          "sections": 16
+        },
+        {
+          "chunk_x": 5,
+          "chunk_z": 0,
+          "sections": 16
+        },
+        {
+          "chunk_x": 6,
+          "chunk_z": 0,
+          "sections": 16
+        },
+        {
+          "chunk_x": 7,
+          "chunk_z": 0,
+          "sections": 16
+        }
+      ],
+      "Hz": [
+        {
+          "chunk_x": 0,
+          "chunk_z": 2,
+          "sections": 16
+        },
+        {
+          "chunk_x": 0,
+          "chunk_z": 3,
+          "sections": 16
+        },
+        {
+          "chunk_x": 0,
+          "chunk_z": 4,
+          "sections": 16
+        },
+        {
+          "chunk_x": 0,
+          "chunk_z": 5,
+          "sections": 16
+        },
+        {
+          "chunk_x": 0,
+          "chunk_z": 6,
+          "sections": 16
+        },
+        {
+          "chunk_x": 0,
+          "chunk_z": 7,
+          "sections": 16
+        }
+      ]
+    },
+    "initial_air_section_count": 338,
+    "initial_loaded_column_count": 24,
+    "initial_loaded_section_count": 384,
+    "loaded_columns": [
+      {
+        "chunk_x": 0,
+        "chunk_z": 0,
+        "sections": 16
+      },
+      {
+        "chunk_x": 1,
+        "chunk_z": 0,
+        "sections": 16
+      },
+      {
+        "chunk_x": 0,
+        "chunk_z": 1,
+        "sections": 16
+      },
+      {
+        "chunk_x": 1,
+        "chunk_z": 1,
+        "sections": 16
+      },
+      {
+        "chunk_x": 8,
+        "chunk_z": 0,
+        "sections": 16
+      },
+      {
+        "chunk_x": 9,
+        "chunk_z": 0,
+        "sections": 16
+      },
+      {
+        "chunk_x": 8,
+        "chunk_z": 1,
+        "sections": 16
+      },
+      {
+        "chunk_x": 9,
+        "chunk_z": 1,
+        "sections": 16
+      },
+      {
+        "chunk_x": 0,
+        "chunk_z": 8,
+        "sections": 16
+      },
+      {
+        "chunk_x": 1,
+        "chunk_z": 8,
+        "sections": 16
+      },
+      {
+        "chunk_x": 0,
+        "chunk_z": 9,
+        "sections": 16
+      },
+      {
+        "chunk_x": 1,
+        "chunk_z": 9,
+        "sections": 16
+      },
+      {
+        "chunk_x": 2,
+        "chunk_z": 0,
+        "sections": 16
+      },
+      {
+        "chunk_x": 3,
+        "chunk_z": 0,
+        "sections": 16
+      },
+      {
+        "chunk_x": 4,
+        "chunk_z": 0,
+        "sections": 16
+      },
+      {
+        "chunk_x": 5,
+        "chunk_z": 0,
+        "sections": 16
+      },
+      {
+        "chunk_x": 6,
+        "chunk_z": 0,
+        "sections": 16
+      },
+      {
+        "chunk_x": 7,
+        "chunk_z": 0,
+        "sections": 16
+      },
+      {
+        "chunk_x": 0,
+        "chunk_z": 2,
+        "sections": 16
+      },
+      {
+        "chunk_x": 0,
+        "chunk_z": 3,
+        "sections": 16
+      },
+      {
+        "chunk_x": 0,
+        "chunk_z": 4,
+        "sections": 16
+      },
+      {
+        "chunk_x": 0,
+        "chunk_z": 5,
+        "sections": 16
+      },
+      {
+        "chunk_x": 0,
+        "chunk_z": 6,
+        "sections": 16
+      },
+      {
+        "chunk_x": 0,
+        "chunk_z": 7,
+        "sections": 16
+      }
+    ],
+    "lower_ledge_y_range": [
+      40,
+      47
+    ],
+    "max_terrain_y": 63,
+    "platform_block_y": 64,
+    "platform_section_y": 4,
+    "section_cap_y": 59,
+    "sentinels": {
+      "A": [
+        0,
+        4,
+        0
+      ],
+      "B": [
+        8,
+        4,
+        0
+      ],
+      "C": [
+        0,
+        4,
+        8
+      ],
+      "Hx": [
+        4,
+        4,
+        0
+      ],
+      "Hz": [
+        0,
+        4,
+        4
+      ]
+    },
+    "sky_light_above_air": 15,
+    "surface_y_range": [
+      60,
+      63
+    ],
+    "terrain_contract": "all columns except gap_air_column receive deterministic relief; cavities are sparse and caps stay below the y=65 camera path",
+    "terrain_mode": "relief_cavity_cap"
+  }
+}

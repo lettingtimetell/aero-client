@@ -1,0 +1,54 @@
+[package]
+name        = "mc-render"
+description = "wgpu renderer: shell, terrain mesher, entities, particles, sky."
+version.workspace = true
+edition.workspace = true
+publish.workspace = true
+license.workspace = true
+repository.workspace = true
+
+[dependencies]
+mc-core.workspace   = true
+thiserror.workspace = true
+wgpu.workspace      = true
+winit.workspace     = true
+pollster.workspace  = true
+glam.workspace      = true
+mc-assets.workspace = true
+mc-math.workspace   = true
+mc-world.workspace  = true
+mc-physics.workspace = true
+bytemuck.workspace  = true
+tracing.workspace   = true
+# Need something that is not listed? Report it instead of editing.
+# Terrain mesher
+mc-data.workspace   = true
+rayon.workspace     = true
+# Entity rendering (skins are fetched over HTTP and decoded as PNG)
+image.workspace     = true
+reqwest.workspace   = true
+# `sync`: the texture downloads' concurrency bound (`entity::skin`). Already enabled in the
+# build through the HTTP stack, so this compiles nothing new.
+tokio = { workspace = true, features = ["sync"] }
+# `w21_mb` asks the binary's allocator to run its pending purges at
+# transitions. The same crate and version `mimalloc` (mc-client's allocator) already links; only
+# enabled through mc-client's `mimalloc` feature. Not a new crate in Cargo.lock.
+libmimalloc-sys = { version = "0.1.49", default-features = false, features = ["v2"], optional = true }
+
+[features]
+# Set by mc-client's `mimalloc` feature: the binary's global allocator is mimalloc.
+mimalloc = ["dep:libmimalloc-sys"]
+
+[dev-dependencies]
+# The headless readback tests need a logger when RUST_LOG is set.
+tracing-subscriber.workspace = true
+proptest.workspace = true
+tempfile.workspace = true
+
+# The frame-loop profiler. `harness = false` because there is no `criterion` in this
+# workspace's offline cargo cache and libtest's `#[bench]` needs nightly; it is a plain binary
+# that prints mean/sd/min/max with the run count, which is what the plan's honesty convention
+# wants anyway. Appended, no existing entry touched.
+[[bench]]
+name = "frame_loop"
+harness = false

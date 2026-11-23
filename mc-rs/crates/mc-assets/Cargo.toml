@@ -1,0 +1,30 @@
+[package]
+name        = "mc-assets"
+description = "Asset index, resource packs, block models, blockstates, texture atlas."
+version.workspace = true
+edition.workspace = true
+publish.workspace = true
+license.workspace = true
+repository.workspace = true
+
+[dependencies]
+mc-core.workspace    = true
+mc-data.workspace    = true          # BlockState/ItemId, block/item registries
+mc-math.workspace    = true          # Facing for BakedQuad.face
+thiserror.workspace  = true
+serde.workspace      = true
+serde_json.workspace = true
+tracing.workspace    = true
+zip.workspace        = true
+image.workspace      = true          # PNG decode for block/item textures
+
+[dev-dependencies]
+serde.workspace = true               # Model JSON in tests/vanilla_assets.rs
+tempfile.workspace = true
+
+# The startup profiler behind the on-disk bake cache. `harness = false` because there is
+# no `criterion` in this workspace's offline cargo cache and libtest's `#[bench]` needs nightly.
+# Appended; no existing entry touched.
+[[bench]]
+name = "startup"
+harness = false

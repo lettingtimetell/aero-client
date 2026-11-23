@@ -1,0 +1,50 @@
+[package]
+name        = "mc-video"
+description = "Video and audio encoding for replay exports (Windows Media Foundation: H.264/H.265 and AAC in MP4)."
+version.workspace = true
+edition.workspace = true
+publish.workspace = true
+license.workspace = true
+repository.workspace = true
+
+[dependencies]
+tracing.workspace   = true
+thiserror.workspace = true
+# The encoder and probe threads run inside `mc_core::panic_scope` (a panic there is a failed
+# export, not the game's crash report). A workspace crate with no new dependencies of its own.
+mc-core.workspace   = true
+
+[dev-dependencies]
+# The encode tests read ffprobe's JSON.
+serde_json.workspace = true
+# tests/gpu_nv12.rs: mc-render's export capture (GPU NV12) checked against this crate's CPU
+# reference. Dev-only, so the library keeps no dependency on the renderer.
+mc-render.workspace = true
+wgpu.workspace      = true
+
+[target.'cfg(windows)'.dev-dependencies]
+# Tests/tracks.rs asks Windows' media playback stack (what the
+# Media Player app is built on) which audio track of a multi-track export it plays. Tests only.
+windows = { version = "0.62", features = ["Foundation", "Media_Core", "Media_Playback"] }
+
+[target.'cfg(windows)'.dependencies]
+# 0.62.2 is already in the graph (cpal, wgpu-hal, mc-media). New features, scoped here:
+# Media Foundation (the sink writer, media types, the encoder MFTs and their CODECAPI keys) and
+# LibraryLoader. Every Media Foundation entry point is loaded at run time (`mf/api.rs`) rather than
+# linked, so `mc-client.exe` keeps no load-time import of mfplat.dll / mfreadwrite.dll: Windows "N"
+# editions without the Media Feature Pack lack them, and the client must still start there (export
+# then reports itself unavailable).
+# Win32_Graphics_Direct3D, _Direct3D11 and _Dxgi for `mf/device.rs` (a
+# Direct3D 11 device on the render adapter for the hardware encoder; the DLLs are loaded at run
+# time there too). Direct3D and Dxgi are already compiled for wgpu-hal.
+windows = { version = "0.62", features = [
+    "Win32_Foundation",
+    "Win32_Graphics_Direct3D",
+    "Win32_Graphics_Direct3D11",
+    "Win32_Graphics_Dxgi",
+    "Win32_Media_MediaFoundation",
+    "Win32_System_Com",
+    "Win32_System_Com_StructuredStorage",
+    "Win32_System_LibraryLoader",
+    "Win32_System_Variant",
+] }

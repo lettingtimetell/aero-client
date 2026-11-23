@@ -1,0 +1,36 @@
+{
+  "schema": "mc-rs.optimization.fixture",
+  "schema_version": 1,
+  "fixture_id": "T1",
+  "title": "Dense terrain traversal candidate",
+  "status": "DRAFT",
+  "scoring_eligible": false,
+  "path_root": "../../..",
+  "inputs": {
+    "capture": {"path": "mc-rs/crates/mc-parity/captures/spigot-1.8.8-perfworld-vd16.mccap", "sha256": "5ef575bd8e1dfcca7517bccc304c67295bf61b38e7de5a66aa53bcc0b4612feb", "required": true, "missing_reason": ""},
+    "camera_input_script": {"path": null, "sha256": null, "required": true, "missing_reason": "The traversal camera/input script is not included with the existing terrain capture."},
+    "settings": {"path": null, "sha256": null, "required": true, "missing_reason": "Render-distance variants and complete settings have not been frozen."},
+    "assets_manifest": {"path": null, "sha256": null, "required": true, "missing_reason": "The resource/asset manifest for this capture has not been frozen."}
+  },
+  "clocks": {
+    "simulation": {"mode": "replay_virtual_cadence", "semantics": "The existing .mccap can drive replay packets at a virtual cadence; exact simulation equivalence is not yet qualified."},
+    "input": {"mode": "unknown", "semantics": "No pinned traversal camera/input script is present."},
+    "capture": {"mode": "unknown", "semantics": "The existing capture is packet data; frame telemetry clock and measurement boundaries are not present in it."},
+    "rng": {"mode": "unknown", "semantics": "RNG seed/state provenance for a scored traversal is not captured."}
+  },
+  "visual_profile": {"name": "Parity", "settings": null, "settings_fingerprint": null},
+  "readiness": [
+    {"id": "capture_present", "kind": "custom", "required": true, "status": "pass", "description": "The committed terrain .mccap exists at the pinned path and digest.", "evidence": "mc-rs/crates/mc-parity/captures/spigot-1.8.8-perfworld-vd16.mccap", "missing_reason": ""},
+    {"id": "world_loaded", "kind": "world_loaded", "required": true, "status": "not_checked", "description": "Terrain is loaded and stable before warmup.", "evidence": null, "missing_reason": "Live replay launch/readiness has not been qualified."},
+    {"id": "telemetry_ready", "kind": "telemetry_ready", "required": true, "status": "not_checked", "description": "Frame, work-count and visibility telemetry is available.", "evidence": null, "missing_reason": "The telemetry adapter is not yet qualified."}
+  ],
+  "intervals": {
+    "warmup": {"unit": "frames", "value": null, "semantics": "Discard the declared warmup frame range after terrain readiness.", "missing_reason": "Warmup frame count has not been selected."},
+    "measurement": {"unit": "frames", "value": null, "semantics": "Include exactly the declared contiguous traversal measurement frames.", "missing_reason": "Measurement frame count has not been selected."}
+  },
+  "checks": {
+    "image": [{"id": "terrain_reference", "required": true, "status": "not_checked", "frame": 0, "path": null, "sha256": null, "description": "Pinned dense-terrain image checkpoint after traversal readiness.", "missing_reason": "No reference image has been captured."}],
+    "visibility": [{"id": "terrain_sections", "required": true, "status": "not_checked", "frame": 0, "path": null, "sha256": null, "description": "Visible section identities during traversal and camera turns.", "missing_reason": "No visibility checkpoint has been captured."}]
+  },
+  "known_limitations": ["Draft only; the existing capture is a diagnostic terrain input, not a qualified score.", "No V1, V2 or E1 label is assigned to this dense terrain capture.", "Camera script, settings, assets, telemetry and correctness gates remain missing."]
+}

@@ -1,0 +1,39 @@
+{
+  "status": "PASS_WIRE_ONLY",
+  "frames": 86,
+  "actions": 31,
+  "provider_blocks": 46,
+  "provider_sections": 46,
+  "nonair": 86475,
+  "occupied_sections": 47,
+  "air_sections": 337,
+  "parent_non_chunk_timing_and_bytes": "IDENTICAL",
+  "parent_light_and_biome_bytes": "IDENTICAL",
+  "parent_full_chunk_wire_bytes": "IDENTICAL_EXCEPT_TWO_DECLARED_STATE_WORDS",
+  "camera_sentinel_gap_topology": "INHERITED_BY_EXACT_SUBSTITUTION_CHECK",
+  "stored_entity_ticking": "NOT_PROVEN_BY_WIRE_VALIDATOR_RUN_TYPED_WORLD_REPLAY_TEST",
+  "runtime_AA_and_all_12_strict_gates": "REQUIRED_UNPROVEN",
+  "scoring_eligible": false,
+  "inputs": {
+    "capture": {
+      "path": "{repo}\\mc-rs\\optimization\\fixtures\\generated-lifecycle-gap-dense-providers-v1\\lifecycle-gap-dense-providers-v1.mccap",
+      "sha256": "80709b70b24130c10fa557ee8f8352515a0a1ce346da55e22ff4d9e851fb0830"
+    },
+    "recipe": {
+      "path": "{repo}\\mc-rs\\optimization\\fixtures\\generated-lifecycle-gap-dense-providers-v1\\lifecycle-gap-dense-providers-v1.recipe.json",
+      "sha256": "060e65073fb2439a4e57f8880d08741ff4e065dab81577e2c2546310df4645b4"
+    },
+    "parent_capture": {
+      "path": "{repo}\\mc-rs\\optimization\\fixtures\\generated-lifecycle-gap-dense-v2\\lifecycle-gap-dense.mccap",
+      "sha256": "f9a1084380ea9194edf74d97d19011af2c557ceabc66c6eeb15315affce07712"
+    },
+    "parent_recipe": {
+      "path": "{repo}\\mc-rs\\optimization\\fixtures\\generated-lifecycle-gap-dense-v2\\lifecycle-gap-dense.recipe.json",
+      "sha256": "9ef796e06596da8aa86a3da9bff953305d252d4fa3060e7c802b55d2a0c7cd1f"
+    },
+    "blocks_source": {
+      "path": "{projects}\\mc-rs-o0-builds\\provider-fixture-execution-root-001-workspace\\crates\\mc-data\\src\\generated\\blocks.rs",
+      "sha256": "bc8dcb7a3ffa51c0559347d7368cff9b556777b807dd0e61a6ae5797ef833bce"
+    }
+  }
+}

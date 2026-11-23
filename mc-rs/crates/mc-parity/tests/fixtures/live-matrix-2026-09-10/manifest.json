@@ -1,0 +1,182 @@
+{
+  "schema": 1,
+  "protocol": 47,
+  "generated": "2026-09-10",
+  "purpose": "Accepted loopback Minecraft 1.8.x parity captures; each file was produced by mc-client and passed its named live gate.",
+  "captures": [
+    {
+      "file": "matrix-m4-guarded-vanilla.mccap",
+      "server": "Vanilla 1.8.9",
+      "mode": "offline",
+      "endpoint": "127.0.0.1:25571",
+      "gate": "M4",
+      "check": "60s idle; KeepAlive IDs consumed; clean replay",
+      "sha256": "E343F611BF89562BDC910FBE78C09C6CA0B817E9FDD601BA996CD03143F62AC4",
+      "frames": 2593
+    },
+    {
+      "file": "matrix-m5-vanilla-latest.mccap",
+      "server": "Vanilla 1.8.9",
+      "mode": "offline",
+      "endpoint": "127.0.0.1:25571",
+      "gate": "M5",
+      "check": "4x50-block loop; 721 ticks; zero corrections; clean replay",
+      "sha256": "57EBC5285BEABA528C39EA8A52E189096E5433937C3815D5B53F85DFD8C2762C",
+      "frames": 1178
+    },
+    {
+      "file": "matrix-m6-guarded-vanilla-final.mccap",
+      "server": "Vanilla 1.8.9",
+      "mode": "offline",
+      "endpoint": "127.0.0.1:25571",
+      "gate": "M6",
+      "check": "break/place/chest drag/close; clean replay",
+      "sha256": "08C0F051E20218DC09FFFF538969BDEF39C49715B6729AE55D4FEE6B9179C3B8",
+      "frames": 509
+    },
+    {
+      "file": "matrix-m4-guarded-paper.mccap",
+      "server": "Paper 1.8.8 build 445",
+      "mode": "offline",
+      "endpoint": "127.0.0.1:25572",
+      "gate": "M4",
+      "check": "60s idle; KeepAlive IDs consumed; clean replay",
+      "sha256": "37858BF6DF4CB74505545AE3C3A0C16C6688FC6DDC4917FC75499059DBAF4B4D",
+      "frames": 2532
+    },
+    {
+      "file": "matrix-m5-paper-build7.mccap",
+      "server": "Paper 1.8.8 build 445",
+      "mode": "offline",
+      "endpoint": "127.0.0.1:25572",
+      "gate": "M5",
+      "check": "4x50-block loop; 721 ticks; zero corrections; clean replay",
+      "sha256": "65B522CC0311AABFE8585A469AE3B7AF5ED6BB4678CDB8CE1324B92E8DA85237",
+      "frames": 1453
+    },
+    {
+      "file": "matrix-m6-paper-final.mccap",
+      "server": "Paper 1.8.8 build 445",
+      "mode": "offline",
+      "endpoint": "127.0.0.1:25572",
+      "gate": "M6",
+      "check": "break/place/chest drag/close; clean replay",
+      "sha256": "8B78A7C43F97ACCD27566A3E1E2C0B85DBBA176F345B373BCD1DF6441E04DCAE",
+      "frames": 631
+    },
+    {
+      "file": "matrix-m4-bungee.mccap",
+      "server": "BungeeCord 2089 + Vanilla/Paper backend",
+      "mode": "offline",
+      "endpoint": "127.0.0.1:25573",
+      "gate": "M4",
+      "check": "60s idle; KeepAlive IDs consumed; clean replay",
+      "sha256": "7E4F251E34177015349A6B3F21EC8474B388BA70ADB86A0FDB828BA4E7AF4D32",
+      "frames": 3482
+    },
+    {
+      "file": "matrix-m5-bungee-build7.mccap",
+      "server": "BungeeCord 2089 + Vanilla backend",
+      "mode": "offline",
+      "endpoint": "127.0.0.1:25573",
+      "gate": "M5",
+      "check": "4x50-block loop; 721 ticks; zero corrections; clean replay",
+      "sha256": "B5384A5DAB2B7AB13FFC3FE3EA8FFDD345AE0BCBD916335F9A3D14B0E81E15F0",
+      "frames": 1180
+    },
+    {
+      "file": "matrix-m6-guarded-bungee-final.mccap",
+      "server": "BungeeCord 2089 + Paper backend",
+      "mode": "offline",
+      "endpoint": "127.0.0.1:25573",
+      "gate": "M6",
+      "check": "break/place/chest drag/close; clean replay",
+      "sha256": "9502DCC6A2EC0A2204D5EDB0CDB6CD4456ABE761A956A2E7622B1DEC03461244",
+      "frames": 527
+    },
+    {
+      "file": "matrix-m8-bungee.mccap",
+      "server": "BungeeCord 2089 + Vanilla/Paper backend",
+      "mode": "offline",
+      "endpoint": "127.0.0.1:25573",
+      "gate": "M8",
+      "check": "production /server backend switch; Respawn/world/entity reset; clean replay",
+      "sha256": "0DAB8B1414426058C8187D410DE4C8684D30B05375F2C163348C005342858C76",
+      "frames": 177
+    },
+    {
+      "file": "matrix-m4-spigot-offline.mccap",
+      "server": "Spigot 1.8.8 BuildTools output",
+      "mode": "offline",
+      "endpoint": "127.0.0.1:25577",
+      "gate": "M4",
+      "check": "60s idle; 1634 frames; KeepAlive IDs consumed; clean replay",
+      "sha256": "E6453AA57C32D9B9EC4840EF246E1313BDEADEBD2AB93F642D824E6A891F8B08",
+      "frames": 1634
+    },
+    {
+      "file": "matrix-m5-spigot-offline.mccap",
+      "server": "Spigot 1.8.8 BuildTools output",
+      "mode": "offline",
+      "endpoint": "127.0.0.1:25577",
+      "gate": "M5",
+      "check": "4x50-block loop; 721 ticks; zero corrections; 1840 frames; clean replay",
+      "sha256": "F0863D793532D9370321587E6FE3B01E7BF7C425A7ED9BDBBBC03A6D12C0EB24",
+      "frames": 1840
+    },
+    {
+      "file": "matrix-m6-spigot-offline.mccap",
+      "server": "Spigot 1.8.8 BuildTools output",
+      "mode": "offline",
+      "endpoint": "127.0.0.1:25577",
+      "gate": "M6",
+      "check": "break/place/chest drag/close; clean replay",
+      "sha256": "8CBF6F25619434B32468FFFD3691B8C702ECAAAFA5EFC029E90596E21D19FDDB",
+      "frames": 269
+    },
+    {
+      "file": "online-s21-paper-auth.mccap",
+      "server": "Paper 1.8.8 build 445",
+      "mode": "online",
+      "endpoint": "127.0.0.1:25582",
+      "gate": "S21",
+      "check": "server-list ping; authenticated join; walk; mine; chat; quit",
+      "identity": "neutralized 2026-11-18: account name, UUID and skin property replaced by same-length placeholders; frame sizes and every other byte unchanged. 2026-11-22: the account name in the echoed chat line too",
+      "sha256": "8865730F3564BBAD3E93E2E3E80345B64E4E68E26AC4A44D1AC4D2B474008DC0",
+      "frames": 205
+    },
+    {
+      "file": "online-s21-bungee-paper-auth.mccap",
+      "server": "BungeeCord 2089 + Paper 1.8.8 build 445",
+      "mode": "online",
+      "endpoint": "127.0.0.1:25583",
+      "gate": "S21",
+      "check": "online proxy auth; ip_forward identity; join; walk; mine; chat; quit",
+      "identity": "neutralized 2026-11-18: account name, UUID and skin property replaced by same-length placeholders; frame sizes and every other byte unchanged. 2026-11-22: the account name in the echoed chat line too",
+      "sha256": "2AE13C2B82722FCDD784FC02CE933D85D5C229D97C9478589ACD1CF5DDEEE217",
+      "frames": 172
+    },
+    {
+      "file": "online-s21-spigot-auth.mccap",
+      "server": "Spigot 1.8.8 BuildTools output",
+      "mode": "online",
+      "endpoint": "127.0.0.1:25578",
+      "gate": "S21",
+      "check": "server-list ping; authenticated join; walk; mine; chat; quit",
+      "identity": "neutralized 2026-11-18: account name, UUID and skin property replaced by same-length placeholders; frame sizes and every other byte unchanged. 2026-11-22: the account name in the echoed chat line too",
+      "sha256": "3BF0CE43E93AD84090A4FB1059BC1B614CF5341F9A78DCF2F691BB2604D07B0D",
+      "frames": 172
+    },
+    {
+      "file": "vanilla-online-encrypted-latest.mccap",
+      "server": "Vanilla 1.8.9",
+      "mode": "online",
+      "endpoint": "127.0.0.1:25581",
+      "gate": "M3",
+      "check": "encrypted login; first post-cipher Play decode; terrain/light validation; 60 ticks; clean replay",
+      "identity": "neutralized 2026-11-18: account name, UUID and skin property replaced by same-length placeholders; frame sizes and every other byte unchanged",
+      "sha256": "08D8931A61D7969BB69D920401F139774B8B6DDD575252396F5C6D54F0197E2B",
+      "frames": 343
+    }
+  ]
+}

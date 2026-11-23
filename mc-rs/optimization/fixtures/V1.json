@@ -1,0 +1,35 @@
+{
+  "schema": "mc-rs.optimization.fixture",
+  "schema_version": 1,
+  "fixture_id": "V1",
+  "title": "Representative island arena steady state",
+  "status": "DRAFT",
+  "scoring_eligible": false,
+  "path_root": "../../..",
+  "inputs": {
+    "capture": {"path": "mc-rs/optimization/fixtures/generated-light-v2/v1.mccap", "sha256": "26a0e34b0f4fc79c762beed754a06aa6be682686a7f61a875a6c20851e8b7171", "required": true, "missing_reason": "Generated V1 light-v2 diagnostic capture is pinned; fixture qualification and visual readiness remain open."},
+    "camera_input_script": {"path": null, "sha256": null, "required": true, "missing_reason": "The fixed camera sweep and input script has not been produced."},
+    "settings": {"path": null, "sha256": null, "required": true, "missing_reason": "The complete parity settings export has not been frozen."},
+    "assets_manifest": {"path": null, "sha256": null, "required": true, "missing_reason": "The resource and skin asset manifest has not been frozen."}
+  },
+  "clocks": {
+    "simulation": {"mode": "unknown", "semantics": "Simulation cadence and packet-to-frame assignment must be selected and recorded before qualification."},
+    "input": {"mode": "unknown", "semantics": "Camera and player actions must be owned by a pinned script rather than live input."},
+    "capture": {"mode": "unknown", "semantics": "The telemetry clock and whether samples represent frames or wall intervals are not selected."},
+    "rng": {"mode": "unknown", "semantics": "The fixture RNG source and seed have not been captured."}
+  },
+  "visual_profile": {"name": "Parity", "settings": null, "settings_fingerprint": null},
+  "readiness": [
+    {"id": "world_loaded", "kind": "world_loaded", "required": true, "status": "not_checked", "description": "The arena world and its player state are loaded before warmup.", "evidence": null, "missing_reason": "Generated V1 capture is present, but world-loaded readiness has not been independently validated."},
+    {"id": "telemetry_ready", "kind": "telemetry_ready", "required": true, "status": "not_checked", "description": "Frame and work telemetry is available without dropped required fields.", "evidence": null, "missing_reason": "The telemetry adapter is not yet qualified."}
+  ],
+  "intervals": {
+    "warmup": {"unit": "frames", "value": null, "semantics": "Discard the declared warmup frame range before measurement; the count is pending capture qualification.", "missing_reason": "Warmup frame count has not been selected."},
+    "measurement": {"unit": "frames", "value": null, "semantics": "Include exactly the declared contiguous measurement frame range; the count is pending capture qualification.", "missing_reason": "Measurement frame count has not been selected."}
+  },
+  "checks": {
+    "image": [{"id": "arena_reference", "required": true, "status": "not_checked", "frame": 0, "path": null, "sha256": null, "description": "Pinned arena image checkpoint after readiness.", "missing_reason": "A clean light-v2 diagnostic image is archived, but no pinned parity reference or visibility qualification is defined."}],
+    "visibility": [{"id": "arena_sections", "required": true, "status": "not_checked", "frame": 0, "path": null, "sha256": null, "description": "Expected visible section identities at the arena checkpoint.", "missing_reason": "A diagnostic image is archived, but visible section identity has not been independently checked."}]
+  },
+  "known_limitations": ["Draft only; no V1 performance score or player count is asserted.", "The existing dense terrain capture is not a V1 substitute.", "The light-v2 diagnostic image is not a pinned parity reference and visibility qualification remains open.", "Replay uses ordinary wall-clock timing, so nondeterminism remains and scoring is not eligible."]
+}

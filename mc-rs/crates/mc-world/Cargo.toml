@@ -1,0 +1,37 @@
+[package]
+name        = "mc-world"
+description = "Client world: chunk storage, block access, lighting, entity arena."
+version.workspace = true
+edition.workspace = true
+publish.workspace = true
+license.workspace = true
+repository.workspace = true
+
+[dependencies]
+mc-core.workspace     = true
+mc-auth.workspace     = true
+thiserror.workspace   = true
+hecs.workspace        = true
+slotmap.workspace     = true
+mc-data.workspace     = true
+mc-math.workspace     = true
+# `entity::MetadataValue`'s type-5 arm carries a real
+# `mc_protocol::ItemStack` instead of a `Vec<u8>` placeholder. Nothing else in this crate touches
+# `mc-protocol` — see the "mc-protocol is a dependency for exactly one type" note in
+# `lib.rs` for what still holds.
+mc-protocol.workspace = true
+
+# The `chunk_memory` bench measures chunk storage against *real*
+# server bytes rather than a synthetic fixture, by reading `mc-parity`'s committed `.mccap`
+# captures directly (read-only, and skipped with a `skip:` line when they are absent). The
+# container's payload section is zlib-compressed, which is the whole of this dependency's job —
+# the packet framing and the S21/S26 field layout are parsed by the bench itself, so `mc-parity`
+# is not pulled in (it depends on this crate, and on `mc-render`).
+[dev-dependencies]
+flate2.workspace = true
+# 09-relight: light-engine and chunk-descent differential tests (`src/light_equivalence.rs`).
+proptest.workspace = true
+
+[[bench]]
+name    = "chunk_memory"
+harness = false

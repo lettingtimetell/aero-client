@@ -1,0 +1,58 @@
+# What must never be committed.
+
+# --- Minecraft / Mojang material ---------------------------------------------------------------
+# Your own Minecraft 1.8.9 files, copied here by setup-vanilla-files.ps1 (the tests and development
+# builds look in MCP-919-main/jars/), and any local decompiled reference workspace. They stay on
+# your PC.
+/MCP-919-main/
+/jars/
+# This repository holds no Java source, bytecode or jars.
+*.java
+*.class
+*.jar
+# Startup caches baked from the vanilla resource pack.
+baked-assets.bin
+
+# --- Build outputs -----------------------------------------------------------------------------
+target/
+/release/
+/mc-rs/optimization/scratch/round2-2026-11-05/tgt/
+/mc-rs/optimization/scratch/round2-2026-11-05/pgo/
+/mc-rs/optimization/scratch/round2-2026-11-05/results/
+/mc-rs/optimization/installed-backups/
+*.profraw
+*.profdata
+*.pdb
+__pycache__/
+*.pyc
+
+# --- Game state: launch-mc-rs.ps1 uses mc-rs/ as the game directory --------------------------------
+/mc-rs/options.txt
+/mc-rs/servers.dat
+/mc-rs/mc-rs-mods.json
+/mc-rs/mc-rs-waypoints.json
+/mc-rs/logs/
+/mc-rs/screenshots/
+# Recordings hold player names, servers, chat and microphone audio; exports are their videos.
+/mc-rs/replays/
+/mc-rs/exports/
+*.aeroreplay
+/mc-rs/resourcepacks/
+/mc-rs/server-resource-packs/
+/mc-rs/crash-reports/
+/mc-rs/cache/
+/mc-rs/run/
+/mc-rs/.cargo-*/
+/mc-rs/crates/*/cache/
+/mc-rs/crates/*/logs/
+*.log
+
+# --- Secrets -------------------------------------------------------------------------------------
+.local-credentials.json
+accounts.json
+
+# --- Editors and OS ------------------------------------------------------------------------------
+.vscode/
+.idea/
+Thumbs.db
+.DS_Store

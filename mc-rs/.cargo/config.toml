@@ -1,0 +1,12 @@
+[build]
+# Keep Cargo/rustc below the machine's saturation point so the PC stays responsive during
+# large mc-client links. Raise it if your machine has headroom; lower it if builds make the
+# PC unresponsive.
+jobs = 4
+
+[env]
+# Every test client and `cargo run` stays silent; a client otherwise plays through the
+# speakers at full volume. The installed client is launched by launch-mc-rs.ps1, not by cargo,
+# so it keeps its sound. A run that really needs the speakers can set MC_NO_AUDIO=0 in its own
+# environment, which wins over this default.
+MC_NO_AUDIO = "1"

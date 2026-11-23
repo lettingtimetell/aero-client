@@ -1,0 +1,15 @@
+[package]
+name        = "mc-physics"
+description = "Player physics, collision sweeps, and client-side prediction."
+version.workspace = true
+edition.workspace = true
+publish.workspace = true
+license.workspace = true
+repository.workspace = true
+
+[dependencies]
+mc-core.workspace   = true
+thiserror.workspace = true
+mc-math.workspace   = true
+mc-world.workspace  = true
+mc-data.workspace   = true

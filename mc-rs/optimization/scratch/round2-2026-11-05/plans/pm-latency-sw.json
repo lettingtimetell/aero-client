@@ -1,0 +1,60 @@
+{
+  "batch": "pm-latency-sw",
+  "lanes": {
+    "A": "{MC_RS}\\optimization\\scratch\\round2-2026-11-05\\bins\\pipe5\\examples\\skywars_bench.exe",
+    "B": "{MC_RS}\\optimization\\scratch\\round2-2026-11-05\\bins\\pipe5\\examples\\skywars_bench.exe"
+  },
+  "pairs": 2,
+  "warmup": true,
+  "timeout_s": 900,
+  "args": [
+    "--replay",
+    "{MC_RS}\\optimization\\scratch\\skywars-scene-2026-11-05\\captures\\sw-mega-doubles-mid.mccap",
+    "--replayCamera",
+    "fixed",
+    "--replayStep",
+    "1000",
+    "--lockstepMicros",
+    "1000",
+    "--seed",
+    "1",
+    "--script",
+    "{MC_RS}\\optimization\\scratch\\skywars-scene-2026-11-05\\captures\\sw-mega-doubles-mid.recipe.json",
+    "--width",
+    "1280",
+    "--height",
+    "720",
+    "--offline",
+    "BenchBot",
+    "--frames",
+    "90000"
+  ],
+  "options": {
+    "renderDistance": "8",
+    "particles": "1",
+    "soundCategory_master": "0.001"
+  },
+  "window_phase": "sw_fight",
+  "window_frames_expected": 60000,
+  "tail_phase": "sw_tail",
+  "window_slices": 10,
+  "window_sum_counters": [
+    "entity_vertices",
+    "entity_batches",
+    "terrain_visible_sections",
+    "terrain_draw_items"
+  ],
+  "stable_counters": [
+    "terrain_loaded_sections",
+    "terrain_visible_sections",
+    "terrain_draw_items",
+    "terrain_quads",
+    "entity_vertices",
+    "entity_batches"
+  ],
+  "lane_env": {
+    "B": {
+      "MC_PIPELINED_SUBMIT": "1"
+    }
+  }
+}

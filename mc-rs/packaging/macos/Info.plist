@@ -1,0 +1,36 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<!--
+  macOS bundle metadata. `@VERSION@` is substituted by packaging/macos/build.sh.
+
+  `CFBundleExecutable` names the launcher, not the client binary: the launcher is what locates
+  the user's own Minecraft installation and passes the assetsDir and versionJar options, and a bundle that
+  started mc-client directly would find no assets. Both live in Contents/MacOS.
+
+  No CFBundleIconFile: every plausible icon for a Minecraft client would be Mojang's artwork, and
+  this artefact carries none of their files.
+-->
+<plist version="1.0">
+<dict>
+    <key>CFBundleName</key>
+    <string>mc-rs</string>
+    <key>CFBundleDisplayName</key>
+    <string>mc-rs</string>
+    <key>CFBundleIdentifier</key>
+    <string>dev.mcrs.client</string>
+    <key>CFBundleVersion</key>
+    <string>@VERSION@</string>
+    <key>CFBundleShortVersionString</key>
+    <string>@VERSION@</string>
+    <key>CFBundlePackageType</key>
+    <string>APPL</string>
+    <key>CFBundleExecutable</key>
+    <string>mc-rs</string>
+    <key>LSMinimumSystemVersion</key>
+    <string>11.0</string>
+    <key>NSHighResolutionCapable</key>
+    <true/>
+    <key>LSApplicationCategoryType</key>
+    <string>public.app-category.games</string>
+</dict>
+</plist>
