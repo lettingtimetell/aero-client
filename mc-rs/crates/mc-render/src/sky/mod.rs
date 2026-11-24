@@ -16,23 +16,28 @@
 //! # Installing the phases
 //!
 //! ```no_run
+//! use std::cell::RefCell;
+//! use std::rc::Rc;
+//!
 //! use mc_render::{Gpu, PhaseList, PhaseOrder};
 //! use mc_render::sky::{clouds::CloudsPhase, dome::SkyPhase, fog::FogPhase, weather::WeatherPhase};
 //!
 //! # fn wire(gpu: &Gpu, phases: &mut PhaseList) {
 //! phases.insert(PhaseOrder::SKY, Box::new(SkyPhase::new(gpu)));
-//! phases.insert(PhaseOrder::SKY, Box::new(CloudsPhase::new(gpu)));
+//! let clouds = Rc::new(RefCell::new(CloudsPhase::new(gpu)));
+//! CloudsPhase::install(&clouds, phases);
 //! phases.insert(PhaseOrder::WEATHER, Box::new(WeatherPhase::new(gpu)));
 //! phases.insert(FogPhase::ORDER, Box::new(FogPhase::new(gpu)));
 //! # }
 //! ```
 //!
-//! **[`dome::SkyPhase`] and [`clouds::CloudsPhase`] must both be registered at
-//! [`crate::PhaseOrder::SKY`]**, i.e. before anything that draws depth. `SkyPhase` paints the fog
-//! colour over the whole frame first (vanilla's `clearColor(fogColor…)`), and `CloudsPhase` borrows
-//! the shared depth buffer for vanilla's two-pass cloud render and resets it to `1.0` afterwards.
-//! Both are safe exactly where vanilla puts them and nowhere later; `CloudsPhase`'s
-//! `RenderPhase::record` documents the reasoning and names the test that pins it.
+//! **[`dome::SkyPhase`] must be registered at [`crate::PhaseOrder::SKY`]**, before anything that
+//! draws depth: it paints the fog colour over the whole frame first (vanilla's
+//! `clearColor(fogColor…)`). [`clouds::CloudsPhase::install`] puts the clouds where vanilla draws
+//! them: at [`crate::PhaseOrder::SKY`] (after the dome, by insertion order) while the eye is below
+//! y=128, and after the world ([`clouds::ABOVE_CLOUDS_ORDER`]) at or above it, keeping their depth
+//! in the shared depth buffer either way. Feed it the eye height every frame
+//! ([`clouds::CloudsPhase::view_eye_y`]); the clouds' module docs give the reasoning.
 //!
 //! Call `load_textures`/`load_texture` on each phase once a [`mc_assets::ResourceManager`] is
 //! up, and set `environment`/`partial_ticks` (and, for weather, call

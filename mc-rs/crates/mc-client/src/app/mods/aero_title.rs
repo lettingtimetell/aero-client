@@ -575,6 +575,10 @@ impl Client {
         if self.acc_title_mouse(x, y, button, pressed) {
             return true;
         }
+        // So does the Discord button (bottom right).
+        if let Some(taken) = self.discord_title_mouse(button, pressed) {
+            return taken;
+        }
         let Some(screen) = self
             .aero
             .live
@@ -600,6 +604,29 @@ impl Client {
             }
         }
         true
+    }
+
+    /// A mouse edge on the Aero title screen: `Some(true)` when the Discord
+    /// button took it (a press on it, or the release of one), `None` to let the rest of the screen
+    /// have it. A click plays vanilla's button sound and opens the Discord invite in the default
+    /// browser at once: it is the client's own fixed link, so through `Action::OpenUrl`'s checks
+    /// and opener but with no confirmation (that is for links from servers, in chat and books).
+    fn discord_title_mouse(&mut self, button: i32, pressed: bool) -> Option<bool> {
+        let (screen, (x, y)) = self.aero.live_screen()?;
+        let button = u8::try_from(button).ok()?;
+        if pressed {
+            return screen.discord.mouse_pressed(x, y, button).then_some(true);
+        }
+        if !screen.discord.has_press() {
+            return None;
+        }
+        if screen.discord.mouse_released(x, y, button) {
+            self.play_button_press();
+            self.handle_action(mc_ui::screens::Action::OpenUrl(
+                aero_title::discord::DISCORD_URL.to_owned(),
+            ));
+        }
+        Some(true)
     }
 
     /// The title screen was left: empty the slots, drop the UI phases, park the scene for the next
@@ -1382,6 +1409,154 @@ mod client_tests {
                 assert!(!ui_slot_filled(&client));
                 let settings = client.settings.clone();
                 assert_eq!(client.effective_frame_cap(&settings, true), Some(30));
+            }
+        }
+    }
+
+    fn discord_rect(client: &Client) -> Option<mc_ui::screens::modmenu::paint::Rect> {
+        client
+            .aero
+            .live
+            .as_ref()
+            .and_then(|live| live.screen.as_ref())
+            .and_then(|screen| screen.discord.rect())
+    }
+
+    /// Rec. 709 luma of the pixel at `(x, y)` in an RGBA8 frame `width` wide.
+    fn luma_at(pixels: &[u8], width: u32, (x, y): (f32, f32)) -> f32 {
+        let i = (y as usize * width as usize + x as usize) * 4;
+        let channel = |k: usize| f32::from(pixels[i + k]) / 255.0;
+        0.2126 * channel(0) + 0.7152 * channel(1) + 0.0722 * channel(2)
+    }
+
+    /// The Discord button, bottom right: a click asks the opener for the
+    /// invite link and nothing else happens (the title screen stays up, vanilla's button sound
+    /// plays); a click elsewhere opens nothing. At 854x480 it is inside the window and clear of
+    /// the account corner and the buttons, in the same place at every GUI scale (the Aero title
+    /// screen follows the window, not the GUI scale), and its logo is on screen: white, where the
+    /// glass beside it is darker. `MC_DISCORD_REVIEW_DIR` also writes pictures, idle and hovered.
+    #[test]
+    fn the_discord_button_opens_the_invite_and_draws_its_logo() {
+        use crate::app::driver::take_opened_external_targets;
+        use mc_ui::screens::aero_title::discord::{DISCORD_URL, LOGO_W, PAD_LEFT};
+        use mc_ui::screens::aero_title::layout::scale;
+
+        let review = std::env::var_os("MC_DISCORD_REVIEW_DIR").map(std::path::PathBuf::from);
+        for size in [SIZE, (1920, 1080)] {
+            let Some(mut gpu) = gpu(size) else { return };
+            let Some((mut client, _dir)) = offline_client() else {
+                return;
+            };
+            let mut phases = PhaseList::new();
+            client.install(&gpu, &mut phases, size.0, size.1);
+            let camera = mc_render::Camera::default();
+            client.build_ui(&gpu, 0.0);
+            set_clock(&mut client, Duration::from_secs(5), Duration::from_secs(3));
+            client.build_ui(&gpu, 0.0);
+            let rect = discord_rect(&client).expect("on screen");
+            let screen = (size.0 as f32, size.1 as f32);
+            assert!(
+                rect.x > screen.0 * 0.5 && rect.y > screen.1 * 0.75,
+                "{size:?}: bottom right: {rect:?}"
+            );
+            assert!(rect.right() <= screen.0 && rect.bottom() <= screen.1);
+
+            if size == SIZE {
+                // The account corner at its widest (its name decides how wide it is).
+                let corner = mc_ui::screens::accounts::corner::corner_rect(screen, 1.0e6);
+                for gui_scale in [1, 2, 3, 4, 0] {
+                    client.settings.gui_scale = gui_scale;
+                    client.build_ui(&gpu, 0.0);
+                    assert_eq!(discord_rect(&client), Some(rect), "GUI scale {gui_scale}");
+                    let live = client.aero.live.as_ref().and_then(|l| l.screen.as_ref());
+                    let live = live.expect("the title screen is live");
+                    let mut others = vec![corner];
+                    others.extend(AeroButton::ALL.map(|button| live.button_rect(button)));
+                    for other in others {
+                        let overlap = rect.intersect(&other);
+                        assert!(
+                            overlap.w <= 0.0 || overlap.h <= 0.0,
+                            "{rect:?} on {other:?}"
+                        );
+                    }
+                }
+
+                let _ = take_opened_external_targets();
+                click(&mut client, (5.0, 5.0));
+                assert!(
+                    take_opened_external_targets().is_empty(),
+                    "a miss opens nothing"
+                );
+                assert!(client.audio.last_play().is_none(), "and plays nothing");
+                click(&mut client, rect.center());
+                assert_eq!(
+                    take_opened_external_targets(),
+                    vec![std::path::PathBuf::from(DISCORD_URL)]
+                );
+                assert_eq!(DISCORD_URL, "https://discord.gg/kAtcMRwffy");
+                assert!(
+                    matches!(client.ui, Ui::MainMenu(_)),
+                    "the title screen stays up"
+                );
+                let sound = client.audio.last_play().expect("vanilla's button sound");
+                assert_eq!(sound.request.event.path, crate::app::audio::BUTTON_PRESS);
+            }
+
+            for hover in [false, true] {
+                let cursor = if hover { rect.center() } else { (0.0, 0.0) };
+                client.aero_title_pointer((f64::from(cursor.0), f64::from(cursor.1)));
+                for _ in 0..3 {
+                    set_clock(&mut client, Duration::from_secs(5), Duration::from_secs(3));
+                    client.build_ui(&gpu, 0.0);
+                    std::thread::sleep(Duration::from_millis(60));
+                }
+                let target = gpu.acquire().expect("offscreen frame");
+                phases.render(&gpu, target.view(), &camera, 0.0);
+                let pixels = gpu.read_pixels().expect("readback");
+                if let Some(dir) = &review {
+                    std::fs::create_dir_all(dir).expect("review folder");
+                    let name = format!(
+                        "title-discord-{}x{}{}.png",
+                        size.0,
+                        size.1,
+                        if hover { "-hover" } else { "" }
+                    );
+                    image::save_buffer(
+                        dir.join(&name),
+                        &pixels,
+                        size.0,
+                        size.1,
+                        image::ExtendedColorType::Rgba8,
+                    )
+                    .expect("write the picture");
+                    eprintln!("wrote {name}");
+                }
+                if hover {
+                    continue;
+                }
+                // The logo's box: the brightest pixel in it is the white mark, well above the
+                // glass at the button's right end.
+                let s = scale(screen);
+                let (cx, cy) = (
+                    rect.x + (PAD_LEFT + LOGO_W * 0.5) * s,
+                    rect.y + rect.h * 0.5,
+                );
+                let half = LOGO_W * 0.5 * s;
+                let mut brightest = 0.0_f32;
+                let mut y = cy - half * 0.7;
+                while y <= cy + half * 0.7 {
+                    let mut x = cx - half;
+                    while x <= cx + half {
+                        brightest = brightest.max(luma_at(&pixels, size.0, (x, y)));
+                        x += 1.0;
+                    }
+                    y += 1.0;
+                }
+                let glass = luma_at(&pixels, size.0, (rect.right() - 4.0 * s - 1.0, cy));
+                assert!(
+                    brightest > 0.85 && brightest > glass + 0.15,
+                    "{size:?}: logo {brightest}, glass {glass}"
+                );
             }
         }
     }

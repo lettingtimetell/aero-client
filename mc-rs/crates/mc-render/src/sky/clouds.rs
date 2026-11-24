@@ -16,19 +16,75 @@
 //! not: it mapped the whole 256x256 `clouds.png` across every 96-block cell instead of the 8x8
 //! texel patch vanilla reads, drew one wall per cell boundary instead of vanilla's eight
 //! per-cloud-unit walls, and dropped the world anchoring, the `f3` above/below gates and the
-//! interior-wall culling. It has been rewritten term for term; see its own docs for the one
-//! remaining deviation (no depth pre-pass).
+//! interior-wall culling. It has been rewritten term for term.
+//!
+//! # Where the clouds draw, and the depth they leave
+//!
+//! java: `EntityRenderer.renderWorldPass` (`:1364`, `:1474`) draws the
+//! clouds at one of two points, picked by the render-view entity's eye height this tick
+//! (`posY + getEyeHeight()`, not interpolated) against a literal `128.0`, not the cloud height:
+//!
+//! * **below 128**, right after the sky and before any terrain;
+//! * **at or above 128**, after translucent terrain and the weather, last before the hand.
+//!
+//! Both times with depth writes on and the ambient `GL_LEQUAL` test, and the depth stays in the
+//! frame's depth buffer. Below, terrain behind a cloud is depth-rejected (the cloud hides it and
+//! the sky shows through the cloud's 20 % transparency) while terrain in front of a cloud draws
+//! over it. Above, the clouds blend over the ground beneath them, and anything rising in front
+//! of them hides them. [`CloudsPhase::install`] registers the clouds at both points
+//! ([`crate::PhaseOrder::SKY`] and [`ABOVE_CLOUDS_ORDER`]), and [`CloudsPhase::view_eye_y`]
+//! enables one of the two each frame.
+//!
+//! The depth written is the clouds' own projection's, as in vanilla: `renderCloudsCheck` widens
+//! the far plane to `farPlaneDistance * 4` around the draw, where terrain uses
+//! `farPlaneDistance * sqrt(2)` (near 0.05 for both). So a terrain fragment at eye-space depth
+//! `z_t` passes against a cloud at `z_c` only when, to first order in the near plane,
+//! `1/z_t >= 1/z_c + 1/far_terrain - 1/far_clouds`: terrain a little in front of a cloud can still
+//! lose to it, by vanilla's own margin.
+
+use std::cell::RefCell;
+use std::rc::Rc;
 
 use glam::{DVec3, Vec2, Vec3};
 use wgpu::util::DeviceExt;
 
+use crate::pipeline::{FrameClearHandoff, PassTarget, PhaseList, PhaseOrder};
 use crate::sky::environment::Environment;
-use crate::sky::fog::{FogDistance, FogState};
+use crate::sky::fog::{FogDistance, FogPhase, FogState};
 use crate::sky::textures::{self, SkyTexture};
-use crate::{Camera, DepthAttachment, Gpu, RenderPhase};
+use crate::{Camera, Gpu, RenderPhase};
 
 /// java: `WorldProvider.getCloudHeight` (Overworld default).
 pub const DEFAULT_CLOUD_HEIGHT: f32 = 128.0;
+
+/// java: `EntityRenderer.renderWorldPass`'s `128.0D`: the eye height (`posY + getEyeHeight()`)
+/// at and above which the clouds draw after the world instead of before it. A literal, not the
+/// cloud height.
+pub const ABOVE_CLOUDS_EYE_Y: f64 = 128.0;
+
+/// Where [`CloudsPhase::install`] puts the clouds' second registration, the one that draws while
+/// the eye is at or above [`ABOVE_CLOUDS_EYE_Y`]. java's `aboveClouds` step comes after
+/// translucent terrain and the weather, last before the hand. Here it comes after the
+/// screen-space fog wherever that is registered ([`FogPhase::ORDER`] at the latest, so these
+/// clouds, which fog themselves, are never fogged twice) and before the anti-aliasing
+/// ([`crate::PhaseOrder::TEMPORAL_AA`]), which resolves them with the rest of the world. The late
+/// volumetric clouds use the same order; the two never draw in the same frame.
+pub const ABOVE_CLOUDS_ORDER: PhaseOrder = PhaseOrder(FogPhase::ORDER.0 + 2);
+
+/// [`RenderPhase::name`] of the registration at [`ABOVE_CLOUDS_ORDER`].
+pub const ABOVE_CLOUDS_PHASE_NAME: &str = "sky/clouds-above";
+
+/// [`RenderPhase::name`] of a [`CloudsPhase`], and of its registration at
+/// [`crate::PhaseOrder::SKY`].
+const PHASE_NAME: &str = "sky/clouds";
+
+/// Whether an eye at `view_eye_y` puts the clouds after the world. java: `renderWorldPass`'s
+/// `entity.posY + (double)entity.getEyeHeight() >= 128.0D`. `None` (no render-view entity fed)
+/// counts as below.
+#[inline]
+fn eye_above_clouds(view_eye_y: Option<f64>) -> bool {
+    view_eye_y.is_some_and(|y| y >= ABOVE_CLOUDS_EYE_Y)
+}
 
 /// Texel scale for the flat/fast cloud texture. java: `4.8828125E-4F` (`= 1.0 / 2048.0`).
 const FAST_TEXEL: f32 = 1.0 / 2048.0;
@@ -349,19 +405,6 @@ fn fancy_cloud_lattice(bottom: bool, top: bool) -> Vec<FancyCloudVertex> {
 fn cloud_cull_enabled() -> bool {
     static ON: std::sync::OnceLock<bool> = std::sync::OnceLock::new();
     *ON.get_or_init(|| std::env::var_os("MC_NW_F2_CLOUD_CULL").is_none_or(|value| value != "0"))
-}
-
-/// Whether fancy clouds draw against their own depth target instead of
-/// borrowing the shared one and clearing it again in a second, depth-only pass. Read once;
-/// `MC_NW_F2_CLOUD_DEPTH=0` keeps the shared buffer and the restore pass.
-///
-/// The pre-pass needs a depth buffer that starts at `1.0` and must not survive the phase. The
-/// shared buffer is at `1.0` here (the frame's clear pass, and nothing before the sky writes
-/// depth), so clearing a private target to `1.0` gives the same depth tests, and since the
-/// shared buffer is never touched it needs no restore. Same pixels, one render pass fewer.
-fn cloud_own_depth_enabled() -> bool {
-    static ON: std::sync::OnceLock<bool> = std::sync::OnceLock::new();
-    *ON.get_or_init(|| std::env::var_os("MC_NW_F2_CLOUD_DEPTH").is_none_or(|value| value != "0"))
 }
 
 /// The only `clouds.png` size culling handles: `FANCY_TEXEL` makes one cloud unit one texel of a
@@ -725,15 +768,9 @@ fn fast_cloud_vertices(
 /// * **Interior-wall culling** (`j1 > -1`, `j1 <= 1`, `k1 > -1`, `k1 <= 1`): only the walls facing
 ///   away from the camera's cell are emitted.
 ///
-/// # Remaining deviation
-///
 /// Vanilla draws the whole grid **twice** (`:1547`): pass 0 with `colorMask(false…)` to lay down
-/// depth, pass 1 with `GL_LEQUAL` so only the nearest surface shades. This port has no depth
-/// attachment on the cloud pass (it records at [`crate::PhaseOrder::SKY`], before terrain, and
-/// writing to the shared depth buffer there would occlude terrain drawn later), so overlapping
-/// faces of one cloud still blend on top of each other. With `clouds.png`'s alpha being all-or-
-/// nothing and the per-face tints only 0.7/0.8/0.9/1.0 apart, that shows as slightly flatter
-/// contrast between the top, side and bottom shading — not as the wrong geometry it used to be.
+/// depth, pass 1 with `GL_LEQUAL` so only the nearest surface shades. [`CloudsPhase`] does the
+/// same with two pipelines over these vertices (see its `RenderPhase::record`).
 ///
 /// Production no longer evaluates this per frame: [`fancy_cloud_lattice`] plus
 /// [`FancyCloudFrame::table`] reproduce it bit for bit on the GPU side, and this stays as the
@@ -951,8 +988,11 @@ fn bind_group(
     })
 }
 
-/// Clouds. Registered at [`crate::PhaseOrder::SKY`], after [`crate::sky::dome::SkyPhase`] so
-/// insertion order draws them on top of (in front of) the sky plane.
+/// Clouds. [`CloudsPhase::install`] registers them where vanilla draws them (see the
+/// [module docs](self)): at [`crate::PhaseOrder::SKY`], after [`crate::sky::dome::SkyPhase`] so
+/// insertion order draws them on top of (in front of) the sky plane, and at
+/// [`ABOVE_CLOUDS_ORDER`]. A `CloudsPhase` inserted on its own at [`crate::PhaseOrder::SKY`]
+/// always draws there.
 pub struct CloudsPhase {
     /// java: `GameSettings.renderClouds`.
     pub mode: CloudMode,
@@ -965,6 +1005,13 @@ pub struct CloudsPhase {
     /// java: `this.cloudTickCounter` — whole ticks elapsed. `partial_ticks` is added once by
     /// [`CloudsPhase::record`] when it builds Java's interpolated cloud scroll time.
     pub cloud_tick_counter: f32,
+    /// java: `EntityRenderer.renderWorldPass`'s
+    /// `entity.posY + entity.getEyeHeight()` for the render-view entity: this tick's position,
+    /// not interpolated, and the entity's eye, not the camera (F5 orbits it). At or above
+    /// [`ABOVE_CLOUDS_EYE_Y`] the registration at [`ABOVE_CLOUDS_ORDER`] draws the clouds, below
+    /// it the one at [`crate::PhaseOrder::SKY`] (see [`CloudsPhase::install`]). `None`, the
+    /// default, counts as below.
+    pub view_eye_y: Option<f64>,
 
     /// Java's global `GameSettings.anaglyph` upload switch. The resident cloud texture keeps its
     /// decoded source bytes inside [`SkyTexture`], so a live toggle can replay the exact upload
@@ -996,11 +1043,6 @@ pub struct CloudsPhase {
     texture: Option<(SkyTexture, wgpu::BindGroup)>,
     /// `Some` while culling is on and `clouds.png` is 256x256.
     fancy_cull: Option<FancyCull>,
-    /// Fancy clouds' own depth target (without MSAA), built on the first
-    /// fancy frame at the shared depth buffer's size and dropped by a fast-cloud frame.
-    fancy_depth: Option<(wgpu::Texture, wgpu::TextureView)>,
-    /// Whether to use [`Self::fancy_depth`]; `MC_NW_F2_CLOUD_DEPTH`.
-    fancy_own_depth: bool,
 }
 
 impl CloudsPhase {
@@ -1131,15 +1173,19 @@ impl CloudsPhase {
                 })
         };
 
-        // java: `RenderGlobal.java:1512` blend + the ambient `GL_LEQUAL` depth func.
+        // java: `RenderGlobal.java:1438` blend + the ambient `GL_LEQUAL` depth func, with depth
+        // writes on: `renderWorldPass` leaves `depthMask(true)` at both of its cloud points.
         let pipeline = make(
             "clouds",
             "vs",
             "fs",
             CloudVertex::LAYOUT,
             true,
-            depth(false, wgpu::CompareFunction::LessEqual),
+            depth(true, wgpu::CompareFunction::LessEqual),
         );
+        // Vanilla's colour pass writes depth too, but only where the pre-pass already wrote the
+        // same value (`GL_LEQUAL` lets nothing nearer through), so leaving it off stores the
+        // same buffer.
         let fancy_pipeline = make(
             "clouds fancy",
             "vs_fancy",
@@ -1195,6 +1241,7 @@ impl CloudsPhase {
             partial_ticks: 0.0,
             cloud_height: DEFAULT_CLOUD_HEIGHT,
             cloud_tick_counter: 0.0,
+            view_eye_y: None,
             anaglyph: false,
             pipeline,
             depth_prepass_pipeline,
@@ -1213,9 +1260,35 @@ impl CloudsPhase {
             fog_state: None,
             texture: None,
             fancy_cull: None,
-            fancy_depth: None,
-            fancy_own_depth: cloud_own_depth_enabled(),
         }
+    }
+
+    /// Register `clouds` at both of vanilla's points (see the
+    /// [module docs](self)): at [`crate::PhaseOrder::SKY`] as `sky/clouds` (register the sky dome
+    /// there first, so the clouds land on it) and at [`ABOVE_CLOUDS_ORDER`] as
+    /// [`ABOVE_CLOUDS_PHASE_NAME`]. Each frame [`Self::draws_above`] enables exactly one of them;
+    /// both draw the same way, only the point in the frame differs. Allocates nothing.
+    pub fn install(clouds: &Rc<RefCell<CloudsPhase>>, phases: &mut PhaseList) {
+        for above in [false, true] {
+            phases.insert(
+                if above {
+                    ABOVE_CLOUDS_ORDER
+                } else {
+                    PhaseOrder::SKY
+                },
+                Box::new(CloudsSlot {
+                    clouds: Rc::clone(clouds),
+                    above,
+                }),
+            );
+        }
+    }
+
+    /// Whether this frame's clouds belong after the world: [`Self::view_eye_y`] is at or above
+    /// [`ABOVE_CLOUDS_EYE_Y`].
+    #[must_use]
+    pub fn draws_above(&self) -> bool {
+        eye_above_clouds(self.view_eye_y)
     }
 
     /// Build the phase with Java's global upload-time anaglyph switch selected.
@@ -1304,23 +1377,6 @@ impl CloudsPhase {
         self.fancy_cull.is_some()
     }
 
-    /// Draw fancy clouds against their own depth target (no MSAA only)
-    /// instead of the shared buffer plus a restore pass, for same-process comparisons; the
-    /// default is the `MC_NW_F2_CLOUD_DEPTH` switch.
-    pub fn set_fancy_own_depth(&mut self, on: bool) {
-        self.fancy_own_depth = on;
-        if !on {
-            self.fancy_depth = None;
-        }
-    }
-
-    /// Whether the last fancy frame drew against the phase's own depth
-    /// target.
-    #[must_use]
-    pub fn fancy_own_depth_in_use(&self) -> bool {
-        self.fancy_depth.is_some()
-    }
-
     /// `(indices drawn, lattice vertices)` of the last culled fancy frame;
     /// `None` while culling is off or before the first fancy frame.
     #[must_use]
@@ -1333,44 +1389,45 @@ impl CloudsPhase {
 
 impl RenderPhase for CloudsPhase {
     fn name(&self) -> &'static str {
-        "sky/clouds"
+        PHASE_NAME
     }
 
     fn enabled(&self) -> bool {
         self.mode != CloudMode::Off && self.environment.dimension.has_clouds()
     }
 
-    // Every pass here that attaches the shared depth buffer opens with
-    // `Gpu::begin_pass` (fast clouds; fancy clouds with MSAA, whose restore pass comes after it),
-    // and the fancy pass with its own depth target never touches it: the frame's depth clear can
-    // wait for the first of those passes. The fancy pass loads the colour target directly, so a
-    // colour clear still pending is recorded first.
-    fn frame_clear_handoff(&self) -> crate::pipeline::FrameClearHandoff {
-        crate::pipeline::FrameClearHandoff::Depth
+    // `record` makes its queue writes, then opens its one pass with
+    // `Gpu::begin_pass` on the frame's colour target and the shared depth buffer before drawing
+    // anything, and nothing else in it touches either: both clears can wait for that pass.
+    fn frame_clear_handoff(&self) -> FrameClearHandoff {
+        FrameClearHandoff::ColorAndDepth
     }
 
-    /// # Why this borrows the shared depth buffer and hands it back
+    // One pass, configured as the world pass, and
+    // nothing else on the encoder (the depth stays, so no restore pass follows it): the clouds
+    // join the shared world pass. At `PhaseOrder::SKY` they open it, and the opaque terrain
+    // recorded next draws into the same pass. Without a texture they draw nothing.
+    fn shares_world_pass(&self) -> bool {
+        self.texture.is_some()
+    }
+
+    /// # Depth
     ///
     /// Vanilla draws fancy clouds twice (`RenderGlobal.java:1547`): once with
     /// `colorMask(false, false, false, false)` to lay down depth, then again for colour under the
     /// ambient `GL_LEQUAL` depth func, so only the nearest cloud surface shades. Without that,
     /// every one of the eight per-cloud-unit interior walls blends over the face in front of it
-    /// and the undersides come out as a waffle of grid lines instead of flat white.
+    /// and the undersides come out as a waffle of grid lines instead of flat white. Fast clouds
+    /// are one draw.
     ///
-    /// Vanilla places clouds before terrain below the cloud layer and after translucent terrain
-    /// above it (`EntityRenderer.java:1366-1370`, `1477-1481`). This phase records at
-    /// [`crate::PhaseOrder::SKY`], before terrain, so leaving cloud depths in the shared buffer
-    /// would reject any terrain fragment behind a cloud — a hole in a distant mountain. The
-    /// phase therefore ends with a depth-only pass that clears the buffer back to `1.0`,
-    /// restoring exactly what
-    /// [`crate::PhaseList::render`](crate::pipeline::PhaseList::render)'s clear pass left (a fast
-    /// clear, where this used to rasterise a full-screen triangle at `z = 1` with
-    /// `depth_compare: Always`; the stored values are the same `1.0`).
-    ///
-    /// That restore is only *correct* because nothing draws depth before the sky. Register this
-    /// phase at [`crate::PhaseOrder::SKY`], as `sky::mod`'s example does — the same contract
-    /// [`crate::sky::dome::SkyPhase`] already relies on to paint its background.
-    /// `clouds_hand_back_a_pristine_depth_buffer` in `tests/s20_sky.rs` pins it.
+    /// Both write their depth into the frame's shared depth buffer and
+    /// leave it there, as vanilla does at both of its cloud points (see the
+    /// [module docs](self)). Recorded at [`crate::PhaseOrder::SKY`], before anything else writes
+    /// depth, that depth is what rejects terrain behind a cloud; recorded at
+    /// [`ABOVE_CLOUDS_ORDER`], the clouds are depth-tested against the finished world. Either way
+    /// there is nothing to hand back: one pass (or a share of the world pass), no depth target of
+    /// the clouds' own, no restore pass. `clouds_keep_their_depth_for_terrain_drawn_after_them`
+    /// in `tests/s20_sky.rs` and `tests/clouds_vanilla_depth.rs` pin it.
     ///
     /// # Resident fancy geometry
     ///
@@ -1386,6 +1443,18 @@ impl RenderPhase for CloudsPhase {
         view: &wgpu::TextureView,
         cam: &Camera,
     ) {
+        self.record_to(gpu, PassTarget::Own { enc, view }, cam);
+    }
+
+    fn record_into_pass(&mut self, gpu: &Gpu, pass: &mut wgpu::RenderPass<'static>, cam: &Camera) {
+        self.record_to(gpu, PassTarget::Shared(pass), cam);
+    }
+}
+
+impl CloudsPhase {
+    /// The frame's cloud draws (see `RenderPhase::record`), into a pass of their own or the
+    /// shared world pass.
+    fn record_to(&mut self, gpu: &Gpu, target: PassTarget<'_>, cam: &Camera) {
         mc_core::profile_scope!("sky.clouds.record");
         if self.texture.is_none() {
             return;
@@ -1409,8 +1478,6 @@ impl RenderPhase for CloudsPhase {
             // The fast path is one flat sheet: nothing can overlap, so there is nothing for a
             // depth pre-pass to resolve. java: `renderClouds` has no second iteration.
             CloudMode::Fast => {
-                // Fast clouds need no depth target of their own.
-                self.fancy_depth = None;
                 let verts = fast_cloud_vertices(cam.pos, self.cloud_height, tick, color);
                 if verts.is_empty() {
                     return;
@@ -1434,7 +1501,8 @@ impl RenderPhase for CloudsPhase {
                     return;
                 };
                 let count = verts.len() as u32;
-                let mut pass = gpu.begin_pass(enc, view, "sky/clouds", DepthAttachment::Shared);
+                let mut own = None;
+                let pass = target.begin(gpu, PHASE_NAME, &mut own);
                 pass.set_bind_group(0, gpu.camera_bind_group(), &[]);
                 pass.set_bind_group(1, group, &[]);
                 pass.set_vertex_buffer(
@@ -1478,118 +1546,87 @@ impl RenderPhase for CloudsPhase {
                 };
                 if culled == Some(0) {
                     // No face can draw: the pre-pass would write no depth and the colour pass
-                    // nothing, so skipping both (and the depth restore) leaves the same frame.
+                    // nothing, so skipping both leaves the same frame.
                     return;
-                }
-                // Without MSAA the pass gets its own depth target (with
-                // MSAA it would also need the Gpu's multisampled colour view, so it keeps the
-                // shared buffer and the restore pass below).
-                let own_depth = self.fancy_own_depth && gpu.sample_count() == 1;
-                if own_depth {
-                    let size = gpu.depth_texture().size();
-                    if !self
-                        .fancy_depth
-                        .as_ref()
-                        .is_some_and(|(texture, _)| texture.size() == size)
-                    {
-                        let texture = gpu.device.create_texture(&wgpu::TextureDescriptor {
-                            label: Some("cloud fancy depth"),
-                            size,
-                            mip_level_count: 1,
-                            sample_count: 1,
-                            dimension: wgpu::TextureDimension::D2,
-                            format: crate::DEPTH_FORMAT,
-                            usage: wgpu::TextureUsages::RENDER_ATTACHMENT,
-                            view_formats: &[],
-                        });
-                        let depth_view =
-                            texture.create_view(&wgpu::TextureViewDescriptor::default());
-                        self.fancy_depth = Some((texture, depth_view));
-                    }
-                } else {
-                    self.fancy_depth = None;
                 }
                 let Some((_, group)) = &self.texture else {
                     return;
                 };
-                {
-                    let mut pass = match &self.fancy_depth {
-                        Some((_, depth)) if own_depth => {
-                            enc.begin_render_pass(&wgpu::RenderPassDescriptor {
-                                label: Some("sky/clouds"),
-                                color_attachments: &[Some(wgpu::RenderPassColorAttachment {
-                                    view,
-                                    depth_slice: None,
-                                    resolve_target: None,
-                                    ops: wgpu::Operations {
-                                        load: wgpu::LoadOp::Load,
-                                        store: wgpu::StoreOp::Store,
-                                    },
-                                })],
-                                depth_stencil_attachment: Some(
-                                    wgpu::RenderPassDepthStencilAttachment {
-                                        view: depth,
-                                        depth_ops: Some(wgpu::Operations {
-                                            load: wgpu::LoadOp::Clear(1.0),
-                                            store: wgpu::StoreOp::Discard,
-                                        }),
-                                        stencil_ops: None,
-                                    },
-                                ),
-                                timestamp_writes: None,
-                                occlusion_query_set: None,
-                                multiview_mask: None,
-                            })
-                        }
-                        _ => gpu.begin_pass(enc, view, "sky/clouds", DepthAttachment::Shared),
-                    };
-                    pass.set_bind_group(0, gpu.camera_bind_group(), &[]);
-                    pass.set_bind_group(1, group, &[]);
-                    pass.set_vertex_buffer(
-                        0,
-                        self.fancy_vertices.slice(
-                            ..u64::from(count) * std::mem::size_of::<FancyCloudVertex>() as u64,
-                        ),
-                    );
-                    let indices = self.fancy_cull.as_ref().and_then(|c| c.buffer.as_ref());
-                    match (culled, indices) {
-                        (Some(n), Some(indices)) => {
-                            pass.set_index_buffer(indices.slice(..), wgpu::IndexFormat::Uint16);
-                            pass.set_pipeline(&self.depth_prepass_pipeline);
-                            pass.draw_indexed(0..n, 0, 0..1);
-                            pass.set_pipeline(&self.fancy_pipeline);
-                            pass.draw_indexed(0..n, 0, 0..1);
-                        }
-                        _ => {
-                            pass.set_pipeline(&self.depth_prepass_pipeline);
-                            pass.draw(0..count, 0..1);
-                            pass.set_pipeline(&self.fancy_pipeline);
-                            pass.draw(0..count, 0..1);
-                        }
+                // The pre-pass and the colour pass share the frame's depth buffer and keep what
+                // they write there (see `RenderPhase::record`).
+                let mut own = None;
+                let pass = target.begin(gpu, PHASE_NAME, &mut own);
+                pass.set_bind_group(0, gpu.camera_bind_group(), &[]);
+                pass.set_bind_group(1, group, &[]);
+                pass.set_vertex_buffer(
+                    0,
+                    self.fancy_vertices
+                        .slice(..u64::from(count) * std::mem::size_of::<FancyCloudVertex>() as u64),
+                );
+                let indices = self.fancy_cull.as_ref().and_then(|c| c.buffer.as_ref());
+                match (culled, indices) {
+                    (Some(n), Some(indices)) => {
+                        pass.set_index_buffer(indices.slice(..), wgpu::IndexFormat::Uint16);
+                        pass.set_pipeline(&self.depth_prepass_pipeline);
+                        pass.draw_indexed(0..n, 0, 0..1);
+                        pass.set_pipeline(&self.fancy_pipeline);
+                        pass.draw_indexed(0..n, 0, 0..1);
+                    }
+                    _ => {
+                        pass.set_pipeline(&self.depth_prepass_pipeline);
+                        pass.draw(0..count, 0..1);
+                        pass.set_pipeline(&self.fancy_pipeline);
+                        pass.draw(0..count, 0..1);
                     }
                 }
-                if own_depth {
-                    // The shared buffer was never touched.
-                    return;
-                }
-                // Hand the shared depth buffer back at its cleared `1.0` (see above).
-                drop(enc.begin_render_pass(&wgpu::RenderPassDescriptor {
-                    label: Some("sky/clouds depth restore"),
-                    color_attachments: &[],
-                    depth_stencil_attachment: Some(wgpu::RenderPassDepthStencilAttachment {
-                        view: gpu.depth_view(),
-                        depth_ops: Some(wgpu::Operations {
-                            load: wgpu::LoadOp::Clear(1.0),
-                            store: wgpu::StoreOp::Store,
-                        }),
-                        stencil_ops: None,
-                    }),
-                    timestamp_writes: None,
-                    occlusion_query_set: None,
-                    multiview_mask: None,
-                }));
             }
         }
+    }
+}
+
+/// One of [`CloudsPhase::install`]'s two registrations of a shared
+/// [`CloudsPhase`]: enabled only on the frames whose eye height ([`CloudsPhase::draws_above`])
+/// puts the clouds at its point, and otherwise exactly the phase it wraps.
+struct CloudsSlot {
+    clouds: Rc<RefCell<CloudsPhase>>,
+    /// The registration at [`ABOVE_CLOUDS_ORDER`]; else the one at [`crate::PhaseOrder::SKY`].
+    above: bool,
+}
+
+impl RenderPhase for CloudsSlot {
+    fn name(&self) -> &'static str {
+        if self.above {
+            ABOVE_CLOUDS_PHASE_NAME
+        } else {
+            PHASE_NAME
+        }
+    }
+
+    fn enabled(&self) -> bool {
+        let clouds = self.clouds.borrow();
+        clouds.enabled() && clouds.draws_above() == self.above
+    }
+
+    fn frame_clear_handoff(&self) -> FrameClearHandoff {
+        self.clouds.borrow().frame_clear_handoff()
+    }
+
+    fn shares_world_pass(&self) -> bool {
+        self.clouds.borrow().shares_world_pass()
+    }
+
+    fn record(
+        &mut self,
+        gpu: &Gpu,
+        enc: &mut wgpu::CommandEncoder,
+        view: &wgpu::TextureView,
+        cam: &Camera,
+    ) {
+        self.clouds.borrow_mut().record(gpu, enc, view, cam);
+    }
+
+    fn record_into_pass(&mut self, gpu: &Gpu, pass: &mut wgpu::RenderPass<'static>, cam: &Camera) {
+        self.clouds.borrow_mut().record_into_pass(gpu, pass, cam);
     }
 }
 
@@ -2112,6 +2149,40 @@ mod tests {
         assert_eq!(CloudMode::from_setting(0), CloudMode::Off);
         assert_eq!(CloudMode::from_setting(1), CloudMode::Fast);
         assert_eq!(CloudMode::from_setting(2), CloudMode::Fancy);
+    }
+
+    /// java: `renderWorldPass` — `posY + getEyeHeight() < 128.0D` draws
+    /// the clouds before terrain, `>= 128.0D` after the world; nothing fed counts as below.
+    #[test]
+    fn the_eye_splits_the_cloud_points_at_vanillas_literal_128() {
+        assert!(!eye_above_clouds(None));
+        assert!(!eye_above_clouds(Some(127.999_999)));
+        assert!(eye_above_clouds(Some(128.0)));
+        assert!(eye_above_clouds(Some(1000.0)));
+        assert!(!eye_above_clouds(Some(-64.0)));
+        // java: `posY + (double)1.62F` with the feet at 126.38 lands on the upper side.
+        assert!(eye_above_clouds(Some(126.38 + f64::from(1.62_f32))));
+    }
+
+    /// The after-the-world point comes after everything java draws before `aboveClouds`
+    /// (translucent terrain, the weather) and after the screen-space fog at either of its
+    /// orders, and before the anti-aliasing and the hand.
+    #[test]
+    fn the_above_clouds_order_sits_after_the_world_and_before_the_resolve() {
+        for earlier in [
+            PhaseOrder::SKY,
+            PhaseOrder::TERRAIN_SOLID,
+            PhaseOrder::PARTICLES,
+            PhaseOrder::WEATHER,
+            FogPhase::BEFORE_TRANSLUCENT_ORDER,
+            PhaseOrder::TERRAIN_TRANSLUCENT,
+            FogPhase::ORDER,
+        ] {
+            assert!(ABOVE_CLOUDS_ORDER > earlier, "{earlier:?}");
+        }
+        assert!(ABOVE_CLOUDS_ORDER < PhaseOrder::TEMPORAL_AA);
+        assert!(ABOVE_CLOUDS_ORDER < PhaseOrder::FIRST_PERSON);
+        assert_eq!(ABOVE_CLOUDS_ORDER, crate::sky::volumetric::LATE_ORDER);
     }
 
     /// CPU mirror of `clouds.wgsl`'s `vs_fancy`: pure table selects plus the one UV addition.

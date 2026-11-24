@@ -673,21 +673,37 @@ mod tests {
         std::fs::read_to_string(path).unwrap()
     }
 
+    /// The version installed in these tests: this build's own, since `apply` only swaps in a
+    /// release newer than the helper running it and records this build as the kept version.
+    const OLD: &str = crate::CURRENT_VERSION;
+
+    /// A release newer than this build (the next minor version).
+    fn new_version() -> String {
+        let current = crate::version::current();
+        format!("{}.{}.0", current.major, current.minor + 1)
+    }
+
     #[test]
     fn a_new_version_that_reaches_its_title_screen_stays() {
+        let new = new_version();
         let dir = tempfile::tempdir().unwrap();
-        let paths = fake_install(dir.path(), "0.1.0");
-        fake_staged_recorded(&paths, "0.2.0");
+        let paths = fake_install(dir.path(), OLD);
+        fake_staged_recorded(&paths, &new);
         let hooks = FakeHooks::new(&paths);
         // The new client starts once and reaches its title screen.
-        hooks.on_launch(|paths| {
-            assert_eq!(read(&paths.exe()), "exe 0.2.0", "launched after the swap");
-            let _ = count_start_as(paths, "0.2.0");
-            mark_healthy_as(paths, "0.2.0");
+        let launched = new.clone();
+        hooks.on_launch(move |paths| {
+            assert_eq!(
+                read(&paths.exe()),
+                format!("exe {launched}"),
+                "launched after the swap"
+            );
+            let _ = count_start_as(paths, &launched);
+            mark_healthy_as(paths, &launched);
         });
-        let outcome = apply(&paths, "0.2.0", &hooks, &Log::none());
+        let outcome = apply(&paths, &new, &hooks, &Log::none());
         assert_eq!(outcome, Outcome::Applied);
-        assert_eq!(read(&paths.exe()), "exe 0.2.0");
+        assert_eq!(read(&paths.exe()), format!("exe {new}"));
         assert_eq!(hooks.launches(), 1);
         let state = state::read(&paths);
         assert_eq!(state.trial, None);
@@ -697,20 +713,26 @@ mod tests {
 
     #[test]
     fn a_new_version_that_closes_before_its_title_screen_is_rolled_back() {
+        let new = new_version();
         let dir = tempfile::tempdir().unwrap();
-        let paths = fake_install(dir.path(), "0.1.0");
-        fake_staged_recorded(&paths, "0.2.0");
+        let paths = fake_install(dir.path(), OLD);
+        fake_staged_recorded(&paths, &new);
         let hooks = FakeHooks::new(&paths);
         // The new client starts and dies at once (it is not running by the next poll).
-        hooks.on_launch(|paths| {
-            if read(&paths.exe()) == "exe 0.2.0" {
-                let _ = count_start_as(paths, "0.2.0");
+        let launched = new.clone();
+        hooks.on_launch(move |paths| {
+            if read(&paths.exe()) == format!("exe {launched}") {
+                let _ = count_start_as(paths, &launched);
             }
         });
-        let outcome = apply(&paths, "0.2.0", &hooks, &Log::none());
+        let outcome = apply(&paths, &new, &hooks, &Log::none());
         assert_eq!(outcome, Outcome::RolledBack);
-        assert_eq!(read(&paths.exe()), "exe 0.1.0", "the old version is back");
-        assert_eq!(read(&paths.launcher_cmd()), "@rem cmd 0.1.0");
+        assert_eq!(
+            read(&paths.exe()),
+            format!("exe {OLD}"),
+            "the old version is back"
+        );
+        assert_eq!(read(&paths.launcher_cmd()), format!("@rem cmd {OLD}"));
         assert_eq!(
             hooks.launches(),
             2,
@@ -718,59 +740,76 @@ mod tests {
         );
         let state = state::read(&paths);
         assert_eq!(state.trial, None);
-        assert_eq!(state.bad_versions, ["0.2.0"]);
+        assert_eq!(state.bad_versions, [new.as_str()]);
         let failure = state.last_failure.as_ref().expect("recorded");
         assert_eq!(
             (failure.version.as_str(), failure.kept_version.as_str()),
-            ("0.2.0", "0.1.0")
+            (new.as_str(), OLD)
         );
-        assert!(!state.may_offer("0.2.0"), "never offered again");
+        assert!(!state.may_offer(&new), "never offered again");
     }
 
     #[test]
     fn a_version_that_fails_its_self_test_is_never_swapped_in() {
+        let new = new_version();
         let dir = tempfile::tempdir().unwrap();
-        let paths = fake_install(dir.path(), "0.1.0");
-        fake_staged_recorded(&paths, "0.2.0");
+        let paths = fake_install(dir.path(), OLD);
+        fake_staged_recorded(&paths, &new);
         let hooks = FakeHooks::new(&paths);
         hooks.self_test_passes(false);
-        let outcome = apply(&paths, "0.2.0", &hooks, &Log::none());
+        let outcome = apply(&paths, &new, &hooks, &Log::none());
         assert_eq!(outcome, Outcome::NotApplied);
-        assert_eq!(read(&paths.exe()), "exe 0.1.0");
+        assert_eq!(read(&paths.exe()), format!("exe {OLD}"));
         assert_eq!(hooks.launches(), 1, "the old version is started again");
         let state = state::read(&paths);
-        assert_eq!(state.bad_versions, ["0.2.0"]);
+        assert_eq!(state.bad_versions, [new.as_str()]);
         assert_eq!(state.staged, None);
         assert!(!paths.staging_root().exists(), "the staged files are gone");
     }
 
     #[test]
     fn staged_files_that_changed_since_staging_are_not_used() {
+        let new = new_version();
         let dir = tempfile::tempdir().unwrap();
-        let paths = fake_install(dir.path(), "0.1.0");
-        let staged = fake_staged_recorded(&paths, "0.2.0");
+        let paths = fake_install(dir.path(), OLD);
+        let staged = fake_staged_recorded(&paths, &new);
         std::fs::write(staged.join(APP_DIR).join(EXE_NAME), "tampered").unwrap();
         let hooks = FakeHooks::new(&paths);
         assert_eq!(
-            apply(&paths, "0.2.0", &hooks, &Log::none()),
+            apply(&paths, &new, &hooks, &Log::none()),
             Outcome::NotApplied
         );
-        assert_eq!(read(&paths.exe()), "exe 0.1.0");
+        assert_eq!(read(&paths.exe()), format!("exe {OLD}"));
         assert_eq!(hooks.self_tests(), 0, "not even run");
     }
 
     #[test]
-    fn nothing_is_applied_while_the_old_client_still_runs() {
+    fn an_older_or_equal_version_is_never_applied() {
         let dir = tempfile::tempdir().unwrap();
-        let paths = fake_install(dir.path(), "0.1.0");
-        fake_staged_recorded(&paths, "0.2.0");
+        let paths = fake_install(dir.path(), OLD);
+        fake_staged_recorded(&paths, OLD);
+        let hooks = FakeHooks::new(&paths);
+        assert_eq!(
+            apply(&paths, OLD, &hooks, &Log::none()),
+            Outcome::NotApplied
+        );
+        assert_eq!(hooks.self_tests(), 0, "refused before the self-test");
+        assert_eq!(read(&paths.exe()), format!("exe {OLD}"));
+    }
+
+    #[test]
+    fn nothing_is_applied_while_the_old_client_still_runs() {
+        let new = new_version();
+        let dir = tempfile::tempdir().unwrap();
+        let paths = fake_install(dir.path(), OLD);
+        fake_staged_recorded(&paths, &new);
         let hooks = FakeHooks::new(&paths);
         hooks.old_client_never_exits();
         assert_eq!(
-            apply(&paths, "0.2.0", &hooks, &Log::none()),
+            apply(&paths, &new, &hooks, &Log::none()),
             Outcome::NotApplied
         );
-        assert_eq!(read(&paths.exe()), "exe 0.1.0");
+        assert_eq!(read(&paths.exe()), format!("exe {OLD}"));
         assert_eq!(hooks.launches(), 0, "it is still running: nothing to start");
         assert!(
             state::read(&paths).staged.is_some(),
@@ -780,17 +819,22 @@ mod tests {
 
     #[test]
     fn a_trial_the_helper_stops_watching_is_rolled_back_after_three_failed_starts() {
+        let new = new_version();
         let dir = tempfile::tempdir().unwrap();
-        let paths = fake_install(dir.path(), "0.1.0");
-        fake_staged_recorded(&paths, "0.2.0");
+        let paths = fake_install(dir.path(), OLD);
+        fake_staged_recorded(&paths, &new);
         let hooks = FakeHooks::new(&paths);
         // The launcher stops before the game (say, an expired login): no client starts.
         hooks.on_launch(|_| {});
         assert_eq!(
-            apply(&paths, "0.2.0", &hooks, &Log::none()),
+            apply(&paths, &new, &hooks, &Log::none()),
             Outcome::Unconfirmed
         );
-        assert_eq!(read(&paths.exe()), "exe 0.2.0", "swapped, on trial");
+        assert_eq!(
+            read(&paths.exe()),
+            format!("exe {new}"),
+            "swapped, on trial"
+        );
         std::fs::create_dir_all(paths.helper_dir()).unwrap();
         std::fs::write(paths.helper_exe(), "old exe").unwrap();
         // Three starts that never reach the title screen run; the fourth hands over.
@@ -800,26 +844,26 @@ mod tests {
             Ok(())
         };
         for _ in 0..MAX_TRIAL_STARTS {
-            assert_eq!(count_start_with(&paths, "0.2.0", &spawn), StartAction::Run);
+            assert_eq!(count_start_with(&paths, &new, &spawn), StartAction::Run);
         }
-        assert_eq!(count_start_with(&paths, "0.2.0", &spawn), StartAction::Exit);
+        assert_eq!(count_start_with(&paths, &new, &spawn), StartAction::Exit);
         assert_eq!(spawned.get(), 1);
         // A rollback that keeps failing (here it never runs) is
         // handed over a bounded number of times; after that the client starts again instead of
         // exiting at every start for good.
         for _ in 1..MAX_ROLLBACK_TRIES {
-            assert_eq!(count_start_with(&paths, "0.2.0", &spawn), StartAction::Exit);
+            assert_eq!(count_start_with(&paths, &new, &spawn), StartAction::Exit);
         }
         assert_eq!(spawned.get(), MAX_ROLLBACK_TRIES);
         for _ in 0..3 {
-            assert_eq!(count_start_with(&paths, "0.2.0", &spawn), StartAction::Run);
+            assert_eq!(count_start_with(&paths, &new, &spawn), StartAction::Run);
         }
         assert_eq!(spawned.get(), MAX_ROLLBACK_TRIES, "no more hand-overs");
-        // The helper's rollback then puts 0.1.0 back.
+        // The helper's rollback then puts the old version back.
         let outcome = roll_back_trial(&paths, &hooks, &Log::none());
         assert_eq!(outcome, Outcome::RolledBack);
-        assert_eq!(read(&paths.exe()), "exe 0.1.0");
-        assert_eq!(state::read(&paths).bad_versions, ["0.2.0"]);
+        assert_eq!(read(&paths.exe()), format!("exe {OLD}"));
+        assert_eq!(state::read(&paths).bad_versions, [new.as_str()]);
     }
 
     #[test]

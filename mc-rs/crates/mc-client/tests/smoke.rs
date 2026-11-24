@@ -95,6 +95,8 @@ fn launch_sign_in_join_walk_mine_chat_and_quit() {
     for expected in [
         "sky/dome",
         "sky/clouds",
+        // The clouds' second point, after the world, for an eye at or above y=128.
+        "sky/clouds-above",
         "terrain/solid",
         "terrain/cutout",
         "terrain/translucent",

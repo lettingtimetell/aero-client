@@ -956,13 +956,15 @@ fn fancy_clouds_show_their_underside_from_below_and_their_top_from_above() {
     );
 }
 
-/// `CloudsPhase` borrows the shared depth buffer for vanilla's two-pass cloud render
-/// (`RenderGlobal.java:1547`) and must hand it back cleared. If it does not, terrain recorded
-/// later is depth-rejected wherever a cloud is nearer — holes in distant geometry. Proven by
-/// drawing a depth-writing quad *after* the cloud phase, farther away than the clouds, and
-/// requiring it to survive.
+/// java: `EntityRenderer.renderWorldPass:1364` — below y=128 the clouds draw before terrain with
+/// depth writes on (fancy: `RenderGlobal.java:1547`'s depth pass, then colour), and their depth
+/// stays for the terrain drawn after them: terrain behind a cloud is rejected where the cloud
+/// covers it, which is what hides a block above the cloud layer behind it. (This port used to
+/// clear the depth again, so blocks behind clouds drew over them.) Proven with a depth-writing
+/// quad recorded *after* the clouds and farther away than any of them: it must fill every gap
+/// between clouds and nothing else.
 #[test]
-fn clouds_hand_back_a_pristine_depth_buffer() {
+fn clouds_keep_their_depth_for_terrain_drawn_after_them() {
     let Some(rm) = resources() else {
         eprintln!("SKIP: jar unavailable");
         return;
@@ -970,40 +972,56 @@ fn clouds_hand_back_a_pristine_depth_buffer() {
     let Some(mut gpu) = headless(64, 64) else {
         return;
     };
-    let mut clouds = CloudsPhase::new(&gpu);
-    clouds.load_texture(&gpu, &rm);
-    clouds.mode = CloudMode::Fancy;
-    clouds.environment.dimension = Dimension::Overworld;
+    for mode in [CloudMode::Fast, CloudMode::Fancy] {
+        let mut clouds = CloudsPhase::new(&gpu);
+        clouds.load_texture(&gpu, &rm);
+        clouds.mode = mode;
+        clouds.environment.dimension = Dimension::Overworld;
 
-    let mut phases = PhaseList::new();
-    phases.clear_color = wgpu::Color::BLACK;
-    phases.insert(PhaseOrder::SKY, Box::new(clouds));
-    // 400 blocks away: farther than any cloud surface overhead, so a leaked cloud depth value
-    // would reject it.
-    phases.insert(
-        PhaseOrder::TERRAIN_SOLID,
-        Box::new(depth_probe::DepthProbe::new(&gpu, 400.0)),
-    );
+        let mut phases = PhaseList::new();
+        phases.clear_color = wgpu::Color::BLACK;
+        phases.insert(PhaseOrder::SKY, Box::new(clouds));
+        // 400 blocks away: farther than any cloud surface in view (all within ~92 blocks).
+        phases.insert(
+            PhaseOrder::TERRAIN_SOLID,
+            Box::new(depth_probe::DepthProbe::new(&gpu, 400.0)),
+        );
 
-    let mut cam = Camera {
-        pos: DVec3::new(0.0, 64.0, 0.0),
-        pitch: -90.0,
-        ..Camera::default()
-    };
-    cam.update();
-    let frame = gpu.acquire().expect("acquire");
-    phases.render(&gpu, frame.view(), &cam, 0.0);
-    let pixels = gpu.read_pixels().expect("readback");
+        let mut cam = Camera {
+            pos: DVec3::new(0.0, 64.0, 0.0),
+            pitch: -90.0,
+            ..Camera::default()
+        };
+        cam.update();
+        let frame = gpu.acquire().expect("acquire");
+        phases.render(&gpu, frame.view(), &cam, 0.0);
+        let pixels = gpu.read_pixels().expect("readback");
 
-    let probe_pixels = pixels
-        .chunks(4)
-        .filter(|p| p[0] > 200 && p[1] < 60 && p[2] < 60)
-        .count();
-    assert!(
-        probe_pixels > 1000,
-        "the post-cloud depth-writing quad was mostly rejected ({probe_pixels} px survived of \
-         4096) — `CloudsPhase` left cloud depths in the shared buffer"
-    );
+        let probe = |p: &[u8]| p[0] > 200 && p[1] < 60 && p[2] < 60;
+        let probe_pixels = pixels.chunks(4).filter(|p| probe(p)).count();
+        let cloud_pixels = pixels
+            .chunks(4)
+            .filter(|p| !probe(p) && (p[0] > 8 || p[1] > 8 || p[2] > 8))
+            .count();
+        let bare = pixels
+            .chunks(4)
+            .filter(|p| p[0] <= 8 && p[1] <= 8 && p[2] <= 8)
+            .count();
+        assert!(
+            probe_pixels > 1000,
+            "{mode:?}: the quad behind the clouds should fill the gaps between them, \
+             {probe_pixels} px of 4096 did"
+        );
+        assert!(
+            cloud_pixels > 300,
+            "{mode:?}: the quad behind the clouds drew over them ({cloud_pixels} cloud px left) \
+             — the cloud depth was not kept"
+        );
+        assert_eq!(
+            bare, 0,
+            "{mode:?}: {bare} px neither cloud nor quad: the quad was rejected where no cloud drew"
+        );
+    }
 }
 
 /// A minimal opaque, depth-writing red quad at a chosen eye distance, standing in for terrain.

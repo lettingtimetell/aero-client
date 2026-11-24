@@ -253,8 +253,9 @@ def main() -> int:
         "Copyright (C) 2026 pvps and contributors. The licence text is app\\LICENSE.txt.",
         "",
         "Aero Client's program (app\\mc-client.exe) also contains open-source Rust libraries, the",
-        "Inter typeface, a math routine derived from fdlibm and shader code that follows",
-        "published code. Each keeps its own licence; their licence and notice texts follow.",
+        "Inter typeface, a math routine derived from fdlibm, shader code that follows published",
+        "code and the Discord logo. Each keeps its own licence; their licence and notice texts",
+        "follow.",
         "Compile-time code generators (procedural macros) that run during the build and are not",
         "part of the program are not listed.",
         "",
@@ -266,7 +267,8 @@ def main() -> int:
         "  2. The Inter typeface",
         "  3. A math routine derived from fdlibm",
         "  4. Shader code that follows published code",
-        f"  5. Licence and notice texts ({len(bodies)} distinct)",
+        "  5. The Discord logo",
+        f"  6. Licence and notice texts ({len(bodies)} distinct)",
         "",
         "=" * 78,
         f"1. Rust libraries ({len(entries)})",
@@ -297,7 +299,13 @@ def main() -> int:
     out += ["=" * 78, "4. Shader code that follows published code", "=" * 78, ""]
     for path in SHADER_NOTICES:
         out += [shader_notice(path), ""]
-    out += ["=" * 78, f"5. Licence and notice texts ({len(bodies)} distinct)", "=" * 78, ""]
+    out += ["=" * 78, "5. The Discord logo", "=" * 78, "",
+            "The title screen's Discord button draws the Discord logo as published by the Simple",
+            "Icons project (simpleicons.org, icon \"discord\"), released under CC0 1.0 (public",
+            "domain dedication). Discord and the Discord logo are trademarks of Discord Inc. Aero",
+            "Client is not affiliated with or endorsed by Discord Inc.; the logo only marks the",
+            "link to Aero Client's own Discord server.", ""]
+    out += ["=" * 78, f"6. Licence and notice texts ({len(bodies)} distinct)", "=" * 78, ""]
     for number, (body, used_by) in enumerate(zip(bodies, users), start=1):
         out.append(f"---- [text {number}] used by: {', '.join(used_by)}")
         out.append("")

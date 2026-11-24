@@ -924,7 +924,8 @@ fn the_mods_buttons_render_on_the_pause_menu_and_the_title_screen() {
             };
             glass = screen.build(&mut env, &mut list);
         }
-        assert_eq!(glass.rects.len(), AeroButton::COUNT);
+        // The buttons and the link pill in the bottom-right corner.
+        assert_eq!(glass.rects.len(), AeroButton::COUNT + 1);
         let scope = gpu.device.push_error_scope(wgpu::ErrorFilter::Validation);
         let mut ui = UiPhase::new(&gpu, w, h, 1, false);
         let mut backdrop = DrawList::new();

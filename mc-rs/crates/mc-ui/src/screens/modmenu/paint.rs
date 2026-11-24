@@ -1,7 +1,7 @@
 //! Anti-aliased vector shapes for the mod menu, emitted as triangles into a [`DrawList`] in
 //! physical pixels: rounded rectangles (solid or linear-gradient fill), strokes, soft shadows,
-//! circles and lines. Every edge gets a one-pixel alpha fringe (an anti-aliasing ramp built into
-//! the geometry), so no MSAA is needed.
+//! circles, lines and filled outlines ([`PathMesh`]). Every edge gets a one-pixel alpha fringe
+//! (an anti-aliasing ramp built into the geometry), so no MSAA is needed.
 //!
 //! [`Painter`] also clips every triangle to an optional axis-aligned rectangle on the CPU
 //! (Sutherland–Hodgman), which is how a scrolled window body is cut off at its edges without a
@@ -554,6 +554,232 @@ impl<'a> Painter<'a> {
         }
         band(c0, c1, d0, d1, core, clear);
     }
+
+    /// Fill `mesh` (a [`PathMesh`], built for its size) with `color`, its origin at `origin`.
+    pub fn fill_mesh(&mut self, mesh: &PathMesh, origin: (f32, f32), color: Rgba) {
+        for t in mesh.vertices.chunks_exact(3) {
+            let at = |k: usize| [origin.0 + t[k].0[0], origin.1 + t[k].0[1]];
+            let tint = |k: usize| [color[0], color[1], color[2], color[3] * t[k].1];
+            self.solid_tri([at(0), at(1), at(2)], [tint(0), tint(1), tint(2)]);
+        }
+    }
+}
+
+/// A filled shape tessellated once for one size, for shapes the other primitives cannot make (a
+/// logo): closed outlines in pixels around an origin, filled with the even-odd rule (an outline
+/// inside another cuts a hole) and given the same one-pixel anti-aliasing ramp as every other
+/// shape here, centred on the outline. Build it when the size changes; draw it each frame with
+/// [`Painter::fill_mesh`], which only offsets and tints it.
+///
+/// The fill is the outlines moved half a pixel into the shape, cut into horizontal trapezoids at
+/// every vertex and at every point where two edges cross (so the fill stays right where that
+/// half-pixel move folds a sharp tip over itself); the ramp is a band from there to half a pixel
+/// outside. Outlines must not cross each other or themselves.
+#[derive(Debug, Clone, Default)]
+pub struct PathMesh {
+    /// A triangle list: position (relative to the origin) and coverage (1 inside, 0 at the outer
+    /// edge of the ramp).
+    vertices: Vec<([f32; 2], f32)>,
+}
+
+impl PathMesh {
+    /// Points closer than this to the last point kept are dropped: it bounds the triangle count
+    /// by the outline's length in pixels and keeps tiny steps from tilting the edge normals.
+    const MIN_STEP: f32 = 0.5;
+
+    /// Tessellate `outlines` (each a closed polygon in pixels; the last point joins the first).
+    #[must_use]
+    pub fn new(outlines: &[Vec<[f32; 2]>]) -> PathMesh {
+        let contours: Vec<Vec<[f32; 2]>> = outlines
+            .iter()
+            .map(|outline| simplified(outline, Self::MIN_STEP))
+            .filter(|contour| contour.len() >= 3)
+            .collect();
+        let mut inner = Vec::with_capacity(contours.len());
+        let mut outer = Vec::with_capacity(contours.len());
+        for (index, contour) in contours.iter().enumerate() {
+            // Even-odd: an outline inside an odd number of others bounds a hole, so its filled
+            // side is its outside.
+            let probe = midpoint(contour[0], contour[1]);
+            let depth = contours
+                .iter()
+                .enumerate()
+                .filter(|&(other, c)| other != index && contains(c, probe))
+                .count();
+            let area: f32 = (0..contour.len())
+                .map(|i| {
+                    let (a, b) = (contour[i], contour[(i + 1) % contour.len()]);
+                    a[0] * b[1] - b[0] * a[1]
+                })
+                .sum();
+            // y down: for a positive shoelace sum (-dy, dx) points into the outline.
+            let sign = if (area > 0.0) == (depth % 2 == 0) {
+                1.0
+            } else {
+                -1.0
+            };
+            let (i, o) = offset_contour(contour, sign);
+            inner.push(i);
+            outer.push(o);
+        }
+        let mut mesh = PathMesh::default();
+        mesh.fill_even_odd(&inner);
+        for (i, o) in inner.iter().zip(&outer) {
+            let n = i.len();
+            for k in 0..n {
+                let j = (k + 1) % n;
+                mesh.push([(i[k], 1.0), (o[k], 0.0), (i[j], 1.0)]);
+                mesh.push([(i[j], 1.0), (o[k], 0.0), (o[j], 0.0)]);
+            }
+        }
+        mesh
+    }
+
+    /// Whether there is nothing to draw.
+    #[must_use]
+    pub fn is_empty(&self) -> bool {
+        self.vertices.is_empty()
+    }
+
+    /// How many triangles a draw emits.
+    #[must_use]
+    pub fn triangle_count(&self) -> usize {
+        self.vertices.len() / 3
+    }
+
+    fn push(&mut self, triangle: [([f32; 2], f32); 3]) {
+        let [a, b, c] = triangle.map(|v| v.0);
+        let area = (b[0] - a[0]) * (c[1] - a[1]) - (c[0] - a[0]) * (b[1] - a[1]);
+        if area.abs() > 1e-6 {
+            self.vertices.extend(triangle);
+        }
+    }
+
+    /// Full-coverage trapezoids for the even-odd fill of `contours`.
+    fn fill_even_odd(&mut self, contours: &[Vec<[f32; 2]>]) {
+        let mut edges: Vec<([f32; 2], [f32; 2])> = Vec::new();
+        for contour in contours {
+            for k in 0..contour.len() {
+                let (a, b) = (contour[k], contour[(k + 1) % contour.len()]);
+                if (a[1] - b[1]).abs() > 1e-6 {
+                    edges.push(if a[1] < b[1] { (a, b) } else { (b, a) });
+                }
+            }
+        }
+        // Slab boundaries: every vertex, and every point where two edges cross, so that inside a
+        // slab no edges cross and pairing them left to right is exact.
+        let mut ys: Vec<f32> = contours.iter().flatten().map(|p| p[1]).collect();
+        for (n, &(a, b)) in edges.iter().enumerate() {
+            for &(c, d) in &edges[n + 1..] {
+                if let Some(y) = crossing_y(a, b, c, d) {
+                    ys.push(y);
+                }
+            }
+        }
+        ys.sort_by(f32::total_cmp);
+        ys.dedup_by(|y, previous| (*y - *previous).abs() < 1e-4);
+        let x_at = |(a, b): ([f32; 2], [f32; 2]), y: f32| {
+            a[0] + (b[0] - a[0]) * (y - a[1]) / (b[1] - a[1])
+        };
+        let mut row: Vec<(f32, f32, f32)> = Vec::new();
+        for slab in ys.windows(2) {
+            let (y0, y1) = (slab[0], slab[1]);
+            let mid = (y0 + y1) * 0.5;
+            row.clear();
+            row.extend(
+                edges
+                    .iter()
+                    .filter(|(a, b)| a[1] < mid && mid < b[1])
+                    .map(|&edge| (x_at(edge, mid), x_at(edge, y0), x_at(edge, y1))),
+            );
+            row.sort_by(|p, q| p.0.total_cmp(&q.0));
+            for pair in row.chunks_exact(2) {
+                let ((_, l0, l1), (_, r0, r1)) = (pair[0], pair[1]);
+                self.push([([l0, y0], 1.0), ([r0, y0], 1.0), ([r1, y1], 1.0)]);
+                self.push([([l0, y0], 1.0), ([r1, y1], 1.0), ([l1, y1], 1.0)]);
+            }
+        }
+    }
+}
+
+fn midpoint(a: [f32; 2], b: [f32; 2]) -> [f32; 2] {
+    [(a[0] + b[0]) * 0.5, (a[1] + b[1]) * 0.5]
+}
+
+/// `outline` without its closing duplicate and without points closer than `step` to the last
+/// one kept.
+fn simplified(outline: &[[f32; 2]], step: f32) -> Vec<[f32; 2]> {
+    let close = |a: [f32; 2], b: [f32; 2]| (a[0] - b[0]).hypot(a[1] - b[1]) < step;
+    let mut kept: Vec<[f32; 2]> = Vec::with_capacity(outline.len());
+    for &p in outline {
+        if kept.last().is_none_or(|&last| !close(last, p)) {
+            kept.push(p);
+        }
+    }
+    while kept.len() > 1 && close(kept[0], kept[kept.len() - 1]) {
+        kept.pop();
+    }
+    kept
+}
+
+/// Whether `p` is inside the polygon `contour` (even-odd crossing test).
+fn contains(contour: &[[f32; 2]], p: [f32; 2]) -> bool {
+    let mut inside = false;
+    let n = contour.len();
+    for k in 0..n {
+        let (a, b) = (contour[k], contour[(k + n - 1) % n]);
+        if (a[1] > p[1]) != (b[1] > p[1])
+            && p[0] < a[0] + (b[0] - a[0]) * (p[1] - a[1]) / (b[1] - a[1])
+        {
+            inside = !inside;
+        }
+    }
+    inside
+}
+
+/// The y where segments `ab` and `cd` cross, strictly inside both (so neighbours that only
+/// share an end do not count).
+fn crossing_y(a: [f32; 2], b: [f32; 2], c: [f32; 2], d: [f32; 2]) -> Option<f32> {
+    let cross = |u: [f32; 2], v: [f32; 2]| u[0] * v[1] - u[1] * v[0];
+    let (r, s) = ([b[0] - a[0], b[1] - a[1]], [d[0] - c[0], d[1] - c[1]]);
+    let denominator = cross(r, s);
+    if denominator.abs() < 1e-9 {
+        return None;
+    }
+    let ac = [c[0] - a[0], c[1] - a[1]];
+    let t = cross(ac, s) / denominator;
+    let u = cross(ac, r) / denominator;
+    let inside = |v: f32| v > 1e-5 && v < 1.0 - 1e-5;
+    (inside(t) && inside(u)).then(|| a[1] + t * r[1])
+}
+
+/// `contour` moved half a pixel towards its filled side and half a pixel away from it: the
+/// inner edge of the anti-aliasing ramp and its outer edge. `sign` is +1 when `(-dy, dx)` points
+/// at the filled side. Mitred corners, the mitre capped at twice the offset.
+fn offset_contour(contour: &[[f32; 2]], sign: f32) -> (Vec<[f32; 2]>, Vec<[f32; 2]>) {
+    let n = contour.len();
+    let normal = |k: usize| {
+        let (a, b) = (contour[k], contour[(k + 1) % n]);
+        let (dx, dy) = (b[0] - a[0], b[1] - a[1]);
+        let len = dx.hypot(dy).max(1e-6);
+        [-dy / len * sign, dx / len * sign]
+    };
+    let mut inner = Vec::with_capacity(n);
+    let mut outer = Vec::with_capacity(n);
+    for (k, p) in contour.iter().enumerate() {
+        let (before, after) = (normal((k + n - 1) % n), normal(k));
+        let sum = [before[0] + after[0], before[1] + after[1]];
+        let len = sum[0].hypot(sum[1]);
+        let m = if len > 1e-4 {
+            [sum[0] / len, sum[1] / len]
+        } else {
+            after
+        };
+        let reach = 0.5 / (m[0] * after[0] + m[1] * after[1]).max(0.5);
+        inner.push([p[0] + m[0] * reach, p[1] + m[1] * reach]);
+        outer.push([p[0] - m[0] * reach, p[1] - m[1] * reach]);
+    }
+    (inner, outer)
 }
 
 #[cfg(test)]
@@ -639,6 +865,86 @@ mod tests {
                 "a clockwise triangle would be culled: {corners:?}"
             );
         }
+    }
+
+    /// A square with a square hole: covered inside, empty in the hole and outside, and every
+    /// edge's ramp centred on the edge (half covered there, done half a pixel either side). The
+    /// hole may wind either way: the rule is even-odd.
+    #[test]
+    fn a_path_fill_covers_the_inside_cuts_holes_and_ramps_on_the_edge() {
+        use crate::widget::test_support::composite_at;
+        let square =
+            |x0: f32, y0: f32, x1: f32, y1: f32| vec![[x0, y0], [x1, y0], [x1, y1], [x0, y1]];
+        for reversed_hole in [false, true] {
+            let mut hole = square(6.0, 6.0, 14.0, 14.0);
+            if reversed_hole {
+                hole.reverse();
+            }
+            let mesh = PathMesh::new(&[square(0.0, 0.0, 20.0, 20.0), hole]);
+            let mut list = DrawList::new();
+            Painter::new(&mut list).fill_mesh(&mesh, (100.0, 50.0), white(1.0));
+            let cover = |x: f32, y: f32| composite_at(&list, (100.0 + x, 50.0 + y), [0.0; 3])[0];
+            for (x, y, expected, what) in [
+                (3.37, 10.29, 1.0, "inside"),
+                (17.21, 3.13, 1.0, "inside, near a corner"),
+                (10.37, 10.29, 0.0, "the hole"),
+                (-3.0, 10.29, 0.0, "outside"),
+                (0.0, 10.29, 0.5, "on the outer edge"),
+                (-0.52, 10.29, 0.0, "past the ramp"),
+                (0.52, 10.29, 1.0, "inside the ramp"),
+                (6.0, 9.71, 0.5, "on the hole's edge"),
+                (6.52, 9.71, 0.0, "inside the hole, past the ramp"),
+                (5.48, 9.71, 1.0, "before the hole's ramp"),
+            ] {
+                let got = cover(x, y);
+                assert!(
+                    (got - expected).abs() < 0.05,
+                    "{what} ({x}, {y}): {got}, reversed hole {reversed_hole}"
+                );
+            }
+        }
+    }
+
+    /// Curved outlines (a ring of two circles) come out round and hole-cut, with a bounded
+    /// triangle count, and the painter's alpha, offset and culling-safe winding apply.
+    #[test]
+    fn a_path_fill_goes_through_the_painters_alpha_offset_and_winding() {
+        use crate::widget::test_support::composite_at;
+        let circle = |r: f32| -> Vec<[f32; 2]> {
+            (0..96)
+                .map(|i| {
+                    let a = i as f32 / 96.0 * std::f32::consts::TAU;
+                    [a.cos() * r, a.sin() * r]
+                })
+                .collect()
+        };
+        let mesh = PathMesh::new(&[circle(12.0), circle(6.0)]);
+        assert!(!mesh.is_empty());
+        assert!(mesh.triangle_count() < 900, "{}", mesh.triangle_count());
+        let mut list = DrawList::new();
+        let mut p = Painter::new(&mut list);
+        p.alpha = 0.5;
+        p.offset = (40.0, 30.0);
+        p.fill_mesh(&mesh, (10.0, 20.0), white(1.0));
+        let (cx, cy) = (50.0, 50.0);
+        let at = |dx: f32, dy: f32| composite_at(&list, (cx + dx, cy + dy), [0.0; 3])[0];
+        assert!(
+            (at(9.03, 0.31) - 0.5).abs() < 0.03,
+            "in the ring: {}",
+            at(9.03, 0.31)
+        );
+        assert!(at(0.31, 0.27) < 0.01, "the hole");
+        assert!(at(-6.31, 6.43) > 0.45, "in the ring, diagonally");
+        assert!(at(14.0, 0.3) < 0.01, "outside");
+        for t in list.vertices().chunks(3) {
+            assert!(t.iter().all(|v| v.color[3] <= 0.5 + 1e-6));
+            let cross = (t[1].pos[0] - t[0].pos[0]) * (t[2].pos[1] - t[0].pos[1])
+                - (t[2].pos[0] - t[0].pos[0]) * (t[1].pos[1] - t[0].pos[1]);
+            assert!(cross <= 1e-3, "a clockwise triangle would be culled");
+        }
+        // Degenerate input draws nothing rather than panicking.
+        assert!(PathMesh::new(&[vec![[0.0, 0.0], [0.1, 0.1]]]).is_empty());
+        assert!(PathMesh::new(&[]).is_empty());
     }
 
     #[test]

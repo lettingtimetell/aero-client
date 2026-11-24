@@ -1277,7 +1277,9 @@ impl RenderStack {
         clouds.load_texture(gpu, &assets.resources);
         clouds.mode = CloudMode::from_setting(settings.clouds);
         let clouds = Shared::new(clouds);
-        phases.insert(PhaseOrder::SKY, Box::new(clouds.clone()));
+        // java: `renderWorldPass` draws the clouds here while the eye is below y=128 and after
+        // the world at or above it; `drive_atmosphere` feeds the eye height that picks the point.
+        CloudsPhase::install(&clouds.0, phases);
 
         // S11's recipe: one call registers solid, cutout and translucent over one renderer.
         let terrain =
@@ -4244,6 +4246,9 @@ impl Client {
         let mut settings = load_settings(&config);
         evict_unconfirmed_incompatible_user_packs(&config, &mut settings);
         clear_active_server_resource_pack(&config);
+        // A brand-new game folder starts with one server, written
+        // before `assemble` loads the list (the binary's path only: `Client::new` starts empty).
+        crate::app::stability::seed_new_player_server_list(&config.servers_path());
         let (assets, loader) = GameAssets::boot(&config, &settings, &mut |message, percent| {
             tracing::info!(percent, "{message}");
         })?;
@@ -20785,6 +20790,14 @@ impl Client {
             } else {
                 CloudMode::Off
             };
+            // java: `renderWorldPass` (`:1364`, `:1474`) puts the clouds before terrain or after
+            // the world by `entity.posY + entity.getEyeHeight()` of the render-view entity: this
+            // tick's position (not interpolated), and the entity's eye, not F5's camera.
+            phase.view_eye_y = self
+                .session
+                .as_ref()
+                .and_then(|session| session.render_view_eye_position(1.0))
+                .map(|eye| eye.y);
         });
 
         // ---- render-view/entity-derived state -----------------------------------------------
@@ -20923,8 +20936,8 @@ impl Client {
                 phase.distance(),
             )
         });
-        // Clouds are drawn before the later screen-space fog pass and then restore shared depth,
-        // so feed them the exact state and eye-distance metric selected for that pass. This keeps
+        // Clouds fog themselves (java: `setupFog(0)` around `renderClouds`), so feed them the exact
+        // state and eye-distance metric selected for the world's screen-space fog pass. This keeps
         // cloud RGB fogged at its own fragment depth while preserving the existing alpha cutoff.
         render
             .clouds

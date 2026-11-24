@@ -64,11 +64,16 @@ fn the_title_and_buttons_pop_in_staggered_like_the_menus_windows() {
     // A rising button sits lower than where it lands.
     let landed = h.screen.button_rect(AeroButton::Multiplayer);
     assert!(glass.rects[0].rect[1] > landed.y);
-    // Settled: one pane per button, fully opaque, in place.
+    // Settled: one pane per button, fully opaque, in place, and the Discord button's last.
     let done = (anim::OPEN_MS + AeroButton::COUNT as f32 * anim::STAGGER_MS) as u64;
     assert!(h.screen.settled(h.t0 + Duration::from_millis(done)));
     let (_, glass) = h.build(done);
-    assert_eq!(glass.rects.len(), AeroButton::COUNT);
+    assert_eq!(glass.rects.len(), AeroButton::COUNT + 1);
+    let discord = h.screen.discord.rect().expect("the Discord button is in");
+    assert_eq!(
+        glass.rects[AeroButton::COUNT].rect,
+        [discord.x, discord.y, discord.w, discord.h]
+    );
     for (pane, button) in glass.rects.iter().zip(AeroButton::ALL) {
         let r = h.screen.button_rect(button);
         assert_eq!(pane.alpha, 1.0);
@@ -155,7 +160,8 @@ fn the_crisp_layer_repeats_only_the_buttons_marks_at_part_strength() {
         time_s: 2.0,
     };
     let glass = h.screen.build_layers(&mut env, &mut list, Some(&mut crisp));
-    assert_eq!(glass.rects.len(), AeroButton::COUNT);
+    // The buttons and the Discord button.
+    assert_eq!(glass.rects.len(), AeroButton::COUNT + 1);
     assert_eq!(
         list.vertices().len(),
         plain.vertices().len(),

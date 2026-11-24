@@ -14,6 +14,21 @@ called **mc-rs**.
 > This repository contains no Minecraft game files and no Minecraft Java source code. Building,
 > testing and playing need your own Minecraft: Java Edition account and its 1.8.9 files.
 
+## Download
+
+Aero Client is in beta. Get it from **[aero-client.com](https://aero-client.com)** or from this
+repository's [releases](https://github.com/lettingtimetell/aero-client/releases), in one of two
+forms:
+
+- `Aero-Client-Setup.exe`, the installer: installs Aero Client for your Windows account, with
+  shortcuts on the desktop and in the Start menu, and needs no administrator rights;
+- `Aero-Client-Portable.zip`, the portable version: unpack it into any folder and start
+  `Play Aero Client`.
+
+You need Windows 10 or 11 (64-bit) and a Microsoft account that owns Minecraft: Java Edition.
+Start version 1.8.9 once from the official Minecraft Launcher, so that its files are on your PC,
+then sign in on Aero Client's Accounts screen.
+
 ## Features
 
 - A wgpu + winit renderer with pipelined frame submission, built with profile-guided
@@ -32,8 +47,8 @@ called **mc-rs**.
 - Its own Microsoft sign-in (see [Signing in](#signing-in))
 - Tells servers that it is Aero Client: when it joins a server it sends the client brand `Aero`
   where vanilla sends `vanilla`
-- An update check against this repository's releases for the portable client; with a signing key
-  compiled in, it downloads, verifies and installs signed updates
+- An update check against this repository's releases for the downloaded client (installed or
+  portable); with a signing key compiled in, it downloads, verifies and installs signed updates
 
 ## Status
 
@@ -44,11 +59,15 @@ called **mc-rs**.
   how your input is read), and three chat settings (chat kept between servers, a 1,000-line
   history, shadows under chat symbols). Two differences have no switch: the client brand above,
   and chat you type can be up to 256 characters (vanilla allows 100; a server that really runs
-  1.8 disconnects you for a longer message).
+  1.8 disconnects you for a longer message). A new player's server list starts with one entry,
+  Mega Skywars (`megaskywars.com`, a server run by the project's publisher), which can be edited
+  or removed like any other, and the Aero title screen has a Discord button that opens the
+  project's Discord invite in your browser.
 - **Windows x86_64** is the only platform that has been built and played. The Linux and macOS
   packaging scripts in `mc-rs/packaging/` have never been run.
-- No release has been published yet. CI (`.github/workflows/ci.yml`) runs only when started by
-  hand; see CONTRIBUTING.md, "CI".
+- Releases are built on a maintainer's PC with `package-aero-client.ps1` (a PGO build) and signed
+  for the in-client updater; see CONTRIBUTING.md, "Packaging". CI (`.github/workflows/ci.yml`)
+  runs only when started by hand; see CONTRIBUTING.md, "CI".
 
 ## Quick start (Windows)
 

@@ -17,8 +17,11 @@ folder, that holds the 1.8.9 files.
    the temporary folder: it starts the game with the stand-in game files and its "game" folder
    and nothing else (no account, no sign-in of any kind), remembers the folder, and asks when
    there are no game files.
-Everything happens in a temporary folder; no real game files, accounts or tokens are read. The
-stand-in game is compiled from a few lines of C# by Add-Type (Windows PowerShell's compiler).
+3. The launcher's upkeep of an installed copy's Settings > Apps entry, against a temporary
+   registry key under HKCU\Software that stands in for the entry Setup writes.
+Everything happens in a temporary folder and that temporary key; no real game files, accounts or
+tokens are read. The stand-in game is compiled from a few lines of C# by Add-Type (Windows
+PowerShell's compiler).
 
 Run:  powershell -NoProfile -ExecutionPolicy Bypass -File packaging\scripts\test-launcher-trust.ps1
 Exit code 0 when every check passes.
@@ -38,6 +41,7 @@ $functions = $ast.FindAll({
 foreach ($function in $functions) { . ([scriptblock]::Create($function.Extent.Text)) }
 
 $work = Join-Path ([System.IO.Path]::GetTempPath()) ('aero-launcher-trust-' + [guid]::NewGuid())
+$testKey = 'HKCU:\Software\AeroLauncherTrustTest-' + [guid]::NewGuid().ToString('N')
 # What the launcher's functions read: its folders, where it remembers things, its test mode.
 $root = Join-Path $work 'Aero Client'
 $game = Join-Path $root 'game'
@@ -271,8 +275,31 @@ public static class ArgPrinter {
     $run = Invoke-Launcher
     Assert-That ($run.Exit -eq 1 -and -not (Test-Path -LiteralPath $log)) 'without game files the game is not started'
     Assert-That ($run.Output -match "couldn't find them") 'and the player is told what to do'
+
+    # ---------------------------------------------------------------- 3. an installed copy
+    # Settings > Apps follows app\aero-install.json after an in-game update: only the entry whose
+    # InstallLocation is this folder changes, and only to a plain version.
+    $marker = Join-Path $work 'aero-install.json'
+    Set-Content -LiteralPath $marker -Value '{"format": 1, "product": "Aero Client", "version": "0.2.0", "platform": "windows-x64"}'
+    Update-InstalledVersion -Key $testKey -Root $root -Marker $marker
+    Assert-That (-not (Test-Path -LiteralPath $testKey)) 'a portable copy (no Setup entry) writes nothing to the registry'
+    New-Item -Path $testKey -Force | Out-Null
+    New-ItemProperty -LiteralPath $testKey -Name 'DisplayVersion' -Value '0.1.0' | Out-Null
+    New-ItemProperty -LiteralPath $testKey -Name 'InstallLocation' -Value ((Join-Path $work 'Other\Aero Client') + '\') | Out-Null
+    Update-InstalledVersion -Key $testKey -Root $root -Marker $marker
+    Assert-That ([string](Get-ItemProperty -LiteralPath $testKey).DisplayVersion -eq '0.1.0') "another folder's entry is left alone"
+    Set-ItemProperty -LiteralPath $testKey -Name 'InstallLocation' -Value ($root.ToUpperInvariant() + '\')
+    Update-InstalledVersion -Key $testKey -Root $root -Marker $marker
+    Assert-That ([string](Get-ItemProperty -LiteralPath $testKey).DisplayVersion -eq '0.2.0') "this folder's entry gets the marker's version"
+    Set-Content -LiteralPath $marker -Value '{"version": "0.3.0\r\nInjected: yes"}'
+    Update-InstalledVersion -Key $testKey -Root $root -Marker $marker
+    Assert-That ([string](Get-ItemProperty -LiteralPath $testKey).DisplayVersion -eq '0.2.0') 'but never anything that is not a plain x.y.z version'
+    Remove-Item -LiteralPath $marker
+    Update-InstalledVersion -Key $testKey -Root $root -Marker $marker
+    Assert-That ([string](Get-ItemProperty -LiteralPath $testKey).DisplayVersion -eq '0.2.0') 'and a missing marker changes nothing, silently'
 } finally {
     Remove-Item -LiteralPath $work -Recurse -Force -ErrorAction SilentlyContinue
+    Remove-Item -LiteralPath $testKey -Recurse -Force -ErrorAction SilentlyContinue
 }
 
 if ($failures.Count -gt 0) {

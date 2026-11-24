@@ -329,7 +329,8 @@ fn the_replay_screens_render_at_720p_and_1080p() {
                 };
                 glass = screen.build(&mut env, &mut list);
             }
-            assert_eq!(glass.rects.len(), AeroButton::COUNT);
+            // The buttons and the link pill in the bottom-right corner.
+            assert_eq!(glass.rects.len(), AeroButton::COUNT + 1);
             let replays = screen.button_rect(AeroButton::Replays);
             let phase = AeroTitlePhase::new(&gpu);
             render(

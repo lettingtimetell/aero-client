@@ -32,8 +32,9 @@ pub const MIN_CARD_W: f32 = super::layout::BUTTON_W;
 pub const MAX_CARD_W: f32 = 560.0;
 /// Inner padding.
 const PAD: f32 = 16.0;
-/// From the card's bottom to the version line's top.
-const FOOTER_GAP: f32 = 14.0;
+/// From the card's bottom to the version line's top (and the Discord button's to the copyright
+/// line's, on the other side).
+pub(super) const FOOTER_GAP: f32 = 14.0;
 /// Small button height.
 const BUTTON_H: f32 = 32.0;
 /// Space between small buttons.

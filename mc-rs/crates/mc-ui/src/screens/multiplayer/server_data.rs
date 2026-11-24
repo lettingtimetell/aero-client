@@ -28,6 +28,12 @@ use crate::UiError;
 /// unbounded allocation. 4096 is far past any real list.
 pub const MAX_SERVERS: usize = 4096;
 
+/// The name of the one server a brand-new player's list starts with
+/// ([`ServerList::for_new_player`]).
+pub const NEW_PLAYER_SERVER_NAME: &str = "Mega Skywars";
+/// The address of [`NEW_PLAYER_SERVER_NAME`].
+pub const NEW_PLAYER_SERVER_ADDRESS: &str = "megaskywars.com";
+
 /// Whether the client accepts a server's resource pack.
 // java: ServerData.ServerResourceMode
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Default)]
@@ -400,6 +406,21 @@ impl ServerList {
     #[must_use]
     pub fn new() -> Self {
         Self::default()
+    }
+
+    /// The list a brand-new player starts with: one ordinary entry, [`NEW_PLAYER_SERVER_NAME`] at
+    /// [`NEW_PLAYER_SERVER_ADDRESS`], with vanilla's defaults for everything else (no icon,
+    /// resource packs "prompt"), as if the player had added it on the Add Server screen. Not
+    /// vanilla, whose first list is empty. The client writes it only into a game folder that has
+    /// no `servers.dat` at all; from then on it is the player's to edit, move or delete.
+    #[must_use]
+    pub fn for_new_player() -> Self {
+        let mut list = ServerList::new();
+        list.add(ServerEntry::new(
+            NEW_PLAYER_SERVER_NAME,
+            NEW_PLAYER_SERVER_ADDRESS,
+        ));
+        list
     }
 
     /// How many servers are saved.
@@ -779,6 +800,40 @@ mod tests {
         root.insert("servers", Nbt::list(items));
         let list = ServerList::from_nbt(&Nbt::Compound(root)).expect("ok");
         assert_eq!(list.len(), MAX_SERVERS);
+    }
+
+    /// A new player's list is one plain entry with vanilla's `new ServerData(name, ip, false)`
+    /// defaults, so on disk it is exactly what the Add Server screen writes: `name` and `ip`, no
+    /// `icon`, no `acceptTextures`.
+    #[test]
+    fn a_new_players_list_is_one_ordinary_entry() {
+        let list = ServerList::for_new_player();
+        assert_eq!(list.len(), 1);
+        let entry = list.get(0).unwrap();
+        assert_eq!(entry.name, "Mega Skywars");
+        assert_eq!(entry.address, "megaskywars.com");
+        assert_eq!(entry, &ServerEntry::new("Mega Skywars", "megaskywars.com"));
+        assert_eq!(entry.resource_mode, ResourceMode::Prompt);
+        assert!(entry.icon_base64.is_none() && !entry.lan);
+        assert_eq!(entry.host_and_port(), ("megaskywars.com", DEFAULT_PORT));
+
+        let mut bytes = Vec::new();
+        list.write(&mut bytes).expect("write");
+        assert_eq!(ServerList::read(&bytes).expect("read"), list);
+        let Nbt::Compound(root) = list.to_nbt() else {
+            panic!("not a compound")
+        };
+        let Some(Nbt::List(items)) = root.get("servers") else {
+            panic!("no servers list")
+        };
+        let Nbt::Compound(saved) = &items.iter().next().expect("one entry") else {
+            panic!("not a compound")
+        };
+        assert_eq!(saved.len(), 2, "only name and ip");
+        assert_eq!(
+            saved.get("ip"),
+            Some(&Nbt::String("megaskywars.com".into()))
+        );
     }
 
     #[test]

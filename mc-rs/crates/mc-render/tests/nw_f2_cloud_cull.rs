@@ -1,7 +1,6 @@
-//! Fancy-cloud face culling and the
-//! clouds' own depth target (both in `sky/clouds.rs`) must draw the same
-//! frame, byte for byte, as the old path (every face, shared depth buffer plus a restore pass),
-//! and must hand the shared depth buffer back untouched.
+//! Fancy-cloud face culling must draw the same frame, byte for byte, as drawing every face, and must leave
+//! the same cloud depth in the shared depth buffer. The clouds keep their depth there, as vanilla
+//! does, so a depth-tested probe recorded after them shows it.
 //!
 //! Real `clouds.png` from the vanilla jar, real GPU readback; skips (printing `SKIP:`) without
 //! either. Point `MC_JARS_DIR` at a `jars/` directory to override the asset location.
@@ -87,8 +86,8 @@ impl RenderPhase for Shared {
 }
 
 /// Stands in for terrain recorded after the sky: an opaque red, depth-tested, depth-writing
-/// quad over the left half of the frame, far behind every cloud. A cloud depth left in the
-/// shared buffer would reject it there.
+/// quad over the left half of the frame, 400 blocks out. The cloud depth left in the shared
+/// buffer rejects it wherever a cloud is nearer, so the left half shows that depth.
 struct DepthProbe {
     pipeline: wgpu::RenderPipeline,
 }
@@ -245,11 +244,10 @@ const POSES: [Pose; 8] = [
 struct Frame {
     pixels: Vec<u8>,
     cull: Option<(u32, u32)>,
-    own_depth: bool,
 }
 
 /// Render one fancy-cloud frame followed by the depth probe.
-fn render(gpu: &mut Gpu, rm: &ResourceManager, pose: Pose, cull: bool, own_depth: bool) -> Frame {
+fn render(gpu: &mut Gpu, rm: &ResourceManager, pose: Pose, cull: bool) -> Frame {
     let (eye, yaw, pitch, ticks, world_time, fogged) = pose;
     let mut clouds = CloudsPhase::new(gpu);
     clouds.load_texture(gpu, rm);
@@ -270,7 +268,6 @@ fn render(gpu: &mut Gpu, rm: &ResourceManager, pose: Pose, cull: bool, own_depth
         clouds.set_fog(Some((state, FogDistance::Radial)));
     }
     assert_eq!(clouds.set_fancy_face_culling(cull), cull, "culling switch");
-    clouds.set_fancy_own_depth(own_depth);
     let clouds = Rc::new(RefCell::new(clouds));
 
     let mut phases = PhaseList::new();
@@ -296,7 +293,6 @@ fn render(gpu: &mut Gpu, rm: &ResourceManager, pose: Pose, cull: bool, own_depth
     Frame {
         pixels,
         cull: phase.fancy_face_cull_stats(),
-        own_depth: phase.fancy_own_depth_in_use(),
     }
 }
 
@@ -308,7 +304,7 @@ fn differing(a: &[u8], b: &[u8]) -> usize {
 }
 
 #[test]
-fn culled_clouds_on_their_own_depth_match_the_old_path_byte_for_byte() {
+fn culled_clouds_match_every_face_byte_for_byte_depth_included() {
     let Some(rm) = resources() else {
         eprintln!("SKIP: jar unavailable");
         return;
@@ -316,60 +312,51 @@ fn culled_clouds_on_their_own_depth_match_the_old_path_byte_for_byte() {
     let Some(mut gpu) = headless(WIDTH, HEIGHT) else {
         return;
     };
-    let (mut drawn, mut total, mut cloud_pixels) = (0_u64, 0_u64, 0_usize);
+    let (mut drawn, mut total, mut cloud_pixels, mut held_back) = (0_u64, 0_u64, 0_usize, 0_usize);
     for (i, pose) in POSES.into_iter().enumerate() {
-        // The old path: every face, shared depth buffer, restore pass.
-        let old = render(&mut gpu, &rm, pose, false, false);
-        assert!(old.cull.is_none() && !old.own_depth, "pose {i}: old path");
-        // The probe must have drawn over the whole left half: the shared depth was pristine.
-        for y in 0..HEIGHT {
-            for x in 0..WIDTH / 2 {
-                let at = ((y * WIDTH + x) * 4) as usize;
-                assert_eq!(
-                    &old.pixels[at..at + 3],
-                    &[255, 0, 0],
-                    "pose {i} probe at {x},{y}"
-                );
-            }
-        }
+        // Every face.
+        let all = render(&mut gpu, &rm, pose, false);
+        assert!(all.cull.is_none(), "pose {i}: every face");
         // The clear colour (0.1, 0.2, 0.4) is about (26, 51, 102) in the unorm target.
         let is_clear = |p: &[u8]| {
             (i32::from(p[0]) - 26).abs() <= 1
                 && (i32::from(p[1]) - 51).abs() <= 1
                 && (i32::from(p[2]) - 102).abs() <= 1
         };
-        cloud_pixels += old
+        // The probe covers the left half except where a nearer cloud's depth kept it out, so
+        // nothing there is left at the clear colour.
+        for y in 0..HEIGHT {
+            for x in 0..WIDTH / 2 {
+                let at = ((y * WIDTH + x) * 4) as usize;
+                let p = &all.pixels[at..at + 3];
+                assert!(!is_clear(p), "pose {i}: nothing drew at {x},{y}");
+                held_back += usize::from(p != [255, 0, 0]);
+            }
+        }
+        cloud_pixels += all
             .pixels
             .chunks_exact(4)
             .enumerate()
             .filter(|(n, p)| (*n as u32 % WIDTH) >= WIDTH / 2 && !is_clear(p))
             .count();
-        for (cull, own_depth) in [(true, true), (true, false), (false, true)] {
-            let new = render(&mut gpu, &rm, pose, cull, own_depth);
-            assert_eq!(
-                new.own_depth, own_depth,
-                "pose {i}: own depth target in use"
-            );
-            let diff = differing(&old.pixels, &new.pixels);
-            assert_eq!(
-                diff, 0,
-                "pose {i} cull={cull} own_depth={own_depth}: {diff} px differ"
-            );
-            if cull {
-                let (n, lattice) = new.cull.expect("culling ran");
-                assert!(n <= lattice);
-                if own_depth {
-                    drawn += u64::from(n);
-                    total += u64::from(lattice);
-                    eprintln!("pose {i}: {n} of {lattice} lattice indices drawn, identical");
-                }
-            }
-        }
+        let culled = render(&mut gpu, &rm, pose, true);
+        let diff = differing(&all.pixels, &culled.pixels);
+        assert_eq!(diff, 0, "pose {i}: culling changed {diff} px");
+        let (n, lattice) = culled.cull.expect("culling ran");
+        assert!(n <= lattice);
+        drawn += u64::from(n);
+        total += u64::from(lattice);
+        eprintln!("pose {i}: {n} of {lattice} lattice indices drawn, identical");
     }
-    // Not vacuous: clouds were on screen, and culling removed faces.
+    // Not vacuous: clouds were on screen, their depth held the probe back, and culling removed
+    // faces.
     assert!(
         cloud_pixels > 5_000,
         "only {cloud_pixels} cloud pixels across all poses"
+    );
+    assert!(
+        held_back > 1_000,
+        "cloud depth held the probe back at only {held_back} px"
     );
     assert!(
         drawn < total,

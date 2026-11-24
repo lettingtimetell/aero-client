@@ -91,6 +91,44 @@ pub fn load_server_list(path: &Path) -> ServerList {
     ServerList::new()
 }
 
+/// A brand-new game folder, one with nothing at all at
+/// `servers.dat`, gets the list a new player starts with ([`ServerList::for_new_player`]), written
+/// at once: from the first launch it is an ordinary entry the player can edit, move or delete, and
+/// nothing ever adds it again. Whatever is already at the path is the player's and is left exactly
+/// as it is: a list, an empty list, a damaged file, a folder or a link. So is a path whose state
+/// cannot be read. Not vanilla, whose first list is empty.
+///
+/// The game binary's start calls this once (`Client::new_deferred`), before the list is loaded and
+/// before anything can save it. Returns whether the file was written.
+pub fn seed_new_player_server_list(path: &Path) -> bool {
+    match std::fs::symlink_metadata(path) {
+        Err(error) if error.kind() == std::io::ErrorKind::NotFound => {}
+        _ => return false,
+    }
+    if let Some(folder) = path
+        .parent()
+        .filter(|folder| !folder.as_os_str().is_empty())
+    {
+        if let Err(error) = std::fs::create_dir_all(folder) {
+            tracing::warn!(%error, "could not create the game folder for the first servers.dat");
+            return false;
+        }
+    }
+    let mc_nbt::Nbt::Compound(root) = ServerList::for_new_player().to_nbt() else {
+        unreachable!("a server list is a compound")
+    };
+    match mc_nbt::safe_write(path, &root) {
+        Ok(()) => {
+            tracing::info!("new game folder: servers.dat starts with the default server");
+            true
+        }
+        Err(error) => {
+            tracing::warn!(%error, "could not write the first servers.dat");
+            false
+        }
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -144,6 +182,154 @@ mod tests {
 
         let backup = dir.path().join("servers.dat.bad");
         assert_eq!(std::fs::read(&backup).expect("copy kept"), damaged);
+    }
+
+    /// A folder with no `servers.dat` gets the one-entry list, on
+    /// disk at once, and the load that follows reads it; the next start finds a file and writes
+    /// nothing.
+    #[test]
+    fn a_new_game_folder_starts_with_the_default_server_on_disk() {
+        let dir = tempfile::tempdir().expect("tempdir");
+        let path = dir.path().join("servers.dat");
+        assert!(seed_new_player_server_list(&path), "a new folder is seeded");
+        let bytes = std::fs::read(&path).expect("written at once");
+        let saved = ServerList::read(&bytes).expect("a valid servers.dat");
+        assert_eq!(saved, ServerList::for_new_player());
+        assert_eq!(saved.get(0).map(|e| e.name.as_str()), Some("Mega Skywars"));
+        assert_eq!(load_server_list(&path), saved);
+        assert!(!dir.path().join("servers.dat_tmp").exists());
+        assert!(!seed_new_player_server_list(&path), "seeded once only");
+        assert_eq!(std::fs::read(&path).expect("read"), bytes);
+    }
+
+    /// Any file already there is the player's list, even an empty one: never seeded, not a byte
+    /// changed.
+    #[test]
+    fn an_existing_server_list_is_never_seeded() {
+        let dir = tempfile::tempdir().expect("tempdir");
+        let path = dir.path().join("servers.dat");
+        for list in [ServerList::new(), list_of(&["alpha", "beta"])] {
+            write_list(&path, &list);
+            let before = std::fs::read(&path).expect("read");
+            assert!(
+                !seed_new_player_server_list(&path),
+                "{} entries",
+                list.len()
+            );
+            assert_eq!(std::fs::read(&path).expect("read"), before);
+            assert_eq!(load_server_list(&path), list);
+        }
+    }
+
+    /// The player deletes the default server (the list screen writes the shorter list at once):
+    /// every later start loads the list as it is.
+    #[test]
+    fn a_deleted_default_server_stays_deleted() {
+        let dir = tempfile::tempdir().expect("tempdir");
+        let path = dir.path().join("servers.dat");
+        assert!(seed_new_player_server_list(&path));
+        let mut list = load_server_list(&path);
+        assert!(list.remove(0).is_some());
+        write_list(&path, &list);
+        for _ in 0..2 {
+            assert!(!seed_new_player_server_list(&path));
+            assert!(load_server_list(&path).is_empty(), "not added back");
+        }
+    }
+
+    /// A damaged file is not a new folder: it is not replaced by the default list, on this start
+    /// or the next; the load keeps its copy aside as before.
+    #[test]
+    fn a_damaged_server_list_is_not_overwritten_with_the_default() {
+        let dir = tempfile::tempdir().expect("tempdir");
+        let path = dir.path().join("servers.dat");
+        for damaged in [b"".to_vec(), vec![0xDE, 0xAD, 0xBE, 0xEF], {
+            write_list(&path, &list_of(&["alpha", "beta", "gamma"]));
+            let mut bytes = std::fs::read(&path).expect("read");
+            bytes.truncate(bytes.len() / 2);
+            bytes
+        }] {
+            std::fs::write(&path, &damaged).expect("damage");
+            assert!(!seed_new_player_server_list(&path));
+            assert_eq!(std::fs::read(&path).expect("read"), damaged, "untouched");
+            assert!(load_server_list(&path).is_empty());
+            let backup = dir.path().join("servers.dat.bad");
+            assert_eq!(std::fs::read(&backup).expect("copy kept"), damaged);
+            assert!(!seed_new_player_server_list(&path), "still not new");
+            assert_eq!(std::fs::read(&path).expect("read"), damaged);
+        }
+    }
+
+    /// Something that is not a file still means the folder is not new.
+    #[test]
+    fn a_folder_named_servers_dat_is_left_alone() {
+        let dir = tempfile::tempdir().expect("tempdir");
+        let path = dir.path().join("servers.dat");
+        std::fs::create_dir(&path).expect("folder");
+        assert!(!seed_new_player_server_list(&path));
+        assert!(path.is_dir());
+    }
+
+    /// A first start into a game folder that does not exist yet creates it for the list.
+    #[test]
+    fn a_missing_game_folder_is_created_for_the_first_list() {
+        let dir = tempfile::tempdir().expect("tempdir");
+        let path = dir.path().join("new").join("game").join("servers.dat");
+        assert!(seed_new_player_server_list(&path));
+        assert_eq!(load_server_list(&path), ServerList::for_new_player());
+    }
+
+    /// The game binary's start (`Client::new_deferred`) seeds a new folder before it loads the
+    /// list, so the list the client holds has the entry from the start, with nothing pinging or
+    /// saving first. A player who deletes it never sees it again, and a folder with a list (even
+    /// an empty one) keeps it. Skips without the vanilla jar.
+    #[test]
+    fn the_game_binarys_start_seeds_only_a_new_folder() {
+        use crate::app::config::{ClientConfig, LoginMode};
+        use mc_ui::screens::Action;
+
+        let boot = |dir: &Path| {
+            let config = ClientConfig {
+                game_dir: dir.to_path_buf(),
+                login: LoginMode::Offline("Dev".to_owned()),
+                ..ClientConfig::default()
+            }
+            .with_discovered_assets();
+            if !config.version_jar.as_ref().is_some_and(|p| p.is_file()) {
+                eprintln!("skip: no vanilla jar in this checkout (set MC_JARS_DIR)");
+                return None;
+            }
+            Some(crate::app::Client::new_deferred(config).expect("the boot assets load"))
+        };
+        let dir = tempfile::tempdir().expect("tempdir");
+        let path = dir.path().join("servers.dat");
+        let Some(mut client) = boot(dir.path()) else {
+            return;
+        };
+        assert_eq!(client.servers, ServerList::for_new_player());
+        assert_eq!(load_server_list(&path), client.servers, "on disk already");
+
+        // The player deletes it from the server list, which writes the list at once.
+        client.handle_action(Action::OpenMultiplayer);
+        let crate::app::driver::Ui::Multiplayer(screen) = &mut client.ui else {
+            panic!("the server list is open")
+        };
+        screen.select(0);
+        assert!(screen.delete_selected().is_some());
+        client.handle_action(Action::SaveServers);
+        drop(client);
+        let client = boot(dir.path()).expect("boots again");
+        assert!(client.servers.is_empty(), "never added back");
+        assert!(load_server_list(&path).is_empty());
+
+        // A folder that already has a list, an empty one included, keeps it.
+        let other = tempfile::tempdir().expect("tempdir");
+        let path = other.path().join("servers.dat");
+        write_list(&path, &ServerList::new());
+        let before = std::fs::read(&path).expect("read");
+        let client = boot(other.path()).expect("boots");
+        assert!(client.servers.is_empty());
+        assert_eq!(std::fs::read(&path).expect("read"), before);
     }
 
     #[test]

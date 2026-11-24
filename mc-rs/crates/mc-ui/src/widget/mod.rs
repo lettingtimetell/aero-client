@@ -74,6 +74,43 @@ pub(crate) mod test_support {
         uniform_font_with_texture(FontTexture::Ascii)
     }
 
+    /// The colour a list's solid-colour triangles leave at the point `(x, y)` over `backdrop`
+    /// (linear RGB, 0..1): each triangle covering the point, in submission order, blended the
+    /// UI pipeline's way (straight alpha, source over), with its vertex colours interpolated.
+    /// Textured triangles (text) are skipped: no glyph pages here. Sample off the pixel grid
+    /// (say `x.37`), where no two triangles of a mesh share an edge.
+    pub(crate) fn composite_at(
+        list: &super::DrawList,
+        (x, y): (f32, f32),
+        backdrop: [f32; 3],
+    ) -> [f32; 3] {
+        let mut rgb = backdrop;
+        for batch in list.batches() {
+            if batch.texture != super::UiTexture::Solid {
+                continue;
+            }
+            for t in list.vertices()[batch.range.clone()].chunks_exact(3) {
+                let (a, b, c) = (t[0].pos, t[1].pos, t[2].pos);
+                let area = (b[0] - a[0]) * (c[1] - a[1]) - (c[0] - a[0]) * (b[1] - a[1]);
+                if area.abs() < 1e-9 {
+                    continue;
+                }
+                let w1 = ((x - a[0]) * (c[1] - a[1]) - (c[0] - a[0]) * (y - a[1])) / area;
+                let w2 = ((b[0] - a[0]) * (y - a[1]) - (x - a[0]) * (b[1] - a[1])) / area;
+                let w0 = 1.0 - w1 - w2;
+                if w0 < 0.0 || w1 < 0.0 || w2 < 0.0 {
+                    continue;
+                }
+                let at = |k: usize| w0 * t[0].color[k] + w1 * t[1].color[k] + w2 * t[2].color[k];
+                let alpha = at(3).clamp(0.0, 1.0);
+                for (k, channel) in rgb.iter_mut().enumerate() {
+                    *channel = at(k) * alpha + *channel * (1.0 - alpha);
+                }
+            }
+        }
+        rgb
+    }
+
     /// The same deterministic fixture with a caller-selected default-sheet identity.
     pub(crate) fn uniform_font_with_texture(texture: FontTexture) -> FontRenderer {
         let data = FontData::from_parts(&uniform_ascii_png(), &[0u8; 0x1_0000])

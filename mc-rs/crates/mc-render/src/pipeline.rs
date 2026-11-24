@@ -4891,7 +4891,8 @@ fn phase_record_span(phase: &dyn RenderPhase) -> tracing::span::EnteredSpan {
             tracing::trace_span!("phase.terrain")
         }
         "sky/dome" => tracing::trace_span!("phase.sky.dome"),
-        "sky/clouds" => tracing::trace_span!("phase.sky.clouds"),
+        // Both of the clouds' registrations; one draws a frame.
+        "sky/clouds" | "sky/clouds-above" => tracing::trace_span!("phase.sky.clouds"),
         "sky/weather" => tracing::trace_span!("phase.sky.weather"),
         "sky/fog" => tracing::trace_span!("phase.sky.fog"),
         "entity" => tracing::trace_span!("phase.entity"),

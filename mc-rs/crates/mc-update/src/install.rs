@@ -299,6 +299,53 @@ mod tests {
         assert_eq!(found.update, dir.path().join("Aero Client").join("update"));
     }
 
+    /// A copy installed by Aero-Client-Setup.exe (packaging/aero/installer):
+    /// the same layout, in `%LOCALAPPDATA%\Programs\Aero Client`, plus the uninstaller's files
+    /// next to `app\` and the shortcuts' icon in it. It is a packaged install like an unzipped
+    /// one, and an update from a release zip swaps `app\` (the icon with it) while the
+    /// uninstaller's files and `game\` stay where they are.
+    #[test]
+    fn a_copy_installed_by_setup_is_detected_and_updated_like_an_unzipped_one() {
+        let dir = tempfile::tempdir().unwrap();
+        let programs = dir.path().join("AppData").join("Local").join("Programs");
+        let paths = fake_install(&programs, "0.1.0");
+        std::fs::write(paths.app.join("aero-client.ico"), "icon 0.1.0").unwrap();
+        std::fs::write(paths.root.join("unins000.exe"), "uninstaller").unwrap();
+        std::fs::write(paths.root.join("unins000.dat"), "uninstall log").unwrap();
+        std::fs::create_dir_all(paths.root.join("game")).unwrap();
+        std::fs::write(paths.root.join("game").join("options.txt"), "mine").unwrap();
+
+        let found = InstallPaths::from_exe(&paths.exe()).unwrap();
+        assert_eq!(found, paths);
+        assert_eq!(found.root, programs.join("Aero Client"));
+        assert_eq!(found.update, programs.join("Aero Client").join(UPDATE_DIR));
+
+        let zip = dir.path().join("release.zip");
+        let icon = crate::tests::ZipItem::file("Aero Client/app/aero-client.ico", b"icon 0.2.0");
+        std::fs::write(&zip, crate::tests::package_zip("0.2.0", &[icon])).unwrap();
+        let limits = crate::stage::Limits::default();
+        let staged =
+            crate::stage::stage_release(&zip, &paths.staging_dir("0.2.0"), "0.2.0", &limits)
+                .unwrap();
+        crate::swap::swap_in(&paths, &staged.root).unwrap();
+
+        let read = |path: &Path| std::fs::read_to_string(path).unwrap();
+        assert_eq!(read(&paths.exe()), "exe 0.2.0");
+        assert_eq!(
+            read(&paths.app.join("aero-client.ico")),
+            "icon 0.2.0",
+            "the shortcuts' icon comes with the new app"
+        );
+        assert_eq!(read(&paths.root.join("unins000.exe")), "uninstaller");
+        assert_eq!(read(&paths.root.join("unins000.dat")), "uninstall log");
+        assert_eq!(read(&paths.root.join("game").join("options.txt")), "mine");
+        let updated = InstallPaths::from_exe(&paths.exe()).unwrap();
+        assert_eq!(
+            updated.marker.version, "0.2.0",
+            "what the launcher shows in Settings"
+        );
+    }
+
     #[test]
     fn development_layouts_are_not_portable() {
         let dir = tempfile::tempdir().unwrap();

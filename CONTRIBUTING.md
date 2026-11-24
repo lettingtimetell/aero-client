@@ -84,6 +84,7 @@ Security problems are not reported in pull requests or issues: see section 18.
 | Visual Studio 2022 Build Tools, workload **Desktop development with C++** | everything | the MSVC linker, and the C compiler for the `mimalloc` allocator |
 | `rustup component add llvm-tools-preview` | PGO builds | provides `llvm-profdata`, which merges the training profiles |
 | Python 3.10 or newer on PATH as `python` | PGO builds, the zip's licence notices, the benchmark tool | standard library only |
+| [Inno Setup 6](https://jrsoftware.org/isinfo.php), 6.6 or newer | the installer (section 11) | optional: without it packaging builds the zip only |
 | A Minecraft: Java Edition account | playing | you sign in on the client's Accounts screen (section 10) |
 | Minecraft 1.8.9 installed with the official launcher and started once | the 1.8.9 files for playing, PGO training and tests | any folder holding the 1.8.9 jar and assets works too (section 4) |
 | Git, and roughly 20 GB of free disk | cloning and build folders | the PGO builds use their own target folders |
@@ -389,6 +390,54 @@ Studio Installer or the Windows SDK installer. Check a signed file with
 published the file; Windows SmartScreen still builds reputation for it over time, so expect its
 warning on new releases either way.
 
+**The installer.** After the zip, the script builds `release\Aero-Client-Setup.exe` from the same
+staged folder with Inno Setup 6's `ISCC.exe`: `$env:ISCC` when set, else Inno Setup 6 installed for
+the current user (`%LOCALAPPDATA%\Programs\Inno Setup 6`) or for everyone (`Program Files
+(x86)\Inno Setup 6`, where GitHub's Windows runners have it). Without it the script builds the zip
+only and says so. Use 6.6 or newer: the script compiles with 6.3 or later, but its wizard pictures
+need 6.5.2 and its dark mode (it follows Windows' setting) 6.6. The installer script is
+`mc-rs\packaging\aero\installer\aero-client.iss`; `make-installer-assets.ps1` next to it draws the
+program icon (`app\aero-client.ico`, which the zip carries too) and the wizard pictures from the
+logo renders in `mc-rs\crates\mc-client\assets\icon` (add a size there rather than a picture
+anywhere else). The installer:
+
+- installs for the current Windows user, without an administrator prompt, always into
+  `%LOCALAPPDATA%\Programs\Aero Client`: there is no folder page, and it refuses a folder not named
+  `Aero Client` (`/DIR=` on its command line), so its uninstaller only ever deletes inside one;
+- installs exactly the zip's folder (`Play Aero Client.cmd`, `README.txt`, `app\`), so the in-game
+  updater updates an installed copy the way it updates an unzipped one. Keep `app\aero-client.ico`
+  in every release: the shortcuts point at it, and an update replaces `app\` as a whole;
+- adds "Aero Client" to the Start menu and, unless the player unticks it, the desktop (both start
+  `Play Aero Client.cmd` minimized), and offers to start the game on its last page;
+- upgrades an existing installation in place (its `AppId` must never change), after closing a
+  running client (it asks first);
+- registers in Settings > Apps, where the launcher keeps the version in step after an in-game
+  update (only for the entry whose `InstallLocation` is the launcher's own folder);
+- uninstalls the program, what the updater added (`app\`, `update\`), the shortcuts and the
+  Settings entry. It keeps the player's `game\` folder unless they agree to delete it (a silent
+  uninstall always keeps it), and it never touches saved sign-ins (`%APPDATA%\mc-rs`), which
+  portable copies on the same PC share.
+
+With `-SignThumbprint` or `-SignDlib` the script signs Setup and its uninstaller as well.
+
+**Release files.** `mc-rs\packaging\scripts\release-assets.ps1 -Key <signing key>` (or `-Unsigned`)
+turns the zip and the installer into the files of a GitHub release, in `release\v<version>\`, and
+prints the `gh release create` command that publishes them:
+
+| File | What it is |
+|---|---|
+| `Aero-Client-Setup.exe` | the installer |
+| `Aero-Client-Portable.zip` | the portable zip, byte for byte the versioned one |
+| `Aero-Client-<version>-windows-x64.zip` | the portable zip under the name the in-game updater downloads |
+| `Aero-Client-<version>-windows-x64.zip.sha256` and `.sig` | its SHA-256 and update signature (section 12) |
+| `SHA256SUMS.txt` | the SHA-256 of the installer and both zips, in `sha256sum -c` format |
+
+**Never rename `Aero-Client-Setup.exe` or `Aero-Client-Portable.zip`.** The website's download
+buttons link `https://github.com/lettingtimetell/aero-client/releases/latest/download/Aero-Client-Setup.exe`
+and `.../releases/latest/download/Aero-Client-Portable.zip`, which always download the newest
+release's file of exactly that name. A release without them, or one published as a draft or a
+prerelease (which `latest` skips), breaks those buttons.
+
 `mc-rs\packaging\` also holds the earlier generic packaging scripts (`windows\build.ps1`,
 `linux\build.sh`, `macos\build.sh`), which stage the client with a launcher that looks for the
 platform's standard Minecraft folder (`MC_RS_MINECRAFT_DIR` overrides it). Only the Windows script
@@ -411,7 +460,8 @@ with `AERO_UPDATE_PUBKEY` (the base64 public key) downloads an update, checks th
 and the signature, unpacks it into a staging folder and installs it on the next restart, rolling
 back if the new version fails to start. A client built without a key only tells the player that a
 new version exists. Only a packaged portable install updates itself: `package-aero-client.ps1`
-writes the version marker `app\aero-install.json` into the zip.
+writes the version marker `app\aero-install.json` into the zip. A copy installed by
+`Aero-Client-Setup.exe` is one too: the installer installs the same folder.
 
 `aero-update-sign` makes the key pair and the release files; its file header
 (`mc-rs/crates/mc-update/src/bin/aero-update-sign.rs`) has every step. In short, from `mc-rs`:
@@ -421,10 +471,12 @@ writes the version marker `app\aero-install.json` into the zip.
    sign an update every client accepts.
 2. Set `AERO_UPDATE_PUBKEY` to the printed public key, set the release's version in
    `mc-rs/Cargo.toml`, and run `package-aero-client.ps1`.
-3. `cargo run -p mc-update --bin aero-update-sign -- sign --key <...>.pk8 --zip "..\release\Aero Client.zip" --version <version> --out <folder>`
-   writes the three release files; `verify --pubkey <base64> --dir <folder> --version <version>`
-   checks them the way the client will.
-4. Publish a release tagged `v<version>` (not a draft, not a prerelease) with the three files.
+3. `packaging\scripts\release-assets.ps1 -Key <...>.pk8` runs
+   `aero-update-sign sign --key <...>.pk8 --zip "..\release\Aero Client.zip" --version <version>`,
+   which writes the three updater files, checks them with `aero-update-sign verify` the way the
+   client will, and adds the installer, the portable zip and `SHA256SUMS.txt` (section 11).
+4. Publish a release tagged `v<version>` (not a draft, not a prerelease) with every file in
+   `release\v<version>\`; the script prints the `gh release create` command.
 
 ## 13. CI
 

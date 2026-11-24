@@ -33,6 +33,21 @@ PLAY
      user on this PC, so next time you are already signed in.
 
 
+THE INSTALLED VERSION (Aero-Client-Setup.exe)
+---------------------------------------------
+If you installed Aero Client with Aero-Client-Setup.exe instead of extracting the zip:
+  - Start it from "Aero Client" in the Start menu, or the desktop shortcut. Skip steps 3 and 4;
+    everything else is the same. Windows may show the first-time warnings above for the setup.
+  - It is in the folder  %LOCALAPPDATA%\Programs\Aero Client  (paste that into the address bar
+    of File Explorer). Its "game" folder holds your settings, screenshots and replays.
+  - It updates itself like the zip does (see "Updates" below). Running a newer
+    Aero-Client-Setup.exe also updates it and keeps your settings.
+  - To remove it, open Settings > Apps, find Aero Client and choose Uninstall. It asks whether
+    to delete your settings, screenshots and replays too: choose No to keep them for later.
+    Your saved sign-in stays on this PC for your Windows user (remove the account on the
+    Accounts screen first if you want it gone), and so do videos in Videos\Aero Client.
+
+
 GOOD TO KNOW
 ------------
   - Right Shift in game opens the mod menu (FPS, keystrokes, zoom, crosshair, shaders and more),
@@ -75,7 +90,7 @@ IF SOMETHING GOES WRONG
 
   Nothing happens at all
       Your antivirus may have blocked it. Allow the "Aero Client" folder, extract the zip
-      again, and retry.
+      again (or run Aero-Client-Setup.exe again), and retry.
 
 
 Not an official Minecraft product. Not approved by or associated with Mojang or Microsoft.

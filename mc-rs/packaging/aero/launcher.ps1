@@ -9,6 +9,8 @@ What it does, in order:
      (%LOCALAPPDATA%\Aero Client\launcher-settings.json, never inside the shareable "game" folder).
      Nothing from Minecraft is shipped in this package.
   2. Starts the game with its settings in the "game" folder, and shows a plain message if it fails.
+  3. In a copy installed by Aero-Client-Setup.exe, keeps the version shown in Settings > Apps in
+     step with app\aero-install.json, which an in-game update replaces.
 It reads no account and passes no sign-in to the game. Players sign in inside the game, on its
 Accounts screen, with the Microsoft account that owns Minecraft; the game keeps that sign-in for
 their Windows user, outside this folder.
@@ -34,6 +36,9 @@ $settingsPath = if ($env:LOCALAPPDATA) {
     $null
 }
 $title = 'Aero Client'
+# The Settings > Apps entry Aero-Client-Setup.exe writes (its AppId; keep in step with
+# packaging\aero\installer\aero-client.iss). A portable copy has none.
+$uninstallKey = 'HKCU:\Software\Microsoft\Windows\CurrentVersion\Uninstall\{33D5C40D-DF3B-44A8-89C8-B29ABEFBF5B1}_is1'
 # Test hooks (never set by "Play Aero Client.cmd"; packaging\scripts\test-launcher-trust.ps1 uses
 # them): AERO_LAUNCHER_NOGUI=1 prints messages instead of showing pop-ups; AERO_LAUNCHER_FRAMES=N
 # makes the game close itself after N frames.
@@ -118,6 +123,29 @@ function Test-GameFilesDir([string]$Dir) {
     return $null -ne (Find-VanillaFiles $full)
 }
 
+# Settings > Apps shows the version Setup installed, and an in-game update replaces app\ without
+# Setup, so the entry would keep naming the old one: set its DisplayVersion to the version in
+# app\aero-install.json. Only an entry whose InstallLocation is this very folder is changed (one
+# installed copy per Windows user; a portable copy elsewhere has nothing to do with it), only to
+# a plain x.y.z version. A convenience: anything unexpected leaves the entry as it is, silently.
+function Update-InstalledVersion([string]$Key, [string]$Root, [string]$Marker) {
+    try {
+        $entry = Get-ItemProperty -LiteralPath $Key -ErrorAction Stop
+        $location = [string]$entry.InstallLocation
+        if ($location -eq '') { return }
+        $here = [System.IO.Path]::GetFullPath($Root).TrimEnd('\')
+        if (-not [string]::Equals([System.IO.Path]::GetFullPath($location).TrimEnd('\'), $here,
+                [System.StringComparison]::OrdinalIgnoreCase)) { return }
+        $version = [string](Get-Content -LiteralPath $Marker -Raw | ConvertFrom-Json).version
+        if ($version -notmatch '^[0-9]{1,9}\.[0-9]{1,9}\.[0-9]{1,9}$') { return }
+        if ([string]$entry.DisplayVersion -cne $version) {
+            Set-ItemProperty -LiteralPath $Key -Name 'DisplayVersion' -Value $version -ErrorAction Stop
+        }
+    } catch {
+        # Not installed by Setup, or the entry or marker can't be read: nothing to keep in step.
+    }
+}
+
 function Find-GameFilesDir {
     $saved = Read-Settings
     if ($saved -and (Test-GameFilesDir ([string]$saved.gameFilesDir))) { return [string]$saved.gameFilesDir }
@@ -183,6 +211,8 @@ try {
     $proc = Start-Process -FilePath $client -ArgumentList $clientArgs -WorkingDirectory $game `
         -NoNewWindow -PassThru -RedirectStandardOutput $outLog -RedirectStandardError $errLog
     $null = $proc.Handle   # keep the handle so ExitCode is readable after the game closes
+    # While the game loads, so it never delays the start.
+    Update-InstalledVersion -Key $uninstallKey -Root $root -Marker (Join-Path $app 'aero-install.json')
     $proc.WaitForExit()
     if ($proc.ExitCode -ne 0) {
         $answer = Show-Message ("Aero Client closed because of an error (code $($proc.ExitCode)).`n`n" +

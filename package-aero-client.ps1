@@ -1,7 +1,8 @@
 #requires -Version 5.1
 <#
 .SYNOPSIS
-Build the portable "Aero Client" zip to send to other people: release\Aero Client.zip.
+Build what other people download: the portable zip release\Aero Client.zip and, when Inno Setup 6
+is installed, the installer release\Aero-Client-Setup.exe.
 
 .DESCRIPTION
 The zip holds one "Aero Client" folder:
@@ -12,7 +13,14 @@ The zip holds one "Aero Client" folder:
   app\LICENSE.txt        Aero Client's licence, the GPL-3.0 text (a copy of mc-rs\LICENSE)
   app\NOTICE.txt, app\BUILD-INFO.txt, app\licenses\ (the font licence and THIRD-PARTY-NOTICES.txt)
   app\aero-install.json  the updater's marker: a packaged portable install of this version
+  app\aero-client.ico    the logo as a program icon (the installer's shortcuts and Settings > Apps)
 Each player's settings, logs and screenshots go in a "game" folder created on first start.
+
+The installer (mc-rs\packaging\aero\installer\aero-client.iss) installs exactly that folder for the
+current Windows user into %LOCALAPPDATA%\Programs\Aero Client, with Start menu and desktop
+shortcuts and an uninstaller, so the in-game updater updates it like an unzipped copy. It is built
+with Inno Setup 6's ISCC.exe: $env:ISCC, else Inno Setup 6 installed for this user or for everyone.
+Without it the script builds the zip only and says so.
 
 How the shared client differs from the one install-mc-rs.ps1 installs for you:
   - --no-default-features --features mimalloc: the dev-only "offline" login (no sign-in) is compiled
@@ -29,7 +37,9 @@ Steps (about 35 minutes; separate build folders, so your next install-mc-rs.ps1 
   3. merge the profile            (...\pgo\package.profdata)
   4. optimised build              (...\tgt\pkg-use)
   5. checks: no Visual C++ runtime import, no offline login, a replay smoke run and a title-screen run
-  6. stage, verify that no Minecraft file is inside (packaging\scripts\verify-payload.ps1), zip
+  6. stage, verify that no Minecraft file is inside (packaging\scripts\verify-payload.ps1), zip, and
+     build the installer from the same staged folder
+The release files for GitHub come from both afterwards: mc-rs\packaging\scripts\release-assets.ps1.
 
 .PARAMETER SkipBuild
 Re-stage and re-zip the last build without compiling.
@@ -41,12 +51,12 @@ install-mc-rs.ps1). The profile then fits the real game less well.
 .PARAMETER SignThumbprint
 Optional Authenticode signing (see CONTRIBUTING.md, "Packaging"): the thumbprint of a code signing
 certificate in Cert:\CurrentUser\My (hardware token, cloud signing service, any CA). Signs
-app\mc-client.exe and app\launcher.ps1 before zipping. Also read from $env:AERO_SIGN_THUMBPRINT.
-Off when empty.
+app\mc-client.exe and app\launcher.ps1 before zipping, and the installer (Setup and its
+uninstaller). Also read from $env:AERO_SIGN_THUMBPRINT. Off when empty.
 
 .PARAMETER SignDlib
 Optional Azure Artifact Signing: path to Microsoft's Azure.CodeSigning.Dlib.dll. Needs
--SignMetadata too. Signs app\mc-client.exe. Also read from $env:AERO_SIGN_DLIB.
+-SignMetadata too. Signs app\mc-client.exe and the installer. Also read from $env:AERO_SIGN_DLIB.
 
 .PARAMETER SignMetadata
 Azure Artifact Signing metadata JSON (endpoint, account, certificate profile). Also read from
@@ -175,6 +185,41 @@ function Invoke-OptionalSigning([string]$AppDir) {
     $check = Get-AuthenticodeSignature -LiteralPath $exePath
     if ($check.Status -ne 'Valid') { throw "mc-client.exe signature check failed: $($check.Status) $($check.StatusMessage)" }
     Write-Host "signed: $($check.SignerCertificate.Subject)" -ForegroundColor Green
+}
+
+# The command Inno Setup runs to sign Setup and its uninstaller, with the same certificate or
+# Artifact Signing account as the client; empty when not signing. Inno Setup puts the file name in
+# for $f and a quote for $q (a literal quote would not survive the trip through its command line).
+function Get-InstallerSignCommand {
+    $thumb = ($SignThumbprint -replace '\s', '')
+    if ($thumb -eq '' -and $SignDlib -eq '') { return '' }
+    $signtool = Find-SignTool
+    if ($thumb -ne '') {
+        $tsa = if ($TimestampUrl -ne '') { $TimestampUrl } else { 'http://timestamp.digicert.com' }
+        return '$q' + $signtool + '$q sign /fd SHA256 /sha1 ' + $thumb + ' /tr ' + $tsa + ' /td SHA256 $f'
+    }
+    $tsa = if ($TimestampUrl -ne '') { $TimestampUrl } else { 'http://timestamp.acs.microsoft.com' }
+    return '$q' + $signtool + '$q sign /v /fd SHA256 /tr ' + $tsa + ' /td SHA256 /dlib $q' + $SignDlib +
+        '$q /dmdf $q' + $SignMetadata + '$q $f'
+}
+
+# Inno Setup 6's command-line compiler: $env:ISCC when set, else Inno Setup 6 installed for this
+# user, for everyone (where GitHub's Windows runners have it) or on PATH; $null when there is none.
+function Find-Iscc {
+    if ($env:ISCC) {
+        if (-not (Test-Path -LiteralPath $env:ISCC -PathType Leaf)) { throw "ISCC is set, but there is no $env:ISCC" }
+        return $env:ISCC
+    }
+    $candidates = @()
+    if ($env:LOCALAPPDATA) { $candidates += Join-Path $env:LOCALAPPDATA 'Programs\Inno Setup 6\ISCC.exe' }
+    if (${env:ProgramFiles(x86)}) { $candidates += Join-Path ${env:ProgramFiles(x86)} 'Inno Setup 6\ISCC.exe' }
+    if ($env:ProgramFiles) { $candidates += Join-Path $env:ProgramFiles 'Inno Setup 6\ISCC.exe' }
+    foreach ($candidate in $candidates) {
+        if (Test-Path -LiteralPath $candidate -PathType Leaf) { return $candidate }
+    }
+    $command = Get-Command ISCC.exe -ErrorAction SilentlyContinue
+    if ($command) { return $command.Source }
+    return $null
 }
 
 Import-Module (Join-Path $scripts 'common.psm1') -Force
@@ -330,7 +375,7 @@ try {
 }
 Remove-Item -LiteralPath $smoke -Recurse -Force
 
-Write-Host "[6/6] stage and zip $(Get-Date -Format T)"
+Write-Host "[6/6] stage, zip and installer $(Get-Date -Format T)"
 New-Item -ItemType Directory -Force $outDir | Out-Null
 $stage = Join-Path $outDir 'Aero Client'
 New-StagedPayload -Stage $stage
@@ -340,6 +385,17 @@ Copy-Item -LiteralPath $exe -Destination (Join-Path $appDir 'mc-client.exe')
 Copy-Item -LiteralPath (Join-Path $templates 'launcher.ps1') -Destination (Join-Path $appDir 'launcher.ps1')
 Copy-Item -LiteralPath (Join-Path $templates 'Play Aero Client.cmd') -Destination (Join-Path $stage 'Play Aero Client.cmd')
 Copy-Item -LiteralPath (Join-Path $templates 'README.txt') -Destination (Join-Path $stage 'README.txt')
+# The logo as a program icon, drawn from the logo renders in crates\mc-client\assets\icon. It goes
+# in app\, so the zip, the installer and every update carry it: the installer's shortcuts point at
+# it, and an update replaces app\ as a whole.
+$makeInstallerAssets = Join-Path $templates 'installer\make-installer-assets.ps1'
+$iconOut = Join-Path ([IO.Path]::GetTempPath()) ('aero-icon-' + [guid]::NewGuid().ToString('N'))
+try {
+    & $makeInstallerAssets -OutDir $iconOut
+    Copy-Item -LiteralPath (Join-Path $iconOut 'aero-client.ico') -Destination (Join-Path $appDir 'aero-client.ico')
+} finally {
+    Remove-Item -LiteralPath $iconOut -Recurse -Force -ErrorAction SilentlyContinue
+}
 Copy-Item -LiteralPath (Join-Path $rs 'crates\mc-ui\assets\fonts\inter\OFL.txt') -Destination (Join-Path $appDir 'licenses\Inter-font-OFL.txt')
 # Aero Client's own licence (GPL-3.0-or-later): the GPL version 3 text, next to NOTICE.txt.
 Copy-Item -LiteralPath (Join-Path $rs 'LICENSE') -Destination (Join-Path $appDir 'LICENSE.txt')
@@ -415,5 +471,38 @@ if ($LASTEXITCODE -ne 0) { throw 'payload verification failed (package)' }
 $zip = Join-Path $outDir 'Aero Client.zip'
 if (Test-Path -LiteralPath $zip) { Remove-Item -LiteralPath $zip -Force }
 Compress-Archive -LiteralPath $stage -DestinationPath $zip
+
+# The installer, from the same staged folder. An old one goes first, so a failed or skipped build
+# never leaves last time's installer next to this zip.
+$setup = Join-Path $outDir 'Aero-Client-Setup.exe'
+if (Test-Path -LiteralPath $setup) { Remove-Item -LiteralPath $setup -Force }
+$iscc = Find-Iscc
+if ($iscc) {
+    # The wizard's pictures, drawn from the logo like the icon; they stay outside the package.
+    $wizardImages = Join-Path ([IO.Path]::GetTempPath()) ('aero-wizard-' + [guid]::NewGuid().ToString('N'))
+    try {
+        & $makeInstallerAssets -OutDir $wizardImages
+        $isccArgs = @('/Qp', "/DAppVersion=$(Get-WorkspaceVersion -Workspace $rs)", "/DSourceDir=$stage",
+            "/DOutputDir=$outDir", "/DAssetDir=$wizardImages")
+        $signCommand = Get-InstallerSignCommand
+        if ($signCommand -ne '') { $isccArgs += @('/DSign', "/Saerosign=$signCommand") }
+        Invoke-Native 'building the installer' { & $iscc @isccArgs (Join-Path $templates 'installer\aero-client.iss') }
+    } finally {
+        Remove-Item -LiteralPath $wizardImages -Recurse -Force -ErrorAction SilentlyContinue
+    }
+    if (-not (Test-Path -LiteralPath $setup -PathType Leaf)) { throw "Inno Setup wrote no $setup" }
+    if ($signCommand -ne '') {
+        $check = Get-AuthenticodeSignature -LiteralPath $setup
+        if ($check.Status -ne 'Valid') { throw "installer signature check failed: $($check.Status) $($check.StatusMessage)" }
+    }
+}
+
 Write-Host ''
 Write-Host ("Built {0} ({1:N1} MB)" -f $zip, ((Get-Item -LiteralPath $zip).Length / 1MB)) -ForegroundColor Green
+if ($iscc) {
+    Write-Host ("Built {0} ({1:N1} MB)" -f $setup, ((Get-Item -LiteralPath $setup).Length / 1MB)) -ForegroundColor Green
+} else {
+    Write-Host ('note: Inno Setup 6 was not found, so there is no installer (release\Aero-Client-Setup.exe). ' +
+        'Install it from https://jrsoftware.org/isdl.php (or set ISCC to its ISCC.exe), then run this ' +
+        'script again with -SkipBuild') -ForegroundColor Yellow
+}

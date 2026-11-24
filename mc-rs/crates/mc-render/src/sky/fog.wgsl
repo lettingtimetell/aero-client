@@ -48,10 +48,16 @@ fn fs(@builtin(position) pos: vec4<f32>) -> @location(0) vec4<f32> {
     let coord = vec2<i32>(pos.xy);
     let d = textureLoad(depth_tex, coord, 0);
 
-    // Depth still at the cleared 1.0 means nothing opaque was drawn here: this pixel is sky (or
-    // clouds — neither writes depth). Vanilla disables fog for the sky pass too, and the sky
-    // dome already paints the fog colour at the horizon, which is what makes distant terrain
-    // appear to dissolve *into* the sky rather than into a separate grey.
+    // Depth still at the cleared 1.0 means nothing opaque was drawn here: this pixel is sky.
+    // Vanilla disables fog for the sky pass too, and the sky dome already paints the fog colour
+    // at the horizon, which is what makes distant terrain appear to dissolve *into* the sky
+    // rather than into a separate grey.
+    //
+    // Clouds do write depth (vanilla keeps it; see `clouds.rs`), through their own projection,
+    // whose far plane is farther than the one inverted below. Read through this one, a cloud
+    // lands nearer than it is (1/d = 1/z + 1/far - 1/far_clouds), inside the fog start until it
+    // is past about 1.14x the render distance, where its own fog has already made it fully
+    // fog-coloured: past there this pass only pulls the sky showing through it toward the fog.
     if (d >= 1.0) {
         discard;
     }

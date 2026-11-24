@@ -15,7 +15,12 @@
 //! Clicks follow the menu too: a press marks a button (it darkens), and releasing over the same
 //! button activates it ([`AeroTitleScreen::mouse_released`]). The client maps the button to
 //! vanilla's own action ([`AeroButton::action`]) and plays vanilla's button sound.
+//!
+//! Above the copyright line at the bottom right, a small glass button with the Discord logo
+//! links to the Aero Client Discord server ([`discord`]).
 
+// The Discord button (bottom right).
+pub mod discord;
 pub mod font;
 pub mod icons;
 pub mod layout;
@@ -214,6 +219,8 @@ pub struct AeroTitleScreen {
     /// The update card (bottom left), empty unless the client has an
     /// update to show ([`update_notice::UpdateNotice::set_view`]).
     pub notice: update_notice::UpdateNotice,
+    /// The Discord button (bottom right); the client opens the link.
+    pub discord: discord::DiscordButton,
 }
 
 impl AeroTitleScreen {
@@ -230,6 +237,7 @@ impl AeroTitleScreen {
             rects: [Rect::default(); AeroButton::COUNT],
             shown: [false; AeroButton::COUNT],
             notice: update_notice::UpdateNotice::default(),
+            discord: discord::DiscordButton::default(),
         }
     }
 
@@ -349,9 +357,10 @@ impl AeroTitleScreen {
             dim: 0.0,
             strength: 1.0,
             frost: FROST,
-            // The buttons, plus one pane for the update card and one for the account pill,
-            // so neither reallocates per frame.
-            rects: Vec::with_capacity(AeroButton::COUNT + 2),
+            // The buttons, plus one pane for the update card and one for the account pill
+            // and one for the Discord button, so none of
+            // them reallocates per frame.
+            rects: Vec::with_capacity(AeroButton::COUNT + 3),
         };
         let mut painter = Painter::new(list);
         let mut crisp = crisp.map(Painter::new);
@@ -435,6 +444,19 @@ impl AeroTitleScreen {
             &layout,
             &mut glass,
             (elapsed, dt, cursor),
+        );
+
+        // The Discord button, bottom right, clear of the card it may share the
+        // bottom with in a narrow window.
+        let card = self.notice.card();
+        self.discord.build(
+            &mut painter,
+            crisp.as_mut(),
+            env,
+            &layout,
+            &mut glass,
+            (elapsed, dt, cursor),
+            card,
         );
         glass
     }
