@@ -325,11 +325,9 @@ client says so.
 line, the way a launcher starts vanilla 1.8.9: `--username`, `--uuid` and `--accessToken`, all
 three (`--userType` is accepted and ignored). The Accounts screen lists it as "From the launcher";
 it is used as given and never saved. Nothing in this repository reads another program's accounts
-or tokens: the client takes a session only from its command line and its own Accounts screen, and
-`launch-mc-rs.ps1` and the portable zip's launcher pass no session at all.
-`mc-rs\packaging\scripts\test-launcher-trust.ps1` checks the zip's launcher for this, and
-`package-aero-client.ps1` runs it before zipping: the launcher's code holds no session argument,
-and a run with a stand-in game passes only the game folder and the 1.8.9 files.
+or tokens: the client takes a session only from its command line and its own Accounts screen.
+`launch-mc-rs.ps1` passes no session at all, and neither does the packaged client when it starts
+itself (section 11): it only finds the 1.8.9 files.
 
 **Saved sign-ins** live in `accounts.json` in the per-user config folder (`%APPDATA%\mc-rs\config`
 on Windows; `MC_RS_CONFIG_DIR` overrides it), never in the game folder that players copy and share.
@@ -343,27 +341,40 @@ written to logs, and removing an account deletes its saved sign-in.
 .\package-aero-client.ps1          # about 35 minutes; -SkipBuild re-zips the last build
 ```
 
-It produces `release\Aero Client.zip` for players who do not build anything: a "Play Aero Client"
-shortcut, a plain-language README, and the client with a launcher script that finds the player's
-own Minecraft 1.8.9 files (players sign in on the client's Accounts screen). Build it with
-`AERO_MSA_CLIENT_ID` set (section 10): the zip's players can sign in only there, so a zip built
-without it cannot sign in at all, and the script warns about it. Compared with the client
+It produces `release\Aero Client.zip` for players who do not build anything: `Aero Client.exe`,
+which players double-click, a plain-language README, and the client, `app\mc-client.exe`.
+`Aero Client.exe` is `aero-start` from the `mc-shell` crate: it only starts `app\mc-client.exe`.
+The client, started with no arguments next to its updater marker `app\aero-install.json`, starts
+itself the way a player expects: it finds the player's own Minecraft 1.8.9 files (the folder
+chosen last time, then the official launcher's, else it asks once with a folder picker and keeps
+the answer for the Windows user), keeps its logs in `game\logs`, and shows a plain message when
+something goes wrong. Players sign in on the client's Accounts screen. The package holds no
+script of any kind (no PowerShell, no `.cmd` or `.bat`). Build it with `AERO_MSA_CLIENT_ID` set
+(section 10): the zip's players can sign in only there, so a zip built without it cannot sign in
+at all, and the script warns about it. Compared with the client
 `install-mc-rs.ps1` installs:
 
-- it is built with `--no-default-features --features mimalloc`, so the development-only offline
-  login is compiled out;
+- it is built with `--no-default-features --features mimalloc,windowed`, so the development-only
+  offline login is compiled out, and the client is a windowed program (Windows' GUI subsystem):
+  no console window opens beside the game;
 - the C runtime is linked statically (`-Ctarget-feature=+crt-static`), so players need no Visual
   C++ Redistributable;
-- it uses its own build folders (`tgt\pkg-gen`, `tgt\pkg-use`) and profile, and never touches your
+- it uses its own build folders (`tgt\pkg-gen`, `tgt\pkg-use`, and `tgt\pkg-starter` for
+  `Aero Client.exe`, which is built the same way without PGO) and profile, and never touches your
   installed client or settings.
 
-**No Minecraft files in anything distributed.** A package ships this project's binary, its
-licences and notices, and a launcher that finds the player's own Minecraft installation; never the
-1.8.9 jar, its assets or anything extracted from them. `mc-rs\packaging\scripts\verify-payload.ps1`
+**No Minecraft files in anything distributed.** A package ships this project's programs, their
+licences and notices; the client finds the player's own Minecraft installation. Never the 1.8.9
+jar, its assets or anything extracted from them. `mc-rs\packaging\scripts\verify-payload.ps1`
 enforces this: it fails the build if anything that looks like a Minecraft file is in the package,
-and its own tests (`verify-payload.tests.ps1`) plant such a file to prove it rejects it. Before
-zipping, the script also checks that the exe imports no Visual C++ runtime DLL and contains no
-offline login, and smoke-tests a replay and the title screen.
+and its own tests (`verify-payload.tests.ps1`) plant such a file to prove it rejects it. The script
+also has it check that the package holds every file players and the updater need, and no script
+(`.ps1`, `.cmd`, `.bat`). Before zipping, the script checks that both programs are windowed,
+carry the logo as their icon (their build scripts compile it with the Windows SDK's `rc.exe`,
+which the MSVC build tools install; without it cargo only warns), import no Visual C++ runtime DLL
+and name no folder, account or address of the PC that built them, that the client contains no
+offline login, and that every library `Aero Client.exe` links is listed in the notices; then it
+smoke-tests a replay and the title screen.
 
 `app\LICENSE.txt` in the zip is the GPL-3.0 text (copied from `mc-rs\LICENSE`), and `app\licenses\`
 holds the font licence and `THIRD-PARTY-NOTICES.txt`: every Rust library compiled into that exe with
@@ -373,8 +384,8 @@ licence, and the notices of published code the client follows (such as the logar
 lock file (offline), for exactly the zip's features and target.
 
 **Optional code signing.** Without these options nothing changes. With one, the script signs
-`app\mc-client.exe` (and `app\launcher.ps1` where it can) before zipping, with SHA-256 and an
-RFC 3161 timestamp, so the signature stays valid after the certificate expires:
+`Aero Client.exe` and `app\mc-client.exe` before zipping, with SHA-256 and an RFC 3161 timestamp,
+so the signature stays valid after the certificate expires:
 
 - `-SignThumbprint <thumbprint>`: a code signing certificate in `Cert:\CurrentUser\My` (on a
   hardware token, from a cloud signing service, or any other). Find the thumbprint with
@@ -401,18 +412,26 @@ program icon (`app\aero-client.ico`, which the zip carries too) and the wizard p
 logo renders in `mc-rs\crates\mc-client\assets\icon` (add a size there rather than a picture
 anywhere else). The installer:
 
-- installs for the current Windows user, without an administrator prompt, always into
-  `%LOCALAPPDATA%\Programs\Aero Client`: there is no folder page, and it refuses a folder not named
-  `Aero Client` (`/DIR=` on its command line), so its uninstaller only ever deletes inside one;
-- installs exactly the zip's folder (`Play Aero Client.cmd`, `README.txt`, `app\`), so the in-game
-  updater updates an installed copy the way it updates an unzipped one. Keep `app\aero-client.ico`
-  in every release: the shortcuts point at it, and an update replaces `app\` as a whole;
+- installs for the current Windows user, without an administrator prompt, into
+  `%LOCALAPPDATA%\Programs\Aero Client` unless the player chooses another folder on its folder
+  page, which shows on a first install only (an upgrade keeps the folder). The folder is always
+  named `Aero Client`: the page adds that name to a typed folder (Browse adds it too), and Setup
+  refuses any other (`/DIR=` on its command line), so its uninstaller only ever deletes inside
+  such a folder. It must be one the player can change without administrator rights, because the
+  in-game updater writes there: the page refuses Program Files, Windows, a network path and any
+  folder where Setup cannot make a test folder. A folder that already holds a portable copy is
+  fine: Setup replaces the program and keeps `game\`;
+- installs exactly the zip's folder (`Aero Client.exe`, `README.txt`, `app\`), so the in-game
+  updater updates an installed copy the way it updates an unzipped one, and removes the
+  `Play Aero Client.cmd` that earlier packages had. Keep `app\aero-client.ico` in every release:
+  the shortcuts use it as their icon, and an update replaces `app\` as a whole;
 - adds "Aero Client" to the Start menu and, unless the player unticks it, the desktop (both start
-  `Play Aero Client.cmd` minimized), and offers to start the game on its last page;
+  `app\mc-client.exe` with no arguments, so a pinned shortcut and the running game share one
+  taskbar button), and offers to start the game on its last page;
 - upgrades an existing installation in place (its `AppId` must never change), after closing a
   running client (it asks first);
-- registers in Settings > Apps, where the launcher keeps the version in step after an in-game
-  update (only for the entry whose `InstallLocation` is the launcher's own folder);
+- registers in Settings > Apps, where the client keeps the version in step after an in-game
+  update (only for the entry whose `InstallLocation` is its own folder);
 - uninstalls the program, what the updater added (`app\`, `update\`), the shortcuts and the
   Settings entry. It keeps the player's `game\` folder unless they agree to delete it (a silent
   uninstall always keeps it), and it never touches saved sign-ins (`%APPDATA%\mc-rs`), which

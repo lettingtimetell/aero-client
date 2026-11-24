@@ -11,12 +11,18 @@
 #
 # Usage:
 #   pwsh -File verify-payload.ps1 -Payload <dir> [-ExpectBinary mc-client.exe] [-Quiet]
+#        [-ExpectFiles <file>,<file>...] [-ForbidExtensions <.ext>,<.ext>...]
+# -ExpectFiles names files the payload must hold (paths relative to it); -ForbidExtensions adds
+# file types a package must not hold to Minecraft's. Lists may also be one comma-separated
+# string (what `pwsh -File` passes).
 # Exit codes: 0 clean, 1 a forbidden file was found, 2 the payload is not usable.
 
 [CmdletBinding()]
 param(
     [Parameter(Mandatory = $true)][string] $Payload,
     [string] $ExpectBinary = "",
+    [string[]] $ExpectFiles = @(),
+    [string[]] $ForbidExtensions = @(),
     [switch] $Quiet
 )
 
@@ -30,6 +36,9 @@ if (-not (Test-Path -LiteralPath $Payload -PathType Container)) {
     Write-Host "verify-payload: payload directory not found: $Payload"
     exit 2
 }
+$ExpectFiles = @($ExpectFiles | ForEach-Object { $_ -split "," } | ForEach-Object { $_.Trim() } | Where-Object { $_ })
+$ForbidExtensions = @($ForbidExtensions | ForEach-Object { $_ -split "," } | ForEach-Object { $_.Trim().ToLowerInvariant() } |
+    Where-Object { $_ } | ForEach-Object { if ($_.StartsWith(".")) { $_ } else { ".$_" } })
 
 # Anything with one of these extensions is a Minecraft asset in every layout that matters:
 # textures, sounds, models/blockstates, language files, the version jar itself, world saves.
@@ -58,6 +67,9 @@ foreach ($file in Get-ChildItem -LiteralPath $Payload -Recurse -File) {
     if ($forbiddenExtensions -contains $extension) {
         $problems.Add("forbidden extension '$extension': $relative")
     }
+    if ($ForbidExtensions -contains $extension) {
+        $problems.Add("file type '$extension' not allowed in this package: $relative")
+    }
     if ($forbiddenNames -contains $name) {
         $problems.Add("forbidden file name: $relative")
     }
@@ -72,6 +84,15 @@ foreach ($file in Get-ChildItem -LiteralPath $Payload -Recurse -File) {
 if ($fileCount -eq 0) {
     Write-Host "verify-payload: payload is empty: $Payload"
     exit 2
+}
+
+# What a package must hold to work at all, as the caller names it: the program players start,
+# the files an installer or an updater relies on.
+foreach ($expected in $ExpectFiles) {
+    if (-not (Test-Path -LiteralPath (Join-Path $Payload $expected) -PathType Leaf)) {
+        Write-Host "verify-payload: expected file not found in payload: $expected"
+        exit 2
+    }
 }
 
 # The offline login path (no sign-in) is dev-only And S21's

@@ -1,0 +1,37 @@
+[package]
+name        = "mc-shell"
+description = "The Windows calls of the packaged start (message boxes, a folder picker, the Settings > Apps entry, the log handles) and Aero Client.exe, the windowless starter of a portable folder."
+version.workspace = true
+edition.workspace = true
+publish.workspace = true
+license.workspace = true
+repository.workspace = true
+
+# `aero-start` is the portable folder's `Aero Client.exe` (the packaging copies it there): std
+# plus this crate, a windowless program that starts `app\mc-client.exe` and exits.
+[[bin]]
+name = "aero-start"
+path = "src/bin/aero-start.rs"
+
+[target.'cfg(windows)'.dependencies]
+# 0.62.2 is already in the graph (cpal, wgpu-hal, gpu-allocator, mc-media, mc-video, mc-replay),
+# and the client's build already compiles every feature named here (cpal and wgpu-hal need them),
+# so the `windows` build the client shares is not changed. The registry and standard-handle
+# calls, whose binding modules would be new features (and rebuild `windows`, wgpu and the
+# renderer for every build of the client), are imported with the crate's own `link!` in
+# `src/sys.rs` instead.
+windows = { version = "0.62", features = [
+    "Win32_Foundation",
+    "Win32_System_Com",
+    "Win32_UI_Shell",
+    "Win32_UI_WindowsAndMessaging",
+] }
+
+[dev-dependencies]
+tempfile.workspace = true
+
+# The starter end to end. Its own `main` (no test harness): run as `app\mc-client.exe` by the
+# starter under test, the same binary records the arguments it was given.
+[[test]]
+name = "aero_start"
+harness = false

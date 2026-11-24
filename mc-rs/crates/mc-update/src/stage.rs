@@ -11,8 +11,9 @@
 //!   ASCII only, `/` or `\` as separators, no leading separator, no `:` (drive letters, NTFS
 //!   streams), no empty, `.` or `..` component, none ending in a dot or space, none of
 //!   `< > " | ? *`, no Windows device name (`CON`, `NUL`, `COM1`...), bounded lengths;
-//! - it must be under the top folder `Aero Client/`; only `app/...`, `Play Aero Client.cmd` and
-//!   `README.txt` are extracted (anything else, `game/` included, is skipped and logged);
+//! - it must be under the top folder `Aero Client/`; only `app/...` and the [`ROOT_FILES`]
+//!   (`Aero Client.exe`, `Play Aero Client.cmd`, `README.txt`) are extracted (anything else,
+//!   `game/` included, is skipped and logged);
 //! - no symbolic link and nothing but a plain file or folder (Unix mode bits checked too);
 //! - no path twice (compared case-insensitively, as Windows does);
 //! - at most [`Limits::max_entries`] entries; each file's bytes are **counted as read** against
@@ -20,8 +21,10 @@
 //!   declared size is not trusted, and must match the count);
 //! - files are created with `create_new` inside a staging folder this module creates empty.
 //!
-//! The result must contain `app/mc-client.exe`, `app/launcher.ps1`, `Play Aero Client.cmd` and
-//! `app/aero-install.json` naming this release's version.
+//! The result must contain `app/mc-client.exe` and `app/aero-install.json` naming this release's
+//! version. The root files are optional: those a release has replace the
+//! install's, the others stay as they are (the helper starts `app\mc-client.exe` after an update,
+//! never a root file).
 
 use std::collections::HashSet;
 use std::fs::{self, File, OpenOptions};
@@ -29,15 +32,13 @@ use std::io::{BufReader, Read, Write};
 use std::path::{Path, PathBuf};
 
 use crate::error::UpdateError;
-use crate::install::{
-    InstallMarker, APP_DIR, EXE_NAME, LAUNCHER_CMD, LAUNCHER_SCRIPT, MARKER_FILE,
-};
+use crate::install::{InstallMarker, APP_DIR, EXE_NAME, LAUNCHER_CMD, LAUNCHER_EXE, MARKER_FILE};
 
 /// The release zip's top folder.
 pub const TOP_DIR: &str = "Aero Client";
 
-/// Files next to `app/` that an update replaces too.
-pub const ROOT_FILES: &[&str] = &[LAUNCHER_CMD, "README.txt"];
+/// Files next to `app/` that an update replaces too: the starter, the older `.cmd`, the readme.
+pub const ROOT_FILES: &[&str] = &[LAUNCHER_EXE, LAUNCHER_CMD, "README.txt"];
 
 /// The longest entry name accepted, in bytes.
 const MAX_NAME_BYTES: usize = 240;
@@ -272,12 +273,7 @@ pub fn stage_release(
 /// Whether the extracted `Aero Client` folder at `root` is release `version`'s package.
 pub fn check_package(root: &Path, version: &str) -> Result<(), UpdateError> {
     let app = root.join(APP_DIR);
-    for required in [
-        app.join(EXE_NAME),
-        app.join(LAUNCHER_SCRIPT),
-        app.join(MARKER_FILE),
-        root.join(LAUNCHER_CMD),
-    ] {
+    for required in [app.join(EXE_NAME), app.join(MARKER_FILE)] {
         if !required.is_file() {
             return Err(archive_error(format!(
                 "the release has no {}",
@@ -344,10 +340,10 @@ mod tests {
         assert_eq!(
             listing(&dir.path().join("staging")),
             [
+                "0.2.0/Aero Client/Aero Client.exe",
                 "0.2.0/Aero Client/Play Aero Client.cmd",
                 "0.2.0/Aero Client/README.txt",
                 "0.2.0/Aero Client/app/aero-install.json",
-                "0.2.0/Aero Client/app/launcher.ps1",
                 "0.2.0/Aero Client/app/licenses/NOTICE.txt",
                 "0.2.0/Aero Client/app/mc-client.exe",
             ],
@@ -364,15 +360,62 @@ mod tests {
     fn backslash_separators_from_windows_zips_work() {
         let items = [
             ZipItem::file("Aero Client\\app\\mc-client.exe", b"exe"),
-            ZipItem::file("Aero Client\\app\\launcher.ps1", b"ps1"),
             ZipItem::file(
                 "Aero Client\\app\\aero-install.json",
                 InstallMarker::new("0.2.0").to_json().as_bytes(),
             ),
+            ZipItem::file("Aero Client\\Aero Client.exe", b"starter"),
             ZipItem::file("Aero Client\\Play Aero Client.cmd", b"cmd"),
         ];
-        let (_dir, result) = stage(&write_zip(&items), "0.2.0");
+        let (dir, result) = stage(&write_zip(&items), "0.2.0");
+        let staged = result.expect("staged");
+        assert_eq!(
+            fs::read(staged.root.join("Aero Client.exe")).unwrap(),
+            b"starter"
+        );
+        drop(dir);
+    }
+
+    /// A release needs its client and its marker; the root files are optional
+    /// (an install keeps the ones a release doesn't bring), and an older release's
+    /// `app\launcher.ps1` is just another file of `app\`.
+    #[test]
+    fn the_root_files_are_optional_and_no_launcher_script_is_needed() {
+        let marker = InstallMarker::new("0.2.0").to_json();
+        let app_only = [
+            ZipItem::file("Aero Client/app/mc-client.exe", b"exe"),
+            ZipItem::file("Aero Client/app/aero-install.json", marker.as_bytes()),
+        ];
+        let (dir, result) = stage(&write_zip(&app_only), "0.2.0");
+        result.expect("app\\ alone is a release");
+        assert_eq!(
+            listing(&dir.path().join("staging")),
+            [
+                "0.2.0/Aero Client/app/aero-install.json",
+                "0.2.0/Aero Client/app/mc-client.exe",
+            ]
+        );
+
+        let with_script = package_zip(
+            "0.2.0",
+            &[ZipItem::file("Aero Client/app/launcher.ps1", b"# launcher")],
+        );
+        let (dir, result) = stage(&with_script, "0.2.0");
+        let staged = result.expect("an older layout still stages");
+        assert!(staged.root.join("app").join("launcher.ps1").is_file());
+        assert!(staged.root.join("Aero Client.exe").is_file());
+        drop(dir);
+
+        // A starter anywhere but next to app\ is not one of the root files.
+        let (dir, result) = stage(
+            &package_zip(
+                "0.2.0",
+                &[ZipItem::file("Aero Client/extra/Aero Client.exe", b"x")],
+            ),
+            "0.2.0",
+        );
         result.expect("staged");
+        assert!(!dir.path().join("staging/0.2.0/Aero Client/extra").exists());
     }
 
     #[test]
@@ -477,12 +520,19 @@ mod tests {
         assert!(matches!(result, Err(UpdateError::Archive(_))), "{result:?}");
         // No client.
         let items = [
-            ZipItem::file("Aero Client/app/launcher.ps1", b"ps1"),
             ZipItem::file(
                 "Aero Client/app/aero-install.json",
                 InstallMarker::new("0.2.0").to_json().as_bytes(),
             ),
+            ZipItem::file("Aero Client/Aero Client.exe", b"starter"),
             ZipItem::file("Aero Client/Play Aero Client.cmd", b"cmd"),
+        ];
+        let (_dir, result) = stage(&write_zip(&items), "0.2.0");
+        assert!(matches!(result, Err(UpdateError::Archive(_))), "{result:?}");
+        // No marker.
+        let items = [
+            ZipItem::file("Aero Client/app/mc-client.exe", b"exe"),
+            ZipItem::file("Aero Client/Aero Client.exe", b"starter"),
         ];
         let (_dir, result) = stage(&write_zip(&items), "0.2.0");
         assert!(matches!(result, Err(UpdateError::Archive(_))), "{result:?}");

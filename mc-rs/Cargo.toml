@@ -38,6 +38,7 @@ mc-media    = { path = "crates/mc-media" }   # now-playing information and media
 mc-replay   = { path = "crates/mc-replay" }  # replay container, writer, reader
 mc-video    = { path = "crates/mc-video" }   # replay export encoder (Media Foundation)
 mc-update   = { path = "crates/mc-update" }  # the portable client's updater
+mc-shell    = { path = "crates/mc-shell" }   # the packaged start's Windows calls; Aero Client.exe
 
 # ---- external ----
 thiserror          = "2.0"

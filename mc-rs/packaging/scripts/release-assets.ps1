@@ -76,8 +76,9 @@ $Installer = (Resolve-Path -LiteralPath $Installer).Path
 # (Inno Setup pads the version text with spaces.)
 $setupVersion = ([string](Get-Item -LiteralPath $Installer).VersionInfo.ProductVersion) -replace '[\s\x00]+$', ''
 if ($setupVersion -ne $Version) { throw "$Installer is version '$setupVersion', not $($Version): package again" }
-# Installed copies point their shortcuts at app\aero-client.ico, and an update replaces app\, so
-# every release zip must carry it. (Windows PowerShell's Compress-Archive writes \ in names.)
+# Portable players start Aero Client.exe. Installed copies point their shortcuts at
+# app\mc-client.exe with the icon app\aero-client.ico, and an update replaces app\, so every
+# release zip must carry them. (Windows PowerShell's Compress-Archive writes \ in names.)
 Add-Type -AssemblyName System.IO.Compression.FileSystem
 $archive = [System.IO.Compression.ZipFile]::OpenRead($Zip)
 try {
@@ -85,9 +86,12 @@ try {
 } finally {
     $archive.Dispose()
 }
-foreach ($required in @('Aero Client/app/mc-client.exe', 'Aero Client/app/aero-client.ico')) {
+foreach ($required in @('Aero Client/Aero Client.exe', 'Aero Client/app/mc-client.exe', 'Aero Client/app/aero-client.ico')) {
     if ($names -notcontains $required) { throw "$Zip has no $($required): package again" }
 }
+# A release holds no script, PowerShell or batch: the client starts itself.
+$scriptFiles = @($names | Where-Object { $_ -match '\.(ps1|psm1|psd1|cmd|bat)$' })
+if ($scriptFiles.Count -gt 0) { throw "$Zip holds scripts ($($scriptFiles -join ', ')): package again" }
 
 if (Test-Path -LiteralPath $OutDir) {
     if (-not $Force) { throw "$OutDir already exists; delete it or pass -Force" }

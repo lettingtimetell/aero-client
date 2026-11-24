@@ -6,43 +6,51 @@ is installed, the installer release\Aero-Client-Setup.exe.
 
 .DESCRIPTION
 The zip holds one "Aero Client" folder:
-  Play Aero Client.cmd   double-click to play (runs app\launcher.ps1 hidden)
+  Aero Client.exe        double-click to play: starts app\mc-client.exe (mc-shell's aero-start)
   README.txt             setup in plain words
-  app\mc-client.exe      the client: PGO-optimised like the installed one
-  app\launcher.ps1       finds the player's Minecraft 1.8.9 files and starts the game, friendly pop-ups
+  app\mc-client.exe      the client: PGO-optimised like the installed one. Started with no arguments
+                         it finds the player's Minecraft 1.8.9 files (asking once), keeps its logs in
+                         game\logs and shows a plain message when something goes wrong
   app\LICENSE.txt        Aero Client's licence, the GPL-3.0 text (a copy of mc-rs\LICENSE)
   app\NOTICE.txt, app\BUILD-INFO.txt, app\licenses\ (the font licence and THIRD-PARTY-NOTICES.txt)
   app\aero-install.json  the updater's marker: a packaged portable install of this version
   app\aero-client.ico    the logo as a program icon (the installer's shortcuts and Settings > Apps)
-Each player's settings, logs and screenshots go in a "game" folder created on first start.
+Each player's settings, logs and screenshots go in a "game" folder created on first start. Both
+programs are windowed (no console window opens), and the package holds no script of any kind
+(no PowerShell, no .cmd or .bat).
 
 The installer (mc-rs\packaging\aero\installer\aero-client.iss) installs exactly that folder for the
-current Windows user into %LOCALAPPDATA%\Programs\Aero Client, with Start menu and desktop
-shortcuts and an uninstaller, so the in-game updater updates it like an unzipped copy. It is built
-with Inno Setup 6's ISCC.exe: $env:ISCC, else Inno Setup 6 installed for this user or for everyone.
-Without it the script builds the zip only and says so.
+current Windows user, into %LOCALAPPDATA%\Programs\Aero Client or a folder the player chooses, with
+Start menu and desktop shortcuts to app\mc-client.exe and an uninstaller, so the in-game updater
+updates it like an unzipped copy. It is built with Inno Setup 6's ISCC.exe: $env:ISCC, else Inno
+Setup 6 installed for this user or for everyone. Without it the script builds the zip only and
+says so.
 
 How the shared client differs from the one install-mc-rs.ps1 installs for you:
-  - --no-default-features --features mimalloc: the dev-only "offline" login (no sign-in) is compiled
-    out, as CONTRIBUTING.md ("Packaging") requires for anything distributed;
+  - --no-default-features --features mimalloc,windowed: the dev-only "offline" login (no sign-in)
+    is compiled out, as CONTRIBUTING.md ("Packaging") requires for anything distributed, and the
+    client is a windowed program (Windows' GUI subsystem), so no console window opens beside it;
   - -Ctarget-feature=+crt-static: the C runtime is built in, so players don't need the Visual C++
     Redistributable.
-Both builds map this PC's folders (user profile, cargo's home, this project, the build folders) to
-neutral names with --remap-path-prefix, so a player's crash report names no folder of your PC.
-It never touches target\release (your installed client) or your settings.
+Aero Client.exe is built the same way (crt-static, its own build folder), without PGO: it only
+starts the client. Every build maps this PC's folders (user profile, cargo's home, this project,
+the build folders) to neutral names with --remap-path-prefix, so a player's crash report names no
+folder of your PC. It never touches target\release (your installed client) or your settings.
 
 Steps (about 35 minutes; separate build folders, so your next install-mc-rs.ps1 stays fast):
   1. instrumented build           (optimization\scratch\round2-2026-11-05\tgt\pkg-gen)
   2. training on the benchmark scenes (as install-mc-rs.ps1)
   3. merge the profile            (...\pgo\package.profdata)
-  4. optimised build              (...\tgt\pkg-use)
-  5. checks: no Visual C++ runtime import, no offline login, a replay smoke run and a title-screen run
-  6. stage, verify that no Minecraft file is inside (packaging\scripts\verify-payload.ps1), zip, and
-     build the installer from the same staged folder
+  4. optimised build              (...\tgt\pkg-use), then Aero Client.exe (...\tgt\pkg-starter)
+  5. checks: windowed programs, no Visual C++ runtime import, no offline login, nothing that names
+     this PC, the notices cover Aero Client.exe, a replay smoke run and a title-screen run
+  6. stage, verify that the package is complete and holds no Minecraft file and no script
+     (packaging\scripts\verify-payload.ps1), zip, and build the installer from the same staged
+     folder
 The release files for GitHub come from both afterwards: mc-rs\packaging\scripts\release-assets.ps1.
 
 .PARAMETER SkipBuild
-Re-stage and re-zip the last build without compiling.
+Re-stage and re-zip the last build (the client and Aero Client.exe) without compiling.
 
 .PARAMETER SkipVanillaCheck
 Build even though no Minecraft 1.8.9 jar is where the PGO training runs look for one (see
@@ -51,12 +59,13 @@ install-mc-rs.ps1). The profile then fits the real game less well.
 .PARAMETER SignThumbprint
 Optional Authenticode signing (see CONTRIBUTING.md, "Packaging"): the thumbprint of a code signing
 certificate in Cert:\CurrentUser\My (hardware token, cloud signing service, any CA). Signs
-app\mc-client.exe and app\launcher.ps1 before zipping, and the installer (Setup and its
+Aero Client.exe and app\mc-client.exe before zipping, and the installer (Setup and its
 uninstaller). Also read from $env:AERO_SIGN_THUMBPRINT. Off when empty.
 
 .PARAMETER SignDlib
 Optional Azure Artifact Signing: path to Microsoft's Azure.CodeSigning.Dlib.dll. Needs
--SignMetadata too. Signs app\mc-client.exe and the installer. Also read from $env:AERO_SIGN_DLIB.
+-SignMetadata too. Signs Aero Client.exe, app\mc-client.exe and the installer. Also read from
+$env:AERO_SIGN_DLIB.
 
 .PARAMETER SignMetadata
 Azure Artifact Signing metadata JSON (endpoint, account, certificate profile). Also read from
@@ -85,9 +94,12 @@ $scripts = Join-Path $rs 'packaging\scripts'
 $outDir = Join-Path $root 'release'
 $gen = Join-Path $round2 'tgt\pkg-gen'
 $use = Join-Path $round2 'tgt\pkg-use'
+$starterBuild = Join-Path $round2 'tgt\pkg-starter'
 $profraw = Join-Path $round2 'pgo\profraw-pkg'
 $profileData = Join-Path $round2 'pgo\package.profdata'
-$features = @('--no-default-features', '--features', 'mimalloc')
+# The same features for the instrumented and the optimised build: the profile must fit.
+$featureList = 'mimalloc,windowed'
+$features = @('--no-default-features', '--features', $featureList)
 $unitSeparator = [string][char]0x1f
 
 function Restore-Env([hashtable]$Saved) {
@@ -144,6 +156,32 @@ function Test-BytesContain([string]$Path, [string]$Ascii) {
     return $text.IndexOf($Ascii, [StringComparison]::OrdinalIgnoreCase) -ge 0
 }
 
+# The Subsystem field of a Windows program's PE header: 2 for a windowed program, 3 for a console
+# one (Windows opens a console window beside a console program started from Explorer or a shortcut).
+function Get-PeSubsystem([string]$Path) {
+    $head = New-Object byte[] 4096
+    $stream = [IO.File]::OpenRead($Path)
+    try { $read = $stream.Read($head, 0, $head.Length) } finally { $stream.Dispose() }
+    $pe = if ($read -ge 64) { [BitConverter]::ToInt32($head, 0x3C) } else { -1 }
+    if ($pe -lt 0 -or $pe + 94 -gt $read -or [Text.Encoding]::ASCII.GetString($head, $pe, 4) -ne "PE`0`0") {
+        throw "$Path is not a Windows program"
+    }
+    return [BitConverter]::ToUInt16($head, $pe + 92)
+}
+
+# The crates.io libraries a package links into its program, as "name vX.Y.Z" lines (the workspace's
+# own crates carry their folder and are left out): the same cargo tree third_party_notices.py reads.
+function Get-LinkedCrates([string[]]$Selection) {
+    Push-Location -LiteralPath $rs
+    try {
+        $lines = & cargo tree @Selection -e normal,no-proc-macro --target x86_64-pc-windows-msvc --prefix none --format '{p}' --offline --locked
+        if ($LASTEXITCODE -ne 0) { throw "cargo tree $($Selection -join ' ') failed (exit code $LASTEXITCODE)" }
+    } finally {
+        Pop-Location
+    }
+    return @($lines | Where-Object { $_ -match '^[A-Za-z0-9_-]+ v[0-9][^ ]*$' } | Sort-Object -Unique)
+}
+
 function Find-SignTool {
     $cmd = Get-Command signtool.exe -ErrorAction SilentlyContinue
     if ($cmd) { return $cmd.Source }
@@ -156,35 +194,32 @@ function Find-SignTool {
     throw 'signtool.exe not found: install the Windows SDK signing tools (see CONTRIBUTING.md, "Packaging")'
 }
 
-# Optional Authenticode signing of the staged client (CONTRIBUTING.md, "Packaging"). A no-op unless a
-# certificate thumbprint or the Artifact Signing dlib + metadata were given.
-function Invoke-OptionalSigning([string]$AppDir) {
+# Optional Authenticode signing of the staged programs (CONTRIBUTING.md, "Packaging"). A no-op unless
+# a certificate thumbprint or the Artifact Signing dlib + metadata were given.
+function Invoke-OptionalSigning([string[]]$Programs) {
     $thumb = ($SignThumbprint -replace '\s', '')
     if ($thumb -eq '' -and $SignDlib -eq '') { return }
     $signtool = Find-SignTool
-    $exePath = Join-Path $AppDir 'mc-client.exe'
     if ($thumb -ne '') {
         $tsa = if ($TimestampUrl -ne '') { $TimestampUrl } else { 'http://timestamp.digicert.com' }
         Write-Host "signing with certificate $thumb"
-        Invoke-Native 'signing mc-client.exe' { & $signtool sign /fd SHA256 /sha1 $thumb /tr $tsa /td SHA256 $exePath }
-        $cert = Get-ChildItem -LiteralPath "Cert:\CurrentUser\My\$thumb" -ErrorAction SilentlyContinue
-        if ($cert) {
-            $result = Set-AuthenticodeSignature -LiteralPath (Join-Path $AppDir 'launcher.ps1') -Certificate $cert `
-                -HashAlgorithm SHA256 -TimestampServer $tsa
-            if ($result.Status -ne 'Valid') { throw "signing launcher.ps1 failed: $($result.StatusMessage)" }
-        } else {
-            Write-Host 'note: the certificate is not in Cert:\CurrentUser\My, launcher.ps1 left unsigned' -ForegroundColor Yellow
-        }
     } else {
         if ($SignMetadata -eq '' -or -not (Test-Path -LiteralPath $SignMetadata)) { throw '-SignDlib needs -SignMetadata (the Artifact Signing metadata JSON)' }
         if (-not (Test-Path -LiteralPath $SignDlib)) { throw "Artifact Signing dlib not found: $SignDlib" }
         $tsa = if ($TimestampUrl -ne '') { $TimestampUrl } else { 'http://timestamp.acs.microsoft.com' }
         Write-Host 'signing with Azure Artifact Signing'
-        Invoke-Native 'signing mc-client.exe' { & $signtool sign /v /fd SHA256 /tr $tsa /td SHA256 /dlib $SignDlib /dmdf $SignMetadata $exePath }
     }
-    $check = Get-AuthenticodeSignature -LiteralPath $exePath
-    if ($check.Status -ne 'Valid') { throw "mc-client.exe signature check failed: $($check.Status) $($check.StatusMessage)" }
-    Write-Host "signed: $($check.SignerCertificate.Subject)" -ForegroundColor Green
+    foreach ($program in $Programs) {
+        $name = Split-Path -Leaf $program
+        if ($thumb -ne '') {
+            Invoke-Native "signing $name" { & $signtool sign /fd SHA256 /sha1 $thumb /tr $tsa /td SHA256 $program }
+        } else {
+            Invoke-Native "signing $name" { & $signtool sign /v /fd SHA256 /tr $tsa /td SHA256 /dlib $SignDlib /dmdf $SignMetadata $program }
+        }
+        $check = Get-AuthenticodeSignature -LiteralPath $program
+        if ($check.Status -ne 'Valid') { throw "$name signature check failed: $($check.Status) $($check.StatusMessage)" }
+        Write-Host "signed $($name): $($check.SignerCertificate.Subject)" -ForegroundColor Green
+    }
 }
 
 # The command Inno Setup runs to sign Setup and its uninstaller, with the same certificate or
@@ -279,6 +314,14 @@ if (-not $SkipBuild) {
         $env:CARGO_TARGET_DIR = $use
         $env:CARGO_ENCODED_RUSTFLAGS = (@("-Cprofile-use=$profileData", '-Ctarget-feature=+crt-static') + $remap) -join $unitSeparator
         Invoke-Native 'optimised build' { cargo build --profile dist -p mc-client @features --bin mc-client }
+
+        # Aero Client.exe only starts the client, so no profile; but the same static C runtime and
+        # neutral folder names, in its own build folder (the client's stays as the profile built it).
+        Write-Host "      Aero Client.exe $(Get-Date -Format T)"
+        $env:CARGO_TARGET_DIR = $starterBuild
+        $env:CARGO_ENCODED_RUSTFLAGS = (@('-Ctarget-feature=+crt-static') +
+            @(Get-RemapPathFlags -Workspace $rs -TargetDirs @($starterBuild))) -join $unitSeparator
+        Invoke-Native 'Aero Client.exe build' { cargo build --profile dist -p mc-shell --bin aero-start }
     } finally {
         Pop-Location
         Restore-Env $saved
@@ -287,15 +330,31 @@ if (-not $SkipBuild) {
 
 $exe = Join-Path $use 'dist\mc-client.exe'
 if (-not (Test-Path -LiteralPath $exe -PathType Leaf)) { throw "no built client at $exe" }
+$starterExe = Join-Path $starterBuild 'dist\aero-start.exe'
+if (-not (Test-Path -LiteralPath $starterExe -PathType Leaf)) { throw "no built Aero Client.exe at $starterExe" }
+$programs = @(
+    [pscustomobject]@{ Path = $exe; Name = 'the client' },
+    [pscustomobject]@{ Path = $starterExe; Name = 'Aero Client.exe (aero-start)' }
+)
 
 Write-Host "[5/6] checks $(Get-Date -Format T)"
-foreach ($dll in @('VCRUNTIME140', 'MSVCP140', 'api-ms-win-crt-')) {
-    if (Test-BytesContain $exe $dll) { throw "the client still imports $dll; the C runtime must be static" }
+foreach ($program in $programs) {
+    # A console program opens a console window next to the game. Both are built as windowed
+    # programs (the client with the windowed feature).
+    if ((Get-PeSubsystem $program.Path) -ne 2) { throw "$($program.Name) is not a windowed program (Windows GUI subsystem)" }
+    # The logo as the file's icon comes in one resource with the version information, compiled by
+    # the build scripts with the Windows SDK's rc.exe; without rc.exe cargo only warns.
+    if (-not (Get-Item -LiteralPath $program.Path).VersionInfo.FileVersion) {
+        throw "$($program.Name) was built without its icon and version information (the Windows SDK's rc.exe was not found)"
+    }
+    foreach ($dll in @('VCRUNTIME140', 'MSVCP140', 'api-ms-win-crt-')) {
+        if (Test-BytesContain $program.Path $dll) { throw "$($program.Name) still imports $dll; the C runtime must be static" }
+    }
 }
 if (Test-BytesContain $exe 'OfflinePlayer:') { throw 'the client still contains the dev-only offline login' }
-# Players see panic messages, and every string of the exe ships to them: nothing in it may name
-# this PC or its owner (Get-RemapPathFlags maps the build folders). Checked: the profile, cargo's
-# home and the projects folder in every separator form, the account, this PC's name and
+# Players see panic messages, and every string of both programs ships to them: nothing in them may
+# name this PC or its owner (Get-RemapPathFlags maps the build folders). Checked: the profile,
+# cargo's home and the projects folder in every separator form, the account, this PC's name and
 # addresses, and the git e-mail, as ASCII/UTF-8 and as UTF-16LE at both byte alignments. The
 # owner's player names, UUIDs and servers are not known here: the private gate checks the zip.
 $cargoHomeDir = if ($env:CARGO_HOME) { $env:CARGO_HOME } else { Join-Path $env:USERPROFILE '.cargo' }
@@ -310,13 +369,15 @@ $addresses = @([System.Net.Dns]::GetHostAddresses($env:COMPUTERNAME) |
 foreach ($value in @($env:USERNAME, $env:COMPUTERNAME, $gitEmail) + $addresses) {
     if ($value -and $value.Length -ge 4) { $needles.Add($value) }
 }
-$bytes = [IO.File]::ReadAllBytes($exe)
-$texts = @([Text.Encoding]::ASCII.GetString($bytes), [Text.Encoding]::Unicode.GetString($bytes))
-if ($bytes.Length -gt 1) { $texts += [Text.Encoding]::Unicode.GetString($bytes, 1, $bytes.Length - 1) }
-foreach ($needle in $needles) {
-    foreach ($text in $texts) {
-        if ($text.IndexOf($needle, [StringComparison]::OrdinalIgnoreCase) -ge 0) {
-            throw 'the client still names this PC or its owner (a folder, the account, the PC name or address, or the e-mail)'
+foreach ($program in $programs) {
+    $bytes = [IO.File]::ReadAllBytes($program.Path)
+    $texts = @([Text.Encoding]::ASCII.GetString($bytes), [Text.Encoding]::Unicode.GetString($bytes))
+    if ($bytes.Length -gt 1) { $texts += [Text.Encoding]::Unicode.GetString($bytes, 1, $bytes.Length - 1) }
+    foreach ($needle in $needles) {
+        foreach ($text in $texts) {
+            if ($text.IndexOf($needle, [StringComparison]::OrdinalIgnoreCase) -ge 0) {
+                throw "$($program.Name) still names this PC or its owner (a folder, the account, the PC name or address, or the e-mail)"
+            }
         }
     }
 }
@@ -327,11 +388,13 @@ if (-not $env:AERO_MSA_CLIENT_ID) {
 } elseif (-not (Test-BytesContain $exe $env:AERO_MSA_CLIENT_ID.Trim())) {
     Write-Host 'note: the client was built without the AERO_MSA_CLIENT_ID set now; build again (without -SkipBuild) so its players can sign in' -ForegroundColor Yellow
 }
-# The zip's launcher: what it trusts, and exactly what it passes to the game (its folder and the
-# 1.8.9 files, never an account or a session). A few seconds, in a temporary folder, with a
-# stand-in game; Windows PowerShell, whose Add-Type compiles that stand-in.
-& powershell.exe -NoProfile -ExecutionPolicy Bypass -File (Join-Path $scripts 'test-launcher-trust.ps1')
-if ($LASTEXITCODE -ne 0) { throw 'the launcher checks failed (packaging\scripts\test-launcher-trust.ps1)' }
+# THIRD-PARTY-NOTICES.txt is written for the client's libraries; Aero Client.exe ships beside it, so
+# every library it links must be one the client links too.
+$clientCrates = Get-LinkedCrates (@('-p', 'mc-client') + $features)
+$starterOnly = @(Get-LinkedCrates @('-p', 'mc-shell') | Where-Object { $clientCrates -notcontains $_ })
+if ($starterOnly.Count -gt 0) {
+    throw "Aero Client.exe links libraries that THIRD-PARTY-NOTICES.txt would not list: $($starterOnly -join ', ')"
+}
 # The title-screen smoke run needs the vanilla 1.8.9 files: the copy setup-vanilla-files.ps1 made
 # (or MC_JARS_DIR), else the official launcher's folder.
 $jar = $null
@@ -346,6 +409,8 @@ foreach ($dir in @($env:MC_JARS_DIR, (Join-Path $root 'MCP-919-main\jars'), (Joi
         break
     }
 }
+# Both runs pass the client its arguments, so it starts the way a developer starts it, from the build
+# folder: the staged copy would see its updater marker and act as a player's install.
 $smoke = Join-Path ([IO.Path]::GetTempPath()) ('aero-package-smoke-' + [guid]::NewGuid().ToString('N'))
 New-Item -ItemType Directory $smoke | Out-Null
 $savedSmoke = @{ MC_PIPELINED_SUBMIT = $env:MC_PIPELINED_SUBMIT; MC_BACKGROUND_WINDOW = $env:MC_BACKGROUND_WINDOW; MC_NO_AUDIO = $env:MC_NO_AUDIO; MC_JARS_DIR = $env:MC_JARS_DIR }
@@ -382,8 +447,7 @@ New-StagedPayload -Stage $stage
 $appDir = Join-Path $stage 'app'
 New-Item -ItemType Directory -Force (Join-Path $appDir 'licenses') | Out-Null
 Copy-Item -LiteralPath $exe -Destination (Join-Path $appDir 'mc-client.exe')
-Copy-Item -LiteralPath (Join-Path $templates 'launcher.ps1') -Destination (Join-Path $appDir 'launcher.ps1')
-Copy-Item -LiteralPath (Join-Path $templates 'Play Aero Client.cmd') -Destination (Join-Path $stage 'Play Aero Client.cmd')
+Copy-Item -LiteralPath $starterExe -Destination (Join-Path $stage 'Aero Client.exe')
 Copy-Item -LiteralPath (Join-Path $templates 'README.txt') -Destination (Join-Path $stage 'README.txt')
 # The logo as a program icon, drawn from the logo renders in crates\mc-client\assets\icon. It goes
 # in app\, so the zip, the installer and every update carry it: the installer's shortcuts point at
@@ -406,7 +470,7 @@ Invoke-Native 'third-party notices' {
     python -I (Join-Path $scripts 'third_party_notices.py') (Join-Path $appDir 'licenses\THIRD-PARTY-NOTICES.txt') @features
 }
 # Before BUILD-INFO.txt, which records the shipped binary's hash.
-Invoke-OptionalSigning -AppDir $appDir
+Invoke-OptionalSigning -Programs @((Join-Path $stage 'Aero Client.exe'), (Join-Path $appDir 'mc-client.exe'))
 # Where the source code is published: the repository this build's updater reads releases from
 # (mc-update's DEFAULT_REPO, or AERO_UPDATE_REPO when the build set it), so the notice follows it.
 $sourceRepo = $env:AERO_UPDATE_REPO
@@ -437,9 +501,9 @@ It contains no Minecraft game files. It reads the Minecraft 1.8.9 files already 
 need your own Minecraft Java Edition account.
 
 Sign-in: you sign in inside the game, on its Accounts screen, with your Microsoft account. The
-saved sign-in stays on this PC for your Windows user, outside the game folder. The launcher reads
-no account and passes no login to the game. Aero Client sends your login only to Microsoft's,
-Xbox Live's and Minecraft's own services, and never prints it or writes it to a log.
+saved sign-in stays on this PC for your Windows user, outside the game folder. Aero Client reads
+no other program's accounts, sends your login only to Microsoft's, Xbox Live's and Minecraft's
+own services, and never prints it or writes it to a log.
 
 The title uses the Inter typeface, Copyright 2020 The Inter Project Authors, under the SIL Open
 Font License 1.1 (licenses\Inter-font-OFL.txt).
@@ -449,7 +513,7 @@ in licenses\THIRD-PARTY-NOTICES.txt.
 '@
 Set-Content -LiteralPath (Join-Path $appDir 'NOTICE.txt') -Encoding UTF8 -Value $noticeText.Replace('{REPO}', $sourceRepo)
 Write-BuildInfo -Stage $appDir -Version (Get-WorkspaceVersion -Workspace $rs) -Triple 'windows-x86_64' `
-    -Profile 'dist (PGO, crt-static)' -Binary (Join-Path $appDir 'mc-client.exe') -DefaultFeatures 'off' -Features 'mimalloc'
+    -Profile 'dist (PGO, crt-static)' -Binary (Join-Path $appDir 'mc-client.exe') -DefaultFeatures 'off' -Features $featureList
 # The updater's install marker (mc-update, install.rs): only a client next to it is a packaged
 # portable install that checks GitHub releases and may update itself; development builds have
 # none. UTF-8 without a byte order mark. Releases: see crates\mc-update\src\bin\aero-update-sign.rs.
@@ -465,7 +529,10 @@ if ($env:AERO_UPDATE_PUBKEY) {
 
 & (Join-Path $scripts 'verify-payload.ps1') -Payload $appDir -ExpectBinary 'mc-client.exe'
 if ($LASTEXITCODE -ne 0) { throw 'payload verification failed (app)' }
-& (Join-Path $scripts 'verify-payload.ps1') -Payload $stage
+# The whole package: what players start and what the updater and the installer need, and no script
+# anywhere, PowerShell or batch (the client starts itself; Aero Client.exe only starts it).
+& (Join-Path $scripts 'verify-payload.ps1') -Payload $stage -ExpectFiles @('Aero Client.exe', 'README.txt',
+    'app\mc-client.exe', 'app\aero-install.json', 'app\aero-client.ico') -ForbidExtensions @('.ps1', '.psm1', '.psd1', '.cmd', '.bat')
 if ($LASTEXITCODE -ne 0) { throw 'payload verification failed (package)' }
 
 $zip = Join-Path $outDir 'Aero Client.zip'

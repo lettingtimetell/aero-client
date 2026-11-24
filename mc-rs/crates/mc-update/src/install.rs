@@ -2,11 +2,10 @@
 //!
 //! ```text
 //! Aero Client\
-//!   Play Aero Client.cmd      what the player double-clicks
+//!   Aero Client.exe           what the player double-clicks: starts app\mc-client.exe, exits
 //!   README.txt
 //!   app\                      swapped as a whole by an update
-//!     mc-client.exe
-//!     launcher.ps1
+//!     mc-client.exe           started with no arguments: the packaged start
 //!     aero-install.json       the marker the packaging script writes (InstallMarker)
 //!     licenses\ ...
 //!   game\                     the player's settings, worlds, logs: never touched
@@ -33,10 +32,11 @@ pub const APP_DIR: &str = "app";
 pub const EXE_NAME: &str = "mc-client.exe";
 /// The packaging marker's file name, in `app\`.
 pub const MARKER_FILE: &str = "aero-install.json";
-/// What the player starts, next to `app\`.
+/// What the player starts, next to `app\`: the windowless starter (`mc-shell`'s
+/// `aero-start`), which starts `app\mc-client.exe` and exits.
+pub const LAUNCHER_EXE: &str = "Aero Client.exe";
+/// The older way to start the client, next to `app\` (it starts `app\mc-client.exe` too).
 pub const LAUNCHER_CMD: &str = "Play Aero Client.cmd";
-/// The launcher script in `app\`.
-pub const LAUNCHER_SCRIPT: &str = "launcher.ps1";
 /// The updater's folder, next to `app\`.
 pub const UPDATE_DIR: &str = "update";
 /// The marker format this build reads and the packaging script writes.
@@ -144,8 +144,7 @@ impl InstallPaths {
         InstallPaths::from_exe(&exe)
     }
 
-    /// The install `exe` belongs to: it must be `<root>\app\<exe>` with the marker beside it and
-    /// `Play Aero Client.cmd` in `<root>`.
+    /// The install `exe` belongs to: it must be `<root>\app\<exe>` with the marker beside it.
     pub fn from_exe(exe: &Path) -> Result<InstallPaths, UpdateError> {
         let app = exe
             .parent()
@@ -165,8 +164,12 @@ impl InstallPaths {
         InstallPaths::at_root(root)
     }
 
-    /// The install in `root` (`root\app\aero-install.json` and `root\Play Aero Client.cmd` must
-    /// exist).
+    /// The install in `root`: `root\app\aero-install.json` must exist and be this product's.
+    ///
+    /// What else `root` holds doesn't matter: `Aero Client.exe`, `Play Aero
+    /// Client.cmd` (an install from before the starter) or neither (a shortcut that starts
+    /// `app\mc-client.exe`). The helper starts the client itself after an update, never a file in
+    /// `root`, and an update replaces whichever root files its release brings.
     pub fn at_root(root: &Path) -> Result<InstallPaths, UpdateError> {
         let app = root.join(APP_DIR);
         let marker_path = app.join(MARKER_FILE);
@@ -174,9 +177,6 @@ impl InstallPaths {
             return Err(UpdateError::NotPortable(
                 "no install marker (a development build)".to_owned(),
             ));
-        }
-        if !root.join(LAUNCHER_CMD).is_file() {
-            return Err(UpdateError::NotPortable(format!("no {LAUNCHER_CMD}")));
         }
         let marker = InstallMarker::read(&marker_path)?;
         Ok(InstallPaths {
@@ -191,6 +191,12 @@ impl InstallPaths {
     #[must_use]
     pub fn exe(&self) -> PathBuf {
         self.app.join(EXE_NAME)
+    }
+
+    /// `Aero Client.exe`.
+    #[must_use]
+    pub fn launcher_exe(&self) -> PathBuf {
+        self.root.join(LAUNCHER_EXE)
     }
 
     /// `Play Aero Client.cmd`.
@@ -356,11 +362,37 @@ mod tests {
         let paths = fake_install(dir.path(), "0.1.0");
         std::fs::remove_file(paths.app.join(MARKER_FILE)).unwrap();
         assert!(InstallPaths::from_exe(&paths.exe()).is_err());
-        // A marker but no Play Aero Client.cmd.
+        // The marker in a folder that isn't called app.
         let other = tempfile::tempdir().unwrap();
-        let paths = fake_install(other.path(), "0.1.0");
-        std::fs::remove_file(paths.launcher_cmd()).unwrap();
-        assert!(InstallPaths::from_exe(&paths.exe()).is_err());
+        let bin = other.path().join("bin");
+        std::fs::create_dir_all(&bin).unwrap();
+        std::fs::write(bin.join(MARKER_FILE), InstallMarker::new("0.1.0").to_json()).unwrap();
+        assert!(InstallPaths::from_exe(&bin.join(EXE_NAME)).is_err());
+    }
+
+    /// Whatever starts the client sits next to `app\`: the starter `Aero
+    /// Client.exe`, the older `Play Aero Client.cmd`, both, or neither (an installed copy's
+    /// shortcut starts `app\mc-client.exe` itself). The marker alone makes the install, since the
+    /// helper starts `app\mc-client.exe` after an update and needs nothing else.
+    #[test]
+    fn an_install_is_found_by_its_marker_whatever_starts_it() {
+        for (exe, cmd) in [(true, true), (true, false), (false, true), (false, false)] {
+            let dir = tempfile::tempdir().unwrap();
+            let paths = fake_install(dir.path(), "0.1.0");
+            if !exe {
+                std::fs::remove_file(paths.launcher_exe()).unwrap();
+            }
+            if !cmd {
+                std::fs::remove_file(paths.launcher_cmd()).unwrap();
+            }
+            let found = InstallPaths::from_exe(&paths.exe()).expect("an install");
+            assert_eq!(found, paths, "starter {exe}, cmd {cmd}");
+            assert_eq!(found.launcher_exe(), found.root.join("Aero Client.exe"));
+            assert!(
+                !found.app.join("launcher.ps1").exists(),
+                "no PowerShell launcher in a package any more"
+            );
+        }
     }
 
     #[test]

@@ -122,6 +122,46 @@ CheckBinary -Name "no BUILD-INFO.txt is rejected" -Expected 1 -Dir (New-BinaryPa
 CheckBinary -Name "a manifest describing another binary is rejected" -Expected 1 `
     -Dir (New-BinaryPayload -WrongHash)
 
+# The package checks a build script can ask for: files the package must hold, and file types it
+# must not. Without them the guard behaves exactly as above.
+function CheckWith {
+    param([string] $Name, [string[]] $Files, [hashtable] $Options, [int] $Expected)
+    $dir = New-Payload -Files $Files
+    & $verify -Payload $dir -Quiet @Options | Out-Null
+    $code = $LASTEXITCODE
+    if ($code -eq $Expected) {
+        Write-Host "  ok    $Name (exit $code)"
+    } else {
+        Write-Host "  FAIL  $Name (exit $code, expected $Expected)"
+        $script:failures++
+    }
+}
+
+$package = @(
+    "Aero Client.exe", "README.txt", "app/mc-client.exe", "app/aero-install.json", "app/aero-client.ico"
+)
+$packageChecks = @{
+    ExpectFiles      = @("Aero Client.exe", "README.txt", "app\mc-client.exe", "app\aero-install.json",
+                         "app\aero-client.ico")
+    ForbidExtensions = @(".ps1", ".psm1", ".psd1", ".cmd", ".bat")
+}
+CheckWith -Name "a complete package passes the package checks" -Expected 0 -Files $package `
+    -Options $packageChecks
+CheckWith -Name "a package without the program players start is a usage error" -Expected 2 `
+    -Files @($package | Where-Object { $_ -ne "Aero Client.exe" }) -Options $packageChecks
+CheckWith -Name "a missing file inside app/ is found too" -Expected 2 `
+    -Files @($package | Where-Object { $_ -ne "app/aero-install.json" }) -Options $packageChecks
+CheckWith -Name "a PowerShell script in the package is rejected" -Expected 1 `
+    -Files @($package + "app/launcher.ps1") -Options $packageChecks
+CheckWith -Name "a batch file in the package is rejected" -Expected 1 `
+    -Files @($package + "Play Aero Client.cmd") -Options $packageChecks
+CheckWith -Name "a file type given without its dot matches in any case" -Expected 1 `
+    -Files @($package + "app/Launcher.PS1") -Options @{ ForbidExtensions = @("ps1") }
+CheckWith -Name "one comma-separated string works as a list" -Expected 2 `
+    -Files @("README.txt") -Options @{ ExpectFiles = "README.txt, Aero Client.exe" }
+CheckWith -Name "without the package checks scripts are still allowed" -Expected 0 `
+    -Files @($package + "app/launcher.ps1" + "Play Aero Client.cmd") -Options @{}
+
 # And the real artefact this machine produced, if it is there.
 $workspace = Resolve-Path (Join-Path $here "..\..")
 $real = if ($Payload -ne "") { $Payload } else {

@@ -63,11 +63,13 @@
 //! | [`outbound`] | Movement cadence (hazard H11), digging, placing, held-item sync |
 //! | [`session`] | [`session::Session`]: the game-loop-facing state machine |
 //! | [`window_icon`] | The Aero Client logo as the window's icon (title bar, taskbar, Alt+Tab) |
+//! | [`packaged`] | The packaged start: the portable package's launcher, in the game |
 
 pub mod app;
 pub mod error;
 pub mod net;
 pub mod outbound;
+pub mod packaged;
 pub mod session;
 pub mod sync;
 pub mod window_icon;

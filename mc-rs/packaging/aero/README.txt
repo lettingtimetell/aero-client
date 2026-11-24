@@ -19,7 +19,8 @@ the Microsoft account that owns Minecraft.
 PLAY
 ----
   3. Right-click the Aero Client zip and choose "Extract All...".
-  4. Open the "Aero Client" folder and double-click "Play Aero Client".
+  4. Open the "Aero Client" folder and double-click "Aero Client", the program with the
+     Aero logo.
 
   The first time, Windows may warn you, because Aero Client is not from a big company:
     - A blue "Windows protected your PC" box: click "More info", then "Run anyway".
@@ -38,10 +39,13 @@ THE INSTALLED VERSION (Aero-Client-Setup.exe)
 If you installed Aero Client with Aero-Client-Setup.exe instead of extracting the zip:
   - Start it from "Aero Client" in the Start menu, or the desktop shortcut. Skip steps 3 and 4;
     everything else is the same. Windows may show the first-time warnings above for the setup.
-  - It is in the folder  %LOCALAPPDATA%\Programs\Aero Client  (paste that into the address bar
-    of File Explorer). Its "game" folder holds your settings, screenshots and replays.
+    To keep it on the taskbar, right-click "Aero Client" in the Start menu and choose
+    "Pin to taskbar".
+  - It is in the folder you chose while installing. Unless you changed it, that is
+    %LOCALAPPDATA%\Programs\Aero Client  (paste that into the address bar of File Explorer).
+    Its "game" folder holds your settings, screenshots and replays.
   - It updates itself like the zip does (see "Updates" below). Running a newer
-    Aero-Client-Setup.exe also updates it and keeps your settings.
+    Aero-Client-Setup.exe also updates it, in the same folder, and keeps your settings.
   - To remove it, open Settings > Apps, find Aero Client and choose Uninstall. It asks whether
     to delete your settings, screenshots and replays too: choose No to keep them for later.
     Your saved sign-in stays on this PC for your Windows user (remove the account on the

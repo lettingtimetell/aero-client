@@ -2,7 +2,8 @@
 //!
 //! Every step is a rename inside the install folder (one volume), so each is atomic: at any
 //! moment `app\` is either the whole old version or the whole new one. The old `app\` (and the
-//! old `Play Aero Client.cmd` and `README.txt`) go to `update\previous\`; when a later step fails,
+//! old root files the release replaces: `Aero Client.exe`, `Play Aero Client.cmd`, `README.txt`)
+//! go to `update\previous\`; when a later step fails,
 //! the steps already done are undone in reverse. [`roll_back`] puts `update\previous\` back and
 //! moves the version that failed to `update\failed\`. Renames are retried for a few seconds,
 //! because a virus scanner looking at a new executable briefly holds it open.
@@ -204,7 +205,7 @@ pub fn clean_after_update(paths: &InstallPaths) {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::install::{EXE_NAME, LAUNCHER_CMD};
+    use crate::install::{EXE_NAME, LAUNCHER_CMD, LAUNCHER_EXE};
     use crate::tests::{fake_install, fake_staged};
 
     fn read(path: &Path) -> String {
@@ -221,10 +222,12 @@ mod tests {
 
         swap_in(&paths, &staged).expect("swapped");
         assert_eq!(read(&paths.exe()), "exe 0.2.0");
+        assert_eq!(read(&paths.launcher_exe()), "starter 0.2.0");
         assert_eq!(read(&paths.launcher_cmd()), "@rem cmd 0.2.0");
         assert_eq!(read(&paths.root.join("README.txt")), "readme 0.2.0");
         let previous = paths.previous_dir();
         assert_eq!(read(&previous.join(APP_DIR).join(EXE_NAME)), "exe 0.1.0");
+        assert_eq!(read(&previous.join(LAUNCHER_EXE)), "starter 0.1.0");
         assert_eq!(read(&previous.join(LAUNCHER_CMD)), "@rem cmd 0.1.0");
         assert!(!staged.join(APP_DIR).exists(), "moved, not copied");
         assert_eq!(
@@ -235,11 +238,48 @@ mod tests {
 
         roll_back(&paths).expect("rolled back");
         assert_eq!(read(&paths.exe()), "exe 0.1.0");
+        assert_eq!(read(&paths.launcher_exe()), "starter 0.1.0");
         assert_eq!(read(&paths.launcher_cmd()), "@rem cmd 0.1.0");
         assert_eq!(read(&paths.root.join("README.txt")), "readme 0.1.0");
         let failed = paths.failed_dir();
         assert_eq!(read(&failed.join(APP_DIR).join(EXE_NAME)), "exe 0.2.0");
+        assert_eq!(read(&failed.join(LAUNCHER_EXE)), "starter 0.2.0");
         assert_eq!(read(&paths.root.join("game").join("options.txt")), "mine");
+    }
+
+    /// An install from before the starter (`Play Aero Client.cmd` only) gets
+    /// `Aero Client.exe` from the update. A rollback puts the old `app\` and `.cmd` back and
+    /// leaves the starter: it only starts `app\mc-client.exe`, whichever version that is.
+    #[test]
+    fn an_install_without_the_starter_gets_it_from_an_update() {
+        let dir = tempfile::tempdir().unwrap();
+        let paths = fake_install(dir.path(), "0.1.0");
+        std::fs::remove_file(paths.launcher_exe()).unwrap();
+        let staged = fake_staged(&paths, "0.2.0");
+
+        swap_in(&paths, &staged).expect("swapped");
+        assert_eq!(read(&paths.launcher_exe()), "starter 0.2.0");
+        assert_eq!(read(&paths.launcher_cmd()), "@rem cmd 0.2.0");
+        let previous = paths.previous_dir();
+        assert!(!previous.join(LAUNCHER_EXE).exists(), "there was none");
+        assert_eq!(read(&previous.join(LAUNCHER_CMD)), "@rem cmd 0.1.0");
+
+        roll_back(&paths).expect("rolled back");
+        assert_eq!(read(&paths.exe()), "exe 0.1.0");
+        assert_eq!(read(&paths.launcher_cmd()), "@rem cmd 0.1.0");
+        assert_eq!(read(&paths.launcher_exe()), "starter 0.2.0");
+
+        // A release without root files leaves the install's own in place.
+        let other = tempfile::tempdir().unwrap();
+        let paths = fake_install(other.path(), "0.1.0");
+        let staged = fake_staged(&paths, "0.2.0");
+        for name in ROOT_FILES {
+            std::fs::remove_file(staged.join(name)).unwrap();
+        }
+        swap_in(&paths, &staged).expect("swapped");
+        assert_eq!(read(&paths.exe()), "exe 0.2.0");
+        assert_eq!(read(&paths.launcher_exe()), "starter 0.1.0");
+        assert_eq!(read(&paths.launcher_cmd()), "@rem cmd 0.1.0");
     }
 
     #[test]
@@ -248,13 +288,19 @@ mod tests {
         let paths = fake_install(dir.path(), "0.1.0");
         let staged = fake_staged(&paths, "0.2.0");
         // The old README is held open without delete sharing, so moving it aside fails after
-        // `app\` and `Play Aero Client.cmd` were already swapped: both must be undone.
+        // `app\`, `Aero Client.exe` and `Play Aero Client.cmd` were already swapped: all three
+        // must be undone.
         let held = hold_open(&paths.root.join("README.txt"));
         let result = swap_in(&paths, &staged);
         drop(held);
         if cfg!(windows) {
             assert!(result.is_err(), "the held file blocks the swap");
             assert_eq!(read(&paths.exe()), "exe 0.1.0", "app undone");
+            assert_eq!(
+                read(&paths.launcher_exe()),
+                "starter 0.1.0",
+                "starter undone"
+            );
             assert_eq!(read(&paths.launcher_cmd()), "@rem cmd 0.1.0", "cmd undone");
             assert_eq!(read(&paths.root.join("README.txt")), "readme 0.1.0");
             assert_eq!(

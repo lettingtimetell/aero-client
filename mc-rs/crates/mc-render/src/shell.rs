@@ -110,7 +110,7 @@ pub struct ShellConfig {
 impl Default for ShellConfig {
     fn default() -> Self {
         Self {
-            title: "Minecraft 1.8.9 (mc-rs)".into(),
+            title: "Aero Client".into(),
             width: 854,
             height: 480,
             max_frames: None,

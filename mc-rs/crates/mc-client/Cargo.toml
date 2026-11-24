@@ -37,6 +37,10 @@ mc-video.workspace    = true
 # The portable client's updater (GitHub releases, verified, swap on
 # restart). Every crate it uses is already in this graph (reqwest, rustls's ring, zip, semver).
 mc-update.workspace   = true
+# The packaged start's Windows calls (message boxes, the folder picker,
+# the Settings > Apps entry, the log handles), which need `unsafe` this crate forbids. It adds no
+# crate to the graph: `windows` 0.62 with features the client already compiles.
+mc-shell.workspace    = true
 # The video export's progress panel rasterises Segoe UI on the CPU
 # (the window shows it over the live preview while the frame graph renders offscreen). Already in
 # the graph through mc-ui; no new crate.
@@ -110,6 +114,11 @@ offline = ["mc-auth/offline"]
 mimalloc = ["dep:mimalloc", "mc-render/mimalloc"]
 # Allocation counting for the reuse patches' A/B (ALLOC-*); takes precedence over `mimalloc`.
 dhat-heap = ["dep:dhat"]
+# A windowless program (the Windows GUI subsystem): no console window when the
+# player starts it. Packaged builds only (`--no-default-features --features mimalloc,windowed`);
+# without it the client keeps its console. Output to a pipe or file still arrives (a started
+# program gets the handles it is given), so tools that read it work either way.
+windowed = []
 
 [dev-dependencies]
 sha1.workspace = true

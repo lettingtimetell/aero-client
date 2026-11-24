@@ -26,13 +26,16 @@ fn package(path: &Path, version: &str) {
         .compression_method(zip::CompressionMethod::Deflated);
     let marker = InstallMarker::new(version).to_json();
     for (name, bytes) in [
+        (
+            "Aero Client\\Aero Client.exe",
+            b"MZ fake starter".as_slice(),
+        ),
         ("Aero Client\\Play Aero Client.cmd", b"@echo off".as_slice()),
         ("Aero Client\\README.txt", b"readme".as_slice()),
         (
             "Aero Client\\app\\mc-client.exe",
             b"MZ fake client".as_slice(),
         ),
-        ("Aero Client\\app\\launcher.ps1", b"# launcher".as_slice()),
         ("Aero Client\\app\\aero-install.json", marker.as_bytes()),
     ] {
         writer.start_file(name, options).unwrap();

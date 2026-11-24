@@ -11,7 +11,9 @@ use wiremock::matchers::{method, path};
 use wiremock::{Mock, MockServer, ResponseTemplate};
 
 use crate::helper::Hooks;
-use crate::install::{InstallMarker, InstallPaths, APP_DIR, EXE_NAME, LAUNCHER_CMD, MARKER_FILE};
+use crate::install::{
+    InstallMarker, InstallPaths, APP_DIR, EXE_NAME, LAUNCHER_CMD, LAUNCHER_EXE, MARKER_FILE,
+};
 use crate::net::HttpPolicy;
 use crate::service::{ServiceConfig, Status, Updater};
 use crate::state::{self, StagedUpdate};
@@ -19,8 +21,9 @@ use crate::version::Version;
 
 // ---- fixtures -----------------------------------------------------------------------------
 
-/// A fake portable install of `version` in `dir`: `Aero Client\app\{mc-client.exe, launcher.ps1,
-/// aero-install.json}`, `Play Aero Client.cmd` and `README.txt`, each naming the version.
+/// A fake portable install of `version` in `dir`: `Aero Client\app\{mc-client.exe,
+/// aero-install.json}`, `Aero Client.exe`, `Play Aero Client.cmd` and `README.txt`, each naming
+/// the version.
 pub(crate) fn fake_install(dir: &Path, version: &str) -> InstallPaths {
     let root = dir.join("Aero Client");
     write_package_files(&root, version);
@@ -31,8 +34,8 @@ fn write_package_files(root: &Path, version: &str) {
     let app = root.join(APP_DIR);
     std::fs::create_dir_all(&app).unwrap();
     std::fs::write(app.join(EXE_NAME), format!("exe {version}")).unwrap();
-    std::fs::write(app.join("launcher.ps1"), "# launcher").unwrap();
     std::fs::write(app.join(MARKER_FILE), InstallMarker::new(version).to_json()).unwrap();
+    std::fs::write(root.join(LAUNCHER_EXE), format!("starter {version}")).unwrap();
     std::fs::write(root.join(LAUNCHER_CMD), format!("@rem cmd {version}")).unwrap();
     std::fs::write(root.join("README.txt"), format!("readme {version}")).unwrap();
 }
@@ -102,6 +105,10 @@ pub(crate) fn package_zip(version: &str, extra: &[ZipItem]) -> Vec<u8> {
     let marker = InstallMarker::new(version).to_json();
     let mut items = vec![
         ZipItem::file(
+            "Aero Client/Aero Client.exe",
+            format!("starter {version}").as_bytes(),
+        ),
+        ZipItem::file(
             "Aero Client/Play Aero Client.cmd",
             format!("@rem cmd {version}").as_bytes(),
         ),
@@ -113,7 +120,6 @@ pub(crate) fn package_zip(version: &str, extra: &[ZipItem]) -> Vec<u8> {
             "Aero Client/app/mc-client.exe",
             format!("exe {version}").as_bytes(),
         ),
-        ZipItem::file("Aero Client/app/launcher.ps1", b"# launcher"),
         ZipItem::file("Aero Client/app/aero-install.json", marker.as_bytes()),
         ZipItem::file("Aero Client/app/licenses/NOTICE.txt", b"notice"),
     ];

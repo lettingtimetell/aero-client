@@ -8,9 +8,9 @@
 //! # Which builds update themselves
 //!
 //! Only a packaged portable install: `Aero Client\app\mc-client.exe` next to the marker
-//! `app\aero-install.json` that the packaging script writes, with `Aero Client\Play Aero
-//! Client.cmd` beside `app\` ([`install::InstallPaths::detect`]). Development builds and
-//! `cargo run` have no marker and never check, download or swap anything.
+//! `app\aero-install.json` that the packaging script writes ([`install::InstallPaths::detect`]),
+//! started by `Aero Client\Aero Client.exe` or a shortcut. Development
+//! builds and `cargo run` have no marker and never check, download or swap anything.
 //!
 //! # The steps
 //!
@@ -31,8 +31,9 @@
 //! 5. **Apply on restart** ([`helper`], [`swap`]): the player clicks "Restart to update" on the
 //!    title screen (never with a world loaded). A copy of the running client waits for it to
 //!    exit, runs the new binary's self-test, swaps `app\` by renames (the old one is kept in
-//!    `update\previous\`) and starts `Play Aero Client.cmd`. If the new version exits before
-//!    its title screen shows, the old `app\` is put back and started instead.
+//!    `update\previous\`) and starts `app\mc-client.exe` with no arguments (its packaged
+//!    start). If the new version exits before its title screen shows, the old `app\` is put back
+//!    and started instead.
 //!
 //! The player's `game\` folder is never read or written.
 //!

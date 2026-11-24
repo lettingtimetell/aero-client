@@ -12,13 +12,15 @@
 //!    catches a binary that cannot even load on this PC before anything is swapped).
 //! 3. [`crate::swap::swap_in`] renames the old `app\` (and root files) to `update\previous\` and
 //!    the staged ones into place; the state records a *trial* of the new version.
-//! 4. The helper starts `Play Aero Client.cmd`, the way the player does, and watches the trial:
-//!    the new client counts its start ([`on_client_start`]) and ends the trial when its title
-//!    screen shows ([`title_screen_reached`]). If the new client exits before that, the helper
-//!    rolls back ([`crate::swap::roll_back`]), marks the version as failing on this PC, and
-//!    starts the old version again.
-//! 5. If the helper stops watching first (the launcher stopped before the game, say for an
-//!    expired login), the trial stays open: the client keeps counting its starts, and a version
+//! 4. The helper starts `app\mc-client.exe` with no arguments, its packaged start (what the
+//!    player's `Aero Client.exe` does), and watches the trial: the new client counts its start
+//!    ([`on_client_start`]) and ends the trial when its title screen shows
+//!    ([`title_screen_reached`]). If the new client exits before that, the helper rolls back
+//!    ([`crate::swap::roll_back`]), marks the version as failing on this PC, and starts the old
+//!    version again.
+//! 5. If the helper stops watching first (the start stopped before the game, say because the
+//!    player closed the question about the game files), the trial stays open: the client keeps
+//!    counting its starts, and a version
 //!    that has not reached its title screen in [`MAX_TRIAL_STARTS`] starts hands itself back to
 //!    the helper's [`ROLLBACK_FLAG`] and exits (on at most [`MAX_ROLLBACK_TRIES`] starts: a
 //!    rollback that keeps failing never stops the client from starting for good).
@@ -97,7 +99,7 @@ pub trait Hooks {
     fn client_running(&self, exe: &Path) -> bool;
     /// Whether the client at `exe` passes its self-test for `version`.
     fn self_test(&self, exe: &Path, version: &str) -> bool;
-    /// Start `Play Aero Client.cmd`.
+    /// Start the client: `app\mc-client.exe` with no arguments (see [`relaunch_command`]).
     fn launch(&self, paths: &InstallPaths) -> std::io::Result<()>;
     /// Wait.
     fn sleep(&self, duration: Duration);
@@ -127,7 +129,8 @@ impl Hooks for SystemHooks {
     }
 
     fn launch(&self, paths: &InstallPaths) -> std::io::Result<()> {
-        launch_cmd(paths)
+        // The client runs for the whole session: started and left running.
+        relaunch_command(paths).spawn().map(drop)
     }
 
     fn sleep(&self, duration: Duration) {
@@ -610,26 +613,22 @@ fn run_self_test(exe: &Path, version: &str) -> bool {
     }
 }
 
-/// Start `Play Aero Client.cmd` from the install folder, as a double-click does (the standard
-/// library runs a `.cmd` through `cmd.exe` with its arguments escaped; there are none here).
-fn launch_cmd(paths: &InstallPaths) -> std::io::Result<()> {
-    let mut command = Command::new(paths.launcher_cmd());
+/// How the helper starts the client after an update or a rollback:
+/// `app\mc-client.exe` itself, with no arguments, so it makes its packaged start (finds the
+/// Minecraft files, writes `game\logs`, reports problems) exactly as when the player starts it
+/// with `Aero Client.exe` or a shortcut. Working folder the install folder, no console window
+/// (a packaged client has none anyway). It needs nothing in the install folder but `app\`, so an
+/// install from before `Aero Client.exe` starts the same way.
+#[must_use]
+pub fn relaunch_command(paths: &InstallPaths) -> Command {
+    let mut command = Command::new(paths.exe());
     command
         .current_dir(&paths.root)
         .stdin(Stdio::null())
         .stdout(Stdio::null())
         .stderr(Stdio::null());
     no_window(&mut command, false);
-    let mut child = command.spawn()?;
-    // The script only starts the launcher and exits; reap it, but never wait long.
-    let deadline = Instant::now() + Duration::from_secs(10);
-    while Instant::now() < deadline {
-        if child.try_wait()?.is_some() {
-            return Ok(());
-        }
-        std::thread::sleep(Duration::from_millis(100));
-    }
-    Ok(())
+    command
 }
 
 /// Start the helper copy (`update\helper\aero-update-helper.exe`) with `flag`, detached, its
@@ -733,6 +732,7 @@ mod tests {
             "the old version is back"
         );
         assert_eq!(read(&paths.launcher_cmd()), format!("@rem cmd {OLD}"));
+        assert_eq!(read(&paths.launcher_exe()), format!("starter {OLD}"));
         assert_eq!(
             hooks.launches(),
             2,
@@ -824,7 +824,8 @@ mod tests {
         let paths = fake_install(dir.path(), OLD);
         fake_staged_recorded(&paths, &new);
         let hooks = FakeHooks::new(&paths);
-        // The launcher stops before the game (say, an expired login): no client starts.
+        // The start stops before the game (say, the player closed the question about the game
+        // files): no start is counted.
         hooks.on_launch(|_| {});
         assert_eq!(
             apply(&paths, &new, &hooks, &Log::none()),
@@ -879,24 +880,50 @@ mod tests {
         assert!(!client_running(&dir.path().join("missing.exe")));
     }
 
-    /// The real launch, no stand-ins: `Play Aero Client.cmd` in a folder with a space in its
-    /// name ("Aero Client"), started the way the helper starts it (absolute path, no arguments),
-    /// runs and sees its own folder through `%~dp0` as the real one does.
+    /// The helper starts the client itself: `app\mc-client.exe` by its full
+    /// path, no arguments (its packaged start), in the install folder, never a file next to
+    /// `app\`; an install from before `Aero Client.exe` starts the same way.
+    #[test]
+    fn the_relaunch_starts_the_client_itself_with_no_arguments() {
+        let dir = tempfile::tempdir().unwrap();
+        let paths = fake_install(dir.path(), "0.1.0");
+        let command = relaunch_command(&paths);
+        assert_eq!(command.get_program(), paths.exe().as_os_str());
+        assert_eq!(
+            command.get_args().count(),
+            0,
+            "no arguments: the packaged start"
+        );
+        assert_eq!(command.get_current_dir(), Some(paths.root.as_path()));
+        assert!(paths.exe().is_absolute());
+        std::fs::remove_file(paths.launcher_exe()).unwrap();
+        std::fs::remove_file(paths.launcher_cmd()).unwrap();
+        let without = InstallPaths::at_root(&paths.root).expect("still an install");
+        assert_eq!(
+            relaunch_command(&without).get_program(),
+            paths.exe().as_os_str()
+        );
+    }
+
+    /// The real launch: a stand-in client (Windows' own `hostname.exe`, which prints the PC's
+    /// name and exits) in a folder with a space in its name ("Aero Client") is started and left
+    /// to run, as the helper starts the real one.
     #[cfg(windows)]
     #[test]
-    fn the_real_launch_runs_the_cmd_in_a_folder_with_spaces() {
+    fn the_real_launch_starts_the_client_in_a_folder_with_spaces() {
         let dir = tempfile::tempdir().unwrap();
         let paths = fake_install(dir.path(), "0.1.0");
         assert!(paths.root.to_string_lossy().contains("Aero Client"));
-        std::fs::write(
-            paths.launcher_cmd(),
-            "@echo off\r\necho launched> \"%~dp0launched.txt\"\r\n",
-        )
-        .unwrap();
-        SystemHooks.launch(&paths).expect("started");
-        // `launch_cmd` reaps the script (it only starts the launcher and exits).
-        let marker = paths.root.join("launched.txt");
-        assert_eq!(read(&marker).trim(), "launched");
+        let system = std::env::var_os("SystemRoot").unwrap_or_else(|| r"C:\Windows".into());
+        let stand_in = Path::new(&system).join("System32").join("hostname.exe");
+        std::fs::copy(stand_in, paths.exe()).unwrap();
+        SystemHooks.launch(&paths).expect("Windows started it");
+        // It exits on its own; wait for that so the folder can be deleted.
+        let deadline = Instant::now() + Duration::from_secs(30);
+        while client_running(&paths.exe()) && Instant::now() < deadline {
+            std::thread::sleep(Duration::from_millis(50));
+        }
+        assert!(!client_running(&paths.exe()), "the stand-in has exited");
     }
 
     #[test]

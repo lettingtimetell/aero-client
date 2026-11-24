@@ -20,10 +20,11 @@ Aero Client is in beta. Get it from **[aero-client.com](https://aero-client.com)
 repository's [releases](https://github.com/lettingtimetell/aero-client/releases), in one of two
 forms:
 
-- `Aero-Client-Setup.exe`, the installer: installs Aero Client for your Windows account, with
-  shortcuts on the desktop and in the Start menu, and needs no administrator rights;
-- `Aero-Client-Portable.zip`, the portable version: unpack it into any folder and start
-  `Play Aero Client`.
+- `Aero-Client-Setup.exe`, the installer: installs Aero Client for your Windows account, in a
+  folder you can choose, with shortcuts on the desktop and in the Start menu, and needs no
+  administrator rights;
+- `Aero-Client-Portable.zip`, the portable version: unpack it into any folder and double-click
+  `Aero Client`.
 
 You need Windows 10 or 11 (64-bit) and a Microsoft account that owns Minecraft: Java Edition.
 Start version 1.8.9 once from the official Minecraft Launcher, so that its files are on your PC,
@@ -101,8 +102,8 @@ config folder, never in the game folder that players copy and share), so the nex
 already signed in. The Accounts screen adds, switches and removes accounts; removing one deletes
 its saved sign-in.
 
-The scripts in this repository never read an account or a token: `launch-mc-rs.ps1` and the
-portable zip's launcher only find the Minecraft 1.8.9 game files and start the client. Like the
+Nothing in this repository reads another program's accounts or tokens: `launch-mc-rs.ps1`, and the
+downloaded client when it starts itself, only find the Minecraft 1.8.9 game files. Like the
 vanilla client, the client also accepts a session that a launcher passes on its command line
 (`--username`, `--uuid`, `--accessToken`, the way the official launcher starts 1.8.9); the
 Accounts screen lists it as "From the launcher".
@@ -145,6 +146,7 @@ Minecraft's services accept, compiled in from `AERO_MSA_CLIENT_ID` (CONTRIBUTING
 | `mc-video` | Video and audio encoding for replay exports (H.264/H.265 and AAC in MP4) |
 | `mc-parity` | Vanilla parity harness and the session recorder: capture, replay and diff |
 | `mc-update` | Update check, download, verification (SHA-256 and an Ed25519 signature) and staged install of the portable client |
+| `mc-shell` | Windows helpers for the packaged client, and `aero-start`, the package's `Aero Client.exe` |
 | `mc-core` | Shared conventions: tracing setup, profiling scopes |
 
 ## Reporting security problems

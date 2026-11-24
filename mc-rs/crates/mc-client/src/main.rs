@@ -1,4 +1,7 @@
 #![forbid(unsafe_code)]
+// Packaged builds are windowless programs: starting one opens the game's window
+// and nothing else, no console. Every other build keeps its console.
+#![cfg_attr(feature = "windowed", windows_subsystem = "windows")]
 
 //! The game binary.
 //!
@@ -29,6 +32,7 @@ use std::process::ExitCode;
 use anyhow::Context;
 use mc_client::app::crash::{self, CrashExit, CrashReport};
 use mc_client::app::{Client, ClientConfig};
+use mc_client::packaged::{self, CurrentUserEntry, Packaged, ShellUi, StartEnv};
 use mc_render::shell::{Shell, ShellConfig};
 
 /// The process-wide allocator.
@@ -147,6 +151,17 @@ fn main() -> ExitCode {
     if let Some(code) = mc_update::helper::dispatch(std::env::args_os()) {
         return ExitCode::from(code);
     }
+    // `app\mc-client.exe` started with no arguments beside the packaging
+    // marker makes the portable package's start (`mc_client::packaged`): what its PowerShell
+    // launcher did around the game, done here. Its output goes to `game\logs` from this point,
+    // before the log writer starts. Any other start (arguments, or no marker) is unchanged.
+    let packaged_start = Packaged::from_process();
+    if let Some(start) = &packaged_start {
+        if let Err(reason) = start.open_logs() {
+            packaged::report_start_failure(&ShellUi, &reason);
+            return ExitCode::from(1);
+        }
+    }
     mc_core::init_tracing();
     tracing::debug!(safe_dll_search, "DLL search order");
     // Log lines are written by a background thread. A panic that unwinds out of the event loop
@@ -155,6 +170,25 @@ fn main() -> ExitCode {
     // java: `Minecraft.crashed(CrashReport)` — record and let the loop notice. Installed before
     // anything else so a panic during option parsing is still a report.
     crash::install_panic_hook();
+    // The Minecraft files (the player is asked if need be), the game's
+    // command line and the Settings > Apps entry. A start the player cancels ends here, before
+    // it counts as an update's trial start, as when the launcher never started the game.
+    let packaged_config = match &packaged_start {
+        Some(start) => {
+            let entry = CurrentUserEntry::setup();
+            match packaged::prepare(start, &StartEnv::from_process(), &ShellUi, &entry) {
+                Some(config) => {
+                    packaged::apply_process_settings(start);
+                    Some(config)
+                }
+                None => {
+                    mc_core::flush_logs();
+                    return ExitCode::from(1);
+                }
+            }
+        }
+        None => None,
+    };
     // A just-installed update counts this start; one that never reached its
     // title screen in three starts hands itself to the update helper's rollback and exits.
     // Outside a portable install: one cached file check, nothing else.
@@ -163,7 +197,7 @@ fn main() -> ExitCode {
         return ExitCode::SUCCESS;
     }
 
-    let config = match ClientConfig::from_env() {
+    let config = match packaged_config.map_or_else(ClientConfig::from_env, Ok) {
         Ok(config) => with_default_assets(config),
         Err(message) => {
             mc_core::flush_logs();
@@ -176,8 +210,8 @@ fn main() -> ExitCode {
     }
     let game_dir = config.game_dir.clone();
 
-    let exit = match run(config) {
-        Ok(()) => ExitCode::SUCCESS,
+    let code: u8 = match run(config) {
+        Ok(()) => 0,
         Err(error) => {
             let RunFailure { mut report } = *error;
             // Log lines are written by a background thread (`mc_core::logwriter`); let the
@@ -187,15 +221,20 @@ fn main() -> ExitCode {
             // enriched report here and then returned an anyhow error, causing main to print a
             // second bare report after it.
             match crash::display_crash_report(&mut report, &game_dir) {
-                CrashExit::Saved => ExitCode::from(255),
-                CrashExit::NotSaved => ExitCode::from(254),
+                CrashExit::Saved => 255,
+                CrashExit::NotSaved => 254,
             }
         }
     };
     // The writer thread does not outlive `main`: drain it so `stopped` and any shutdown
     // failures are not lost.
     mc_core::flush_logs();
-    exit
+    // After a failed run, the launcher's message, which offers to open
+    // `game\logs` (complete by now: just flushed).
+    if let Some(start) = &packaged_start {
+        packaged::report_exit(start, code, &ShellUi);
+    }
+    ExitCode::from(code)
 }
 
 /// Where the client finds the vanilla 1.8.9 files that the command line did not name.
@@ -240,7 +279,7 @@ fn run(config: ClientConfig) -> std::result::Result<(), Box<RunFailure>> {
     let _dhat = dhat::Profiler::new_heap();
 
     let shell = ShellConfig {
-        title: "Minecraft 1.8.9 (mc-rs)".to_owned(),
+        title: "Aero Client".to_owned(),
         width: client.config.width,
         height: client.config.height,
         max_frames: client.config.max_frames,
