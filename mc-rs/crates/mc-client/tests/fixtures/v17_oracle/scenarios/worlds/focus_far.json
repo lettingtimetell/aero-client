@@ -1,0 +1,8 @@
+{
+  "about": "A stone floor, top face y = 64, over chunk columns 62500..62501 (x and z in [1000000, 1000031]), with a one-block stone target at (1000008, 64, 1000004) whose top face is y = 65.",
+  "chunks": [62500, 62501],
+  "boxes": [
+    [1000000, 60, 1000000, 1000031, 63, 1000031, 1],
+    [1000008, 64, 1000004, 1000008, 64, 1000004, 1]
+  ]
+}

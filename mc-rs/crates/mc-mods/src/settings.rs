@@ -65,6 +65,10 @@
 //! * `pinned`: a top-level list of mod ids pinned to the menu's My setup, e.g.
 //!   `"pinned": ["zoom", "fps"]`. Written only when something is pinned;
 //!   older files lack it and load with no pins. See [`ModSettings::pinned_at`].
+//! * `game_version`: the Minecraft version the next connection plays, as picked on the title
+//!   screen, e.g. `"game_version": "1.7.10"`. Written only when it is not 1.8.9, so a 1.8.9
+//!   player's file is exactly what it would be without the choice. Never part of a whole-setup
+//!   profile. See [`ModSettings::game_version`].
 //!
 //! Loading never fails: a missing file, a missing key or an unknown key leaves the default; a
 //! wrong-typed or out-of-range value is coerced or clamped ([`OptionKind::sanitize`]) and noted
@@ -75,6 +79,7 @@
 use std::borrow::Cow;
 use std::path::Path;
 
+use mc_version::GameVersion;
 use serde_json::{Map, Number, Value};
 
 use crate::catalog;
@@ -95,6 +100,9 @@ pub const DEFAULT_MENU_KEY: i32 = 54;
 
 /// The most profiles the menu lets one mod save (a file with more keeps them all).
 pub const MAX_PROFILES: usize = 12;
+
+/// The root key of the game version ([`ModSettings::game_version`]).
+const GAME_VERSION_KEY: &str = "game_version";
 
 /// The longest profile name, in characters.
 pub const PROFILE_NAME_MAX: usize = 24;
@@ -259,6 +267,8 @@ pub struct ModSettings {
     hud_style: [OptionValue; 5],
     /// Keys of the root `"hud_style"` object this build does not know.
     unknown_hud_style: Map<String, Value>,
+    /// The version the next connection plays (the title screen's version slider).
+    game_version: GameVersion,
 }
 
 impl Default for ModSettings {
@@ -288,6 +298,7 @@ impl ModSettings {
             pinned: Vec::new(),
             hud_style: hud_style::defaults(),
             unknown_hud_style: Map::new(),
+            game_version: GameVersion::V1_8_9,
         }
     }
 
@@ -620,6 +631,27 @@ impl ModSettings {
             return false;
         }
         self.menu_key = code;
+        self.bump();
+        true
+    }
+
+    // ---- the game version ------------------------------------------------------------------
+
+    /// The Minecraft version the next connection plays, as picked with the title screen's
+    /// version slider: 1.8.9 until the player picks another. A connection reads it once when it
+    /// opens; changing it never touches a live one.
+    #[must_use]
+    pub fn game_version(&self) -> GameVersion {
+        self.game_version
+    }
+
+    /// Pick the version the next connection plays. Returns whether anything changed (the
+    /// generation moves only then).
+    pub fn set_game_version(&mut self, version: GameVersion) -> bool {
+        if self.game_version == version {
+            return false;
+        }
+        self.game_version = version;
         self.bump();
         true
     }
@@ -1157,6 +1189,12 @@ impl ModSettings {
             }
             root.insert(hud_style::ROOT_KEY.into(), Value::Object(style));
         }
+        // The game version, only when it is not 1.8.9: a 1.8.9 player's file saves exactly as it
+        // would without the choice.
+        if self.game_version != GameVersion::V1_8_9 {
+            let name = Value::String(self.game_version.name().into());
+            root.insert(GAME_VERSION_KEY.into(), name);
+        }
         root.insert("mods".into(), Value::Object(mods));
         Value::Object(root)
     }
@@ -1204,9 +1242,19 @@ impl ModSettings {
         for (key, value) in root {
             if !matches!(
                 key.as_str(),
-                "format" | "menu" | "mods" | "pinned" | hud_style::ROOT_KEY
+                "format" | "menu" | "mods" | "pinned" | hud_style::ROOT_KEY | GAME_VERSION_KEY
             ) {
                 self.unknown_root.insert(key.clone(), value.clone());
+            }
+        }
+        // The game version: older files lack it (1.8.9). A value this build does not play (a
+        // hand edit, or a version a newer build added) loads as 1.8.9.
+        if let Some(json) = root.get(GAME_VERSION_KEY) {
+            match json.as_str().and_then(GameVersion::from_name) {
+                Some(version) => self.game_version = version,
+                None => report.warnings.push(format!(
+                    "game_version: not a version this build plays ({json}), 1.8.9 kept"
+                )),
             }
         }
         // The shared HUD style: missing values keep their default.
@@ -2734,6 +2782,117 @@ mod tests {
                 assert_eq!(a.as_f64(), b.as_f64(), "{at} changed");
             }
             _ => assert_eq!(old, new, "{at} changed"),
+        }
+    }
+
+    // ---- the game version ------------------------------------------------------------------
+
+    #[test]
+    fn a_file_without_a_game_version_saves_byte_identically_and_plays_1_8_9() {
+        // Something in every root key: the menu key, a pin, an unknown root key, changed mods.
+        let (mut s, _) = ModSettings::from_json_str(r#"{"from_the_future": {"a": 1}}"#);
+        s.set_menu_key(25);
+        s.set_enabled("fps", true);
+        assert!(s.set_f32("zoom", "factor", 6.0));
+        assert!(s.set_pinned_at(s.index_of("zoom").expect("zoom"), true));
+        let text = s.to_json_string();
+        assert!(!text.contains("game_version"), "1.8.9 writes no key");
+
+        let (loaded, report) = ModSettings::from_json_str(&text);
+        assert!(report.warnings.is_empty(), "{:?}", report.warnings);
+        assert_eq!(loaded.game_version(), GameVersion::V1_8_9);
+        assert_eq!(loaded.to_json_string(), text, "the same bytes");
+
+        // Negative control: picking 1.7.10 changes the file, by exactly its key.
+        let mut picked = loaded.clone();
+        assert!(picked.set_game_version(GameVersion::V1_7_10));
+        assert_ne!(picked.to_json_string(), text);
+        let mut json = picked.to_json();
+        assert_eq!(json["game_version"], "1.7.10");
+        json.as_object_mut().expect("root").remove("game_version");
+        assert_eq!(json, loaded.to_json(), "nothing else differs");
+    }
+
+    #[test]
+    fn picking_1_8_9_on_a_fresh_store_changes_nothing() {
+        let mut s = ModSettings::new();
+        let generation = s.generation();
+        assert_eq!(s.game_version(), GameVersion::V1_8_9);
+        assert!(!s.set_game_version(GameVersion::V1_8_9));
+        assert_eq!(s.generation(), generation, "no change, nothing to save");
+        // Negative control: a real change moves the generation, once.
+        assert!(s.set_game_version(GameVersion::V1_7_10));
+        let moved = s.generation();
+        assert_ne!(moved, generation);
+        assert!(!s.set_game_version(GameVersion::V1_7_10));
+        assert_eq!(s.generation(), moved);
+    }
+
+    #[test]
+    fn a_picked_version_survives_a_save_and_load() {
+        let mut s = fresh();
+        assert!(s.set_game_version(GameVersion::V1_7_10));
+        let text = s.to_json_string();
+        assert_eq!(text.matches("game_version").count(), 1, "{text}");
+        let (loaded, report) = ModSettings::from_json_str_with_catalog(&text, &TEST_CATALOG);
+        assert!(report.warnings.is_empty(), "{:?}", report.warnings);
+        assert_eq!(loaded.game_version(), GameVersion::V1_7_10);
+        assert_eq!(loaded.to_json_string(), text);
+    }
+
+    #[test]
+    fn whole_setup_profiles_never_carry_the_game_version() {
+        let mut s = ModSettings::new();
+        s.set_game_version(GameVersion::V1_7_10);
+        s.set_enabled("fps", true);
+        let setup = s.setup_json();
+        assert!(setup.get("game_version").is_none(), "{setup}");
+
+        // Loading a profile keeps the version the player picked.
+        let (profile, report) = ModSettings::from_json_str(&setup.to_string());
+        assert!(report.warnings.is_empty(), "{:?}", report.warnings);
+        assert_eq!(profile.game_version(), GameVersion::V1_8_9);
+        let mut other = ModSettings::new();
+        other.set_game_version(GameVersion::V1_7_10);
+        assert!(other.apply_setup(&profile), "Fps turns on");
+        assert_eq!(other.game_version(), GameVersion::V1_7_10);
+
+        // Two stores that differ only in their version hold the same setup.
+        let mut only_version = s.clone();
+        only_version.set_game_version(GameVersion::V1_8_9);
+        assert!(s.setup_eq(&only_version));
+        assert!(s.setup_diff(&only_version).is_empty());
+    }
+
+    #[test]
+    fn an_unreadable_game_version_loads_as_1_8_9_with_a_warning() {
+        for json in [
+            r#""1.9""#,
+            r#""1.7.10 ""#,
+            r#""""#,
+            "5",
+            "47",
+            "null",
+            "true",
+            r#"{"name": "1.7.10"}"#,
+        ] {
+            let text = format!(r#"{{"game_version": {json}}}"#);
+            let (s, report) = ModSettings::from_json_str_with_catalog(&text, &TEST_CATALOG);
+            assert_eq!(s.game_version(), GameVersion::V1_8_9, "{json}");
+            assert_eq!(report.warnings.len(), 1, "{json}: {:?}", report.warnings);
+            assert!(
+                report.warnings[0].starts_with("game_version:"),
+                "{:?}",
+                report.warnings
+            );
+            assert!(s.to_json().get("game_version").is_none(), "{json}");
+        }
+        // Negative control: every version this build plays loads without a word.
+        for version in GameVersion::ALL {
+            let text = format!(r#"{{"game_version": "{version}"}}"#);
+            let (s, report) = ModSettings::from_json_str_with_catalog(&text, &TEST_CATALOG);
+            assert_eq!(s.game_version(), version);
+            assert!(report.warnings.is_empty(), "{:?}", report.warnings);
         }
     }
 }

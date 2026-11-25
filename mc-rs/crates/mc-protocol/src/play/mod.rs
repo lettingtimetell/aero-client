@@ -63,6 +63,7 @@ macro_rules! dispatch_enum {
         }
     };
 }
+pub(crate) use dispatch_enum;
 
 dispatch_enum! {
     /// Every clientbound Play packet, id `0x00`-`0x49`.

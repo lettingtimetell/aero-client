@@ -1,0 +1,25 @@
+{
+  "name": "combat_sprint_hits_wtap",
+  "about": "Sprint-hits on a player (motion x 0.6 and the sprint stops; the held sprint key restarts it), a w-tap, two clicks in one tick, a hit after double-tap sprint (the 1.8.9 oracle's keepsprint_wtap inputs).",
+  "world": "arena",
+  "spawn": [8.5, 64.0, 8.5, 0.0, 0.0],
+  "setup": [{"slot": 36, "item": 276}],
+  "steps": [
+    {"in": [{"spawnPlayer": [200, 8.5, 64.0, 12.6, 180.0, 0.0], "name": "Target"}], "hold": 2},
+    {"keys": ["forward", "sprint"], "hold": 2},
+    {"note": "sprint-hit", "tap": ["attack"], "keys": ["forward", "sprint"], "hold": 1},
+    {"keys": ["forward", "sprint"], "hold": 1},
+    {"tap": ["attack"], "keys": ["forward", "sprint"], "hold": 1},
+    {"note": "w-tap", "keys": ["sprint"], "hold": 1},
+    {"tap": ["attack"], "keys": ["forward", "sprint"], "hold": 1},
+    {"note": "two clicks in one tick", "tap": ["attack", "attack"], "keys": ["forward", "sprint"], "hold": 1},
+    {"hold": 3},
+    {"note": "double-tap sprint, then a hit", "keys": ["forward"], "hold": 1},
+    {"hold": 1},
+    {"keys": ["forward"], "hold": 2},
+    {"tap": ["attack"], "keys": ["forward"], "hold": 1},
+    {"keys": ["forward"], "hold": 4},
+    {"look": [180.0, 0.0], "keys": ["forward"], "hold": 10},
+    {"hold": 10}
+  ]
+}

@@ -55,6 +55,8 @@ chrono.workspace     = true
 mc-mods.workspace    = true
 # The mod menu's Segoe UI text, rasterised into a glyph atlas (falls back to the MC font).
 ab_glyph.workspace   = true
+# The title screen's version slider, and the server list's version compare.
+mc-version.workspace = true
 
 [dev-dependencies]
 # S15 set the precedent: GPU tests render through `mc_render::Gpu::headless` and read pixels

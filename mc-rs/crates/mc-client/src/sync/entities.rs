@@ -41,6 +41,11 @@ use super::players::PlayerList;
 use super::watched::{DamageWobble, HorseState, Watched};
 use crate::session::AttributeStore;
 
+// 1.7.10 connections: the local rider's seat.
+mod rider_v5;
+// 1.7.10 connections: positions converted from `posY` to the box bottom.
+pub(crate) mod tracker_v5;
+
 /// The profile data copied by vanilla's `handleSpawnPlayer` into the new
 /// `EntityOtherPlayerMP`/`AbstractClientPlayer` instance.
 ///
@@ -1060,6 +1065,9 @@ pub struct TrackedEntity {
     pub player_profile: Option<PlayerProfileSnapshot>,
     /// Server-authoritative position in 1/32 blocks. java: `Entity.serverPosX/Y/Z`
     pub server_pos: [i32; 3],
+    /// A 1.7.10 connection's extra state for this generation (`tracker_v5`); `None` on 1.8.9.
+    /// Boxed, so a 1.8.9 entity pays one pointer for it rather than its 48 bytes.
+    pub(crate) v5: Option<Box<tracker_v5::TrackedV5>>,
     /// The block anchor reconstructed by `EntityHanging` for an item frame generation.
     ///
     /// `S0E` type 71 carries the wire-space entity position, but vanilla constructs an
@@ -2220,6 +2228,9 @@ impl TrackedEntity {
             item_frame_facing(world, self),
             item_frame_anchor(world, self),
         ) {
+            if let Some(position) = tracker_v5::hanging_v5(self) {
+                return position;
+            }
             let current = item_frame_hanging_position(anchor, facing);
             let previous =
                 item_frame_hanging_position(BlockPos::from_vec3(self.last_tick_pos), facing);
@@ -4208,6 +4219,7 @@ impl EntityTracker {
                 uuid,
                 player_profile: None,
                 server_pos,
+                v5: None,
                 item_frame_anchor,
                 painting_anchor: None,
                 target_pos: position,
@@ -5382,7 +5394,11 @@ impl EntityTracker {
                 ) else {
                     continue;
                 };
-                let position = mounted_position(world, rider, vehicle, vehicle_position);
+                let position =
+                    tracker_v5::mounted_position_v5(world, rider, vehicle, vehicle_position)
+                        .unwrap_or_else(|| {
+                            mounted_position(world, rider, vehicle, vehicle_position)
+                        });
                 positions.insert(rider_id, position);
             }
         }
@@ -5636,6 +5652,7 @@ impl EntityTracker {
             if let Some(tracked) = self.by_network_id.get_mut(&network_id) {
                 census.observe(tracked.kind);
                 refresh_wither_skeleton_dimensions(world, tracked);
+                tracker_v5::refresh_skeleton_dimensions_v5(world, tracked);
                 refresh_armor_stand_dimensions(world, tracked);
                 reconcile_item_frame_position(world, tracked);
                 reconcile_painting_position(world, tracked);
@@ -7761,6 +7778,7 @@ fn advance_render_state(
     // before it), then publish the new dimensions at this exact post-super boundary so animal
     // particles observe the resized box just as Java does.
     refresh_ageable_dimensions(world, tracked);
+    tracker_v5::refresh_living_dimensions_v5(world, tracked);
 
     // ---- per-species `onLivingUpdate` --------------------------------------------------
     // java: `EntityLivingBase.onUpdate` (`:1837`) calls `this.onLivingUpdate()` — the subclass
@@ -10189,6 +10207,9 @@ fn item_frame_hanging_position(anchor: BlockPos, facing: Facing) -> DVec3 {
 /// Canonical current item-frame pose, if this generation has received its typed facing marker.
 fn item_frame_position(world: &World, tracked: &TrackedEntity) -> Option<DVec3> {
     let facing = item_frame_facing(world, tracked)?;
+    if let Some(position) = tracker_v5::hanging_v5(tracked) {
+        return Some(position);
+    }
     let anchor = item_frame_anchor(world, tracked)?;
     Some(item_frame_hanging_position(anchor, facing))
 }
@@ -10281,6 +10302,9 @@ fn reconcile_painting_position(world: &mut World, tracked: &mut TrackedEntity) {
     let Some((facing, width, height)) = painting_info(world, tracked) else {
         return;
     };
+    if tracker_v5::hanging_v5(tracked).is_some() {
+        return;
+    }
     let Ok(current) = world.ecs.get::<&Position>(tracked.entity) else {
         return;
     };

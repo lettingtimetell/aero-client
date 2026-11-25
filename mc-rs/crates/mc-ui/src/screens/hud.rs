@@ -34,6 +34,10 @@ use crate::widget::draw_centered_string;
 use crate::widget::Transform;
 use std::cell::Cell;
 
+// Minecraft 1.7.10's sidebar rules: a child module, for `Sidebar`'s private state.
+#[path = "hud_v5.rs"]
+mod v5;
+
 /// `textures/gui/container/inventory.png` — where the potion icons live.
 pub const INVENTORY_TEXTURE: &str = "textures/gui/container/inventory.png";
 

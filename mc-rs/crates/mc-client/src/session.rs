@@ -18,6 +18,7 @@ use mc_physics::state::{MoveInput, PhysicsState, PLAYER_HEIGHT, PLAYER_WIDTH};
 use mc_protocol::connection::LoginOutcome;
 use mc_protocol::play::{c2s, C2SPlay};
 use mc_render::entity::{EntityAnimState, LivingRenderState};
+use mc_version::GameVersion;
 use mc_world::{entity::MetadataValue, World};
 use std::collections::{HashMap, HashSet};
 
@@ -33,6 +34,15 @@ use crate::sync::{apply, BorderState, ClientEvent, ClientState, TrackedKind, Wat
 
 // <<NW-RC:session-snapshot>> exact copies of a replay session (replay checkpoints).
 mod rc_snapshot;
+// 1.7.10 connections: the per-tick inbound drain and the session-owned 1.7.10 handlers.
+pub(crate) mod v5;
+// 1.7.10 connections: the local player's tick.
+mod movement_v5;
+// 1.7.10 connections: the session's own sends in their 1.7.10 form, and the screen packets'
+// tick phase.
+mod sends_v5;
+// 1.7.10 connections: an attack on an entity the tick's packets removed after the pick.
+mod attack_v5;
 
 /// How the connection is progressing. java: roughly `NetHandlerLoginClient` →
 /// `NetHandlerPlayClient` → `GuiDisconnected`.
@@ -97,6 +107,13 @@ pub struct JoinSettings {
     /// client. Servers log it and some plugins branch on it. The default is vanilla's; the
     /// client always sends `Aero` instead (`app/mods/client_brand.rs`).
     pub brand: String,
+    /// The difficulty id (0 peaceful .. 3 hard) a 1.7.10 connection's client settings carry.
+    /// java17: `GameSettings.difficulty` in `C15PacketClientSettings`, the client's own option:
+    /// 1.7.10's `handleJoinGame` does not overwrite it from the server. Unused by 1.8.9.
+    pub difficulty: u8,
+    /// Whether a 1.7.10 connection's client settings ask to show capes. java17:
+    /// `GameSettings.showCape`, taken from the cape skin-part toggle. Unused by 1.8.9.
+    pub show_cape: bool,
 }
 
 impl Default for JoinSettings {
@@ -111,6 +128,9 @@ impl Default for JoinSettings {
             // All seven skin-layer bits, which is vanilla's default.
             displayed_skin_parts: 0x7F,
             brand: "vanilla".to_owned(),
+            // java17 `GameSettings`: NORMAL, and capes shown.
+            difficulty: 2,
+            show_cape: true,
         }
     }
 }
@@ -431,6 +451,14 @@ pub struct Session {
     /// the replay recorder's tap is on. Taken right after that
     /// call by [`Session::take_tapped_raw`].
     tapped_raw: Option<Box<[u8]>>,
+    /// The version this connection plays, fixed when it opened ([`Session::version`]).
+    version: GameVersion,
+    /// 1.7.10's received-packet queue: the play messages of a 1.7.10 connection wait here for
+    /// the tick's drain (`session/v5.rs`). Always empty on a 1.8.9 one.
+    inbound_v5: v5::InboundV5,
+    /// A 1.7.10 connection's held screen packets and send bookkeeping (`session/sends_v5.rs`).
+    /// Never touched on a 1.8.9 one.
+    sends_v5: sends_v5::SendsV5,
 }
 
 /// **W-RIDE.** java: `EntityPlayerSP.ridingEntity` plus the two `horseJumpPower*` fields.
@@ -491,7 +519,31 @@ impl Session {
             world_generation: 0,
             hit_particles: mc_render::particle::tuning::HitEmitters::default(),
             tapped_raw: None,
+            version: GameVersion::V1_8_9,
+            inbound_v5: v5::InboundV5::default(),
+            sends_v5: sends_v5::SendsV5::default(),
         }
+    }
+
+    /// Wrap a freshly-spawned connection that plays `version` ([`Session::new`] is a 1.8.9
+    /// one). The version never changes for the life of the session.
+    #[must_use]
+    pub fn with_version(
+        handle: NetHandle,
+        settings: JoinSettings,
+        version: GameVersion,
+    ) -> Session {
+        Session {
+            version,
+            ..Session::new(handle, settings)
+        }
+    }
+
+    /// The version this connection plays: everything in a session asks here, never the
+    /// setting, which may have changed since the connection opened.
+    #[must_use]
+    pub fn version(&self) -> GameVersion {
+        self.version
     }
 
     fn reset_local_particle_state(&mut self) {
@@ -1156,8 +1208,29 @@ impl Session {
     /// Queue a packet. Silently dropped once disconnected, which is what every vanilla
     /// `addToSendQueue` call site assumes.
     pub fn send(&mut self, packet: C2SPlay) {
+        // 1.7.10: a screen's packet waits for the tick's screen phase (`session/sends_v5.rs`).
+        let Some(packet) = self.hold_screen_packet(packet) else {
+            return;
+        };
         if self.phase.is_live() {
             let _ = self.handle.send(packet);
+        }
+    }
+
+    /// Queue a protocol-5 (1.7.10) packet, built exactly as 1.7.10 sends it. The same gate as
+    /// [`Session::send`] (dropped once disconnected) and the same queue, so the order of the two
+    /// kinds is kept. A 1.8.9 session never sends one: it is dropped with an error log.
+    pub fn send_v5(&mut self, packet: mc_protocol::v5::C2SPlay5) {
+        if !self.version.is_1_7_10() {
+            tracing::error!(?packet, "a 1.7.10 packet on a 1.8.9 connection; not sent");
+            return;
+        }
+        // A screen's packet waits for the tick's screen phase (`session/sends_v5.rs`).
+        let Some(packet) = self.hold_screen_packet_v5(packet) else {
+            return;
+        };
+        if self.phase.is_live() {
+            let _ = self.handle.send_v5(packet);
         }
     }
 
@@ -1177,6 +1250,10 @@ impl Session {
     ///
     /// Returns whether a packet was queued.
     pub fn send_client_settings_if_changed(&mut self, settings: &JoinSettings) -> bool {
+        // 1.7.10: the same rule over 1.7.10's fields (`session/sends_v5.rs`).
+        if self.version.is_1_7_10() {
+            return self.send_client_settings_if_changed_v5(settings);
+        }
         self.settings.locale.clone_from(&settings.locale);
         self.settings.view_distance = settings.view_distance;
         self.settings.chat_visibility = settings.chat_visibility;
@@ -1537,6 +1614,11 @@ impl Session {
                 self.tapped_raw = Some(raw);
                 self.apply_chunk_packet(&job, events);
             }
+            // 1.7.10: kept in order for the tick's drain (`session/v5.rs`), never applied here.
+            message @ (ToGame::PacketV5(_)
+            | ToGame::ChunkPacketV5(..)
+            | ToGame::RawPacketV5(_)
+            | ToGame::RawChunkPacketV5(..)) => return self.queue_v5(message, events),
         }
         true
     }
@@ -1752,6 +1834,11 @@ impl Session {
                     self.riding = Riding::default();
                     self.pending_horse_jump = None;
                     self.pending_horse_mount = None;
+                    // 1.7.10: the C15 and MC|Brand in their 1.7.10 form (`session/sends_v5.rs`).
+                    if self.version.is_1_7_10() {
+                        self.send_join_packets_v5(!reuses_player);
+                        continue;
+                    }
                     // java: handleJoinGame (:290-291) — settings first, then the brand.
                     let settings = outbound::client_settings(
                         &self.settings.locale,
@@ -2300,6 +2387,9 @@ impl Session {
                 self.send(C2SPlay::KeepAlive(c2s::KeepAlive { key: 0 }));
             }
         }
+        // 1.7.10: a terrain screen the first S01 opened in this tick counts from the next one
+        // (`session/sends_v5.rs`).
+        self.settle_fresh_terrain_screen_v5();
 
         // Keep the weather sample beside the local entity tick. The fire tail evaluates
         // `isWet()` after movement; remote-world living entities clear inherited lava fire in
@@ -2461,6 +2551,7 @@ impl Session {
                 }
             }
         }
+        self.sync_rider_eye_v5();
         self.sync_local_entity_packet_shadow();
         self.sync_local_living_render_state();
         movement_packet
@@ -2539,6 +2630,9 @@ impl Session {
     }
 
     fn tick_player(&mut self, input: &MoveInput) -> Option<C2SPlay> {
+        if self.version.is_1_7_10() {
+            return self.tick_player_v5(input);
+        }
         mc_core::profile_scope!("physics.tick_player");
         // `EntityLivingBase.onEntityUpdate` evaluates the border hazard before its
         // `onLivingUpdate` interpolation/movement body.  Sample the same projected border once
@@ -3268,6 +3362,7 @@ impl Session {
             0.10000000149011612,
             f64::from(-math_helper::sin(angle) * 0.1),
         );
+        self.death_pose_v5();
     }
 
     /// The client-side half of `EntityPlayer.trySleep` after the server has accepted the bed.
@@ -3299,6 +3394,7 @@ impl Session {
             predictor.state.set_position(position);
             predictor.state.vel = DVec3::ZERO;
         }
+        self.enter_bed_v5(bed);
         self.state.local.sleeping = true;
         self.state.local.sleep_timer = 0;
         self.state.local.sleeping_at = Some(bed);
@@ -3322,6 +3418,7 @@ impl Session {
                 }
             }
         }
+        self.wake_from_bed_v5();
         self.state.local.sleeping = false;
         self.state.local.sleep_timer = 100;
         self.sync_local_living_render_state();
@@ -3362,6 +3459,7 @@ impl Session {
         state.prev_sneak = false;
         state.prev_move_forward = 0.0;
         state.sneaking = false;
+        self.prepare_reused_player_to_spawn_v5();
     }
 
     /// Rebuild the session-owned halves of Java's replacement `EntityPlayerSP`.

@@ -45,6 +45,8 @@ mc-shell.workspace    = true
 # (the window shows it over the live preview while the frame graph renders offscreen). Already in
 # the graph through mc-ui; no new crate.
 ab_glyph.workspace    = true
+# The version a connection plays (1.8.9 or 1.7.10), picked on the title screen.
+mc-version.workspace  = true
 
 # The root table gives tokio ["rt","time","macros"]. The connection task additionally needs a
 # real multi-threaded runtime it can own, the socket, the AsyncRead/AsyncWrite extension

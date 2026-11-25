@@ -1479,6 +1479,10 @@ impl Client {
     /// only `playSound`, `playSoundToNearExcept`, `onEntityAdded` and `onEntityRemoved` are
     /// empty), so every one of these 25 effects was simply absent.
     pub(crate) fn react_to_effect(&mut self, packet: &s2c::Effect) {
+        // 1.7.10 sessions: the events whose 1.7.10 table differs (`app/effects_v5.rs`).
+        if self.react_to_effect_v5(packet) {
+            return;
+        }
         if packet.disable_relative_volume {
             self.broadcast_sound(packet.effect_id, packet.position, packet.data);
         } else {

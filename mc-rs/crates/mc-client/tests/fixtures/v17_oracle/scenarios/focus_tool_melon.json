@@ -1,0 +1,12 @@
+{
+  "name": "focus_tool_melon",
+  "about": "Diamond axe on a melon block. 1.7.10 axe is not effective (strength 1.0: 30 ticks); 1.8.9 efficiency 8 (4 ticks).",
+  "world": "focus",
+  "spawn": [6.5, 64.0, 28.5, -90.0, 35.0],
+  "setup": [{"slot": 36, "item": 279}],
+  "steps": [
+    {"hold": 3},
+    {"hold": 35, "keys": ["attack"]},
+    {"hold": 3}
+  ]
+}

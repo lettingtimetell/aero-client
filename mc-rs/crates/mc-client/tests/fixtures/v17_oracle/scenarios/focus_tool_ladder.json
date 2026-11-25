@@ -1,0 +1,12 @@
+{
+  "name": "focus_tool_ladder",
+  "about": "Diamond axe on a ladder (west-facing, thin box at x 8.875..9). 1.7.10 axe is not effective (13 ticks: 12 float additions of 0.083333336 stay below 1.0); 1.8.9 efficiency 8 (2 ticks). Pitch 20 aims the ray at the ladder's face.",
+  "world": "focus",
+  "spawn": [6.5, 64.0, 30.5, -90.0, 20.0],
+  "setup": [{"slot": 36, "item": 279}],
+  "steps": [
+    {"hold": 3},
+    {"hold": 16, "keys": ["attack"]},
+    {"hold": 3}
+  ]
+}

@@ -1,0 +1,13 @@
+{
+  "name": "focus_remote_teleport_offset",
+  "about": "A remote player (box 1.8 high in both versions) gets an S18 to its own position. 1.7.10 adds 0.015625 to the S18 y, so after the 3-tick interpolation its pick box top (with the 0.1 border) is 65.915625; 1.8.9 keeps the position (within the 1/64 snap rule), top 65.9. The look ray meets the box's front face (x = 10.38125) at y ~ 65.905: 1.7.10 attacks (C02), 1.8.9 misses (swing only, MISS cooldown).",
+  "world": "focus",
+  "spawn": [8.5, 64.0, 44.5, -90.0, -8.62],
+  "setup": [{"spawnPlayer": [110, 10.8, 64.0, 44.5, 0.0, 0.0], "name": "Target"}],
+  "steps": [
+    {"hold": 3},
+    {"hold": 4, "in": [{"teleport": [110, 10.8, 64.0, 44.5, 0.0, 0.0]}]},
+    {"hold": 1, "tap": ["attack"]},
+    {"hold": 3}
+  ]
+}

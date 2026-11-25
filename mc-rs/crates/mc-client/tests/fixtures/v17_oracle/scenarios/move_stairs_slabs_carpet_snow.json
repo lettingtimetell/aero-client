@@ -1,0 +1,19 @@
+{
+  "name": "move_stairs_slabs_carpet_snow",
+  "about": "Slab and stair steps up and down at a walk and sneaking, a sprint-jump up a staircase, sneaking to a 3-block drop, carpet and snow layers, Speed II from S20 (the 1.8.9 oracle's edge_stairs inputs).",
+  "world": "edge",
+  "spawn": [6.5, 64.0, -8.5, 0.0, 0.0],
+  "steps": [
+    {"hold": 2},
+    {"note": "up the slab steps, down the stair steps", "keys": ["forward"], "hold": 45},
+    {"note": "sneak back up", "look": [180.0, 0.0], "keys": ["forward", "sneak"], "hold": 25},
+    {"note": "sneak down again", "look": [0.0, 0.0], "keys": ["forward", "sneak"], "hold": 25},
+    {"keys": ["forward", "sprint"], "hold": 20},
+    {"note": "sprint-jump up the staircase", "keys": ["forward", "sprint", "jump"], "hold": 16},
+    {"note": "sneak to the top's edge (a 3-block drop)", "keys": ["forward", "sneak"], "hold": 45},
+    {"keys": ["forward"], "hold": 8},
+    {"note": "carpet and snow", "keys": ["forward"], "hold": 30},
+    {"note": "Speed II, back into the staircase", "look": [180.0, 0.0], "in": [{"speed": 0.10000000149011612, "modifiers": [["91AEAA56-376B-4498-935B-2F7F68070635", 0.4000000059604645, 2]]}], "keys": ["forward", "sprint", "jump"], "hold": 24},
+    {"in": [{"speed": 0.10000000149011612}], "hold": 10}
+  ]
+}

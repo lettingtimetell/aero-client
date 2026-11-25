@@ -1,0 +1,21 @@
+{
+  "name": "combat_reach_block_behind",
+  "about": "A player whose box is 3.3 from the eye (beyond the 3.0 entity reach) with a wall 4.2 behind it: 1.7.10 targets the wall (a click and a held attack start digging it through the player), 1.8.9 a MISS; then targets at 2.95625 and 3.05 from the eye; then close enough for both.",
+  "world": "arena",
+  "spawn": [8.5, 64.0, 15.8, 0.0, 0.0],
+  "setup": [{"slot": 36, "item": 276}],
+  "watch": [[8, 65, 20]],
+  "steps": [
+    {"note": "the player 3.3 from the eye, the wall 4.2", "in": [{"spawnPlayer": [200, 8.5, 64.0, 19.5, 180.0, 0.0], "name": "Target"}], "hold": 3},
+    {"note": "click", "tap": ["attack"], "hold": 3},
+    {"note": "hold attack", "keys": ["attack"], "hold": 10},
+    {"hold": 3},
+    {"note": "2.95625 from the eye", "in": [{"teleport": [200, 8.5, 64.0, 19.15625, 180.0, 0.0]}], "hold": 6},
+    {"tap": ["attack"], "hold": 3},
+    {"note": "3.05 from the eye", "in": [{"teleport": [200, 8.5, 64.0, 19.25, 180.0, 0.0]}], "hold": 6},
+    {"tap": ["attack"], "hold": 3},
+    {"note": "step closer: both hit", "in": [{"posLook": [8.5, 64.0, 16.4, 0.0, 0.0]}], "hold": 2},
+    {"tap": ["attack"], "hold": 3},
+    {"hold": 3}
+  ]
+}

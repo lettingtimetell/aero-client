@@ -383,7 +383,7 @@ fn on_landed(s: &mut PhysicsState, ground: BlockState) {
 /// The living override re-runs `handleWaterMovement` when not already in water — that is how
 /// stepping into water mid-move cancels the fall — and then falls through to the base version.
 /// The particle burst in between is `!worldObj.isRemote` only, so the client never runs it.
-fn update_fall_state(
+pub(crate) fn update_fall_state(
     w: &World,
     s: &mut PhysicsState,
     y: f64,
@@ -459,7 +459,7 @@ pub fn fall_damage_with_jump_boost(distance: f32, damage_multiplier: f32, jump_b
 /// `isInWeb`, and soul sand scales horizontal motion by `0.4`. Slime is *not* here — it
 /// overrides the other overload; see [`on_stood_on`]. Everything else vanilla does here (fire
 /// damage, portals, pressure plates, tripwire) is either server-side or not physics.
-fn do_block_collisions(w: &World, s: &mut PhysicsState) {
+pub(crate) fn do_block_collisions(w: &World, s: &mut PhysicsState) {
     let bb = s.aabb();
     let from = BlockPos::new(
         floor_f64(bb.min.x + 0.001),

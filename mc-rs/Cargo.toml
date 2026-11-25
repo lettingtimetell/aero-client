@@ -39,6 +39,7 @@ mc-replay   = { path = "crates/mc-replay" }  # replay container, writer, reader
 mc-video    = { path = "crates/mc-video" }   # replay export encoder (Media Foundation)
 mc-update   = { path = "crates/mc-update" }  # the portable client's updater
 mc-shell    = { path = "crates/mc-shell" }   # the packaged start's Windows calls; Aero Client.exe
+mc-version  = { path = "crates/mc-version" } # the version played: 1.8.9 (default) or 1.7.10
 
 # ---- external ----
 thiserror          = "2.0"

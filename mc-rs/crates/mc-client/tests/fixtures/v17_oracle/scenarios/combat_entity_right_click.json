@@ -1,0 +1,20 @@
+{
+  "name": "combat_entity_right_click",
+  "about": "Right-clicks on a player with an empty hand and with a sword (1.7.10: C02 INTERACT then the C08 use; 1.8.9: C02 INTERACT_AT with the hit vector, then INTERACT, then C08), held use on the player (every 4 ticks), then right-click and attack on a zombie.",
+  "world": "arena",
+  "spawn": [8.5, 64.0, 8.5, 0.0, 0.0],
+  "setup": [{"slot": 37, "item": 276}],
+  "steps": [
+    {"in": [{"spawnPlayer": [200, 8.5, 64.0, 10.5, 180.0, 0.0], "name": "Target"}], "hold": 2},
+    {"note": "empty hand", "tap": ["use"], "hold": 3},
+    {"tap": ["hotbar2"], "hold": 1},
+    {"note": "with a sword", "tap": ["use"], "hold": 3},
+    {"hold": 2},
+    {"note": "held use on the player", "keys": ["use"], "hold": 10},
+    {"hold": 3},
+    {"note": "a zombie", "look": [315.0, 18.8], "in": [{"spawnMob": [400, 54, 10.0, 64.0, 10.0, 180.0]}], "hold": 2},
+    {"tap": ["use"], "hold": 3},
+    {"tap": ["attack"], "hold": 3},
+    {"hold": 3}
+  ]
+}

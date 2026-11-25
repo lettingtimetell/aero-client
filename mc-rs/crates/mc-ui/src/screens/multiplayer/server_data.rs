@@ -18,6 +18,7 @@
 use std::io::Write;
 
 use mc_nbt::{Nbt, NbtCompound, NbtLimits};
+use mc_version::GameVersion;
 
 use crate::UiError;
 
@@ -120,7 +121,15 @@ pub struct ServerEntry {
     pub icon_base64: Option<String>,
     /// Whether this entry came from LAN discovery rather than the file.
     pub lan: bool,
+    /// The version of the client the row is shown to: 1.8.9 unless the list was opened for
+    /// another ([`ServerEntry::set_client_version`]). The server's [`ServerEntry::protocol`] is
+    /// compared with this version's, and the row's ping state was asked for with it. Not saved.
+    pub client_version: GameVersion,
 }
+
+// The 1.8.9 client's protocol is the list's own constant: the two never drift apart.
+const _: () =
+    assert!(crate::screens::multiplayer::CLIENT_PROTOCOL == GameVersion::V1_8_9.protocol());
 
 impl ServerEntry {
     /// A fresh entry with vanilla's defaults.
@@ -139,7 +148,34 @@ impl ServerEntry {
             resource_mode: ResourceMode::Prompt,
             icon_base64: None,
             lan: false,
+            client_version: GameVersion::V1_8_9,
         }
+    }
+
+    /// Show this row to a client that plays `version`. A row whose ping state was asked for by
+    /// another version forgets it, so it is pinged again with `version`'s protocol, and starts
+    /// from `version`'s defaults: vanilla's `ServerData` takes its protocol and version name from
+    /// the client's own (java17 `ServerData.<init>` 5 and "1.7.10"; java18 47 and "1.8.9").
+    pub fn set_client_version(&mut self, version: GameVersion) {
+        if self.client_version == version {
+            return;
+        }
+        self.client_version = version;
+        self.forget_ping();
+    }
+
+    /// Forget everything the last ping learned, as a fresh `ServerData` (java) knows nothing: the
+    /// row is pinged again when it is next drawn, and until the server answers its protocol and
+    /// version name are the client's own.
+    pub(crate) fn forget_ping(&mut self) {
+        self.state = PingState::Unqueried;
+        self.motd.clear();
+        self.population.clear();
+        self.player_list.clear();
+        self.ping_ms = 0;
+        self.protocol = self.client_version.protocol();
+        self.game_version.clear();
+        self.game_version.push_str(self.client_version.name());
     }
 
     /// Split `address` into a host and a port, defaulting to 25565.
@@ -171,7 +207,7 @@ impl ServerEntry {
     /// Whether this server's protocol differs from ours, which vanilla renders in dark red.
     #[must_use]
     pub fn version_mismatch(&self) -> bool {
-        self.protocol != crate::screens::multiplayer::CLIENT_PROTOCOL
+        self.protocol != self.client_version.protocol()
     }
 
     /// The NBT compound vanilla writes for this entry.

@@ -313,6 +313,8 @@ fn drain(
         match message {
             ToNet::Send(packet) => out.push((phase, encode_outbound(&packet))),
             ToNet::Disconnect => out.push((phase, b"<disconnect>".to_vec())),
+            // Never sent on a 1.8.9 connection: kept visible as a mismatch if it ever is.
+            ToNet::SendV5(packet) => out.push((phase, format!("<1.7.10 {packet:?}>").into_bytes())),
         }
     }
 }

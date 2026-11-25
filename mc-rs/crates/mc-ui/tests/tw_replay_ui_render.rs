@@ -322,6 +322,7 @@ fn the_replay_screens_render_at_720p_and_1080p() {
                     mc_font: &mut h.font,
                     labels: &labels,
                     version: "Minecraft 1.8.9",
+                    game_version: mc_version::GameVersion::V1_8_9,
                     copyright: "Copyright Mojang AB. Do not distribute!",
                     screen: sz,
                     now,
@@ -329,8 +330,9 @@ fn the_replay_screens_render_at_720p_and_1080p() {
                 };
                 glass = screen.build(&mut env, &mut list);
             }
-            // The buttons and the link pill in the bottom-right corner.
-            assert_eq!(glass.rects.len(), AeroButton::COUNT + 1);
+            // One pane per button, the version slider's and the link pill's in the bottom-right
+            // corner.
+            assert_eq!(glass.rects.len(), AeroButton::COUNT + 2);
             let replays = screen.button_rect(AeroButton::Replays);
             let phase = AeroTitlePhase::new(&gpu);
             render(

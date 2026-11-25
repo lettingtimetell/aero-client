@@ -1,0 +1,12 @@
+{
+  "name": "focus_yaw_head_lag",
+  "about": "Two zombies 2.5 blocks away, A at yaw 0 and B at yaw -40. Turn to yaw -40 and click in the same frame. 1.7.10 picks with rotationYaw (attacks B); 1.8.9 picks with rotationYawHead, still the previous tick's 0 (attacks A).",
+  "world": "focus",
+  "spawn": [8.5, 64.0, -10.5, 0.0, 0.0],
+  "setup": [{"spawnMob": [101, 54, 8.5, 64.0, -8.0, 0.0]}, {"spawnMob": [102, 54, 10.1, 64.0, -8.6, 0.0]}],
+  "steps": [
+    {"hold": 3, "look": [0.0, 0.0]},
+    {"hold": 1, "look": [-40.0, 0.0], "tap": ["attack"]},
+    {"hold": 3}
+  ]
+}

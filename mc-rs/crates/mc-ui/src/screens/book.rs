@@ -9,6 +9,7 @@
 use mc_assets::{format_template, Language};
 use mc_nbt::{Nbt, NbtCompound, TagType};
 use mc_protocol::item::ItemStack;
+use mc_version::GameVersion;
 
 use crate::font::component::{ChatComponent, ClickAction, ResolvedStyle, Span};
 use crate::font::FontRenderer;
@@ -16,6 +17,11 @@ use crate::screen_stack::{Screen, ScreenCtx};
 use crate::widget::draw::{DrawList, UiTexture};
 use crate::widget::keys::{self, Clipboard, Modifiers};
 use crate::widget::{draw_centered_string, draw_string, Button, Rect};
+
+// Minecraft 1.7.10's page fit and plain pages: a child module, for the screen's private state.
+#[path = "book_v5.rs"]
+mod v5;
+pub use v5::MAX_PAGE_HEIGHT_V5;
 
 /// `textures/gui/book.png`, the 256x256 sheet used by the page and arrow sprites.
 pub const BOOK_TEXTURE: &str = "textures/gui/book.png";
@@ -178,6 +184,8 @@ pub struct BookScreen {
     previous_rect: Rect,
     width: i32,
     actions: Vec<BookAction>,
+    /// Whose page rules the screen follows (`book_v5.rs`); 1.8.9 unless set.
+    version: GameVersion,
 }
 
 impl BookScreen {
@@ -224,6 +232,7 @@ impl BookScreen {
             previous_rect: Rect::new(0, 0, 23, 13),
             width: 0,
             actions: Vec::new(),
+            version: GameVersion::V1_8_9,
         }
     }
 
@@ -393,6 +402,10 @@ impl BookScreen {
         next.push_str(inserted);
         let mut measured = next.as_str().to_owned();
         measured.push_str("\u{a7}0_");
+        // 1.7.10's pages hold 13 lines, not 14 (`book_v5.rs`).
+        if self.version.is_1_7_10() && !v5::page_fits_v5(font, &measured) {
+            return;
+        }
         if next.len() <= MAX_PAGE_UTF16
             && font.split_string_height(&measured, PAGE_EDIT_WIDTH) <= MAX_PAGE_HEIGHT
         {
@@ -629,6 +642,10 @@ impl BookScreen {
     }
 
     fn parsed_lines(&self, font: &FontRenderer, lang: &Language) -> Option<Vec<Vec<WrappedSpan>>> {
+        // A 1.7.10 page is plain text, drawn raw and never clickable (`book_v5.rs`).
+        if self.version.is_1_7_10() {
+            return None;
+        }
         if self.unsigned || !valid_written_book(&self.book) {
             return None;
         }
@@ -734,7 +751,8 @@ impl BookScreen {
                     PAGE_WIDTH,
                     0,
                 );
-            } else if !valid_written_book(&self.book) {
+            } else if !self.version.is_1_7_10() && !valid_written_book(&self.book) {
+                // 1.7.10 has no validity check: its raw page is drawn below (`book_v5.rs`).
                 draw_string(
                     d,
                     font,

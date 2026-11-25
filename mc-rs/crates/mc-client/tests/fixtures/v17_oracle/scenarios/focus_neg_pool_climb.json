@@ -1,0 +1,11 @@
+{
+  "name": "focus_neg_pool_climb",
+  "about": "Swim west and jump against the wall of a pool at negative x whose rim block (-21, 64) holds water. 1.7.10 isAnyLiquid also scans the column x - 1 for negative minX, sees the rim water and refuses the 0.3 wall-climb boost; 1.8.9 does not scan it. Compare motionY per tick.",
+  "world": "focus",
+  "spawn": [-18.5, 63.0, 1.5, 90.0, 0.0],
+  "steps": [
+    {"hold": 3},
+    {"hold": 40, "keys": ["forward", "jump"]},
+    {"hold": 5}
+  ]
+}

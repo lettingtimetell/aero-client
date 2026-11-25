@@ -444,7 +444,7 @@ pub fn collision_boxes_in_with_entities(
     append_entity_collision_boxes(mask, entities, out);
 }
 
-fn append_entity_collision_boxes(
+pub(crate) fn append_entity_collision_boxes(
     mask: &Aabb,
     entities: &[EntityCollisionCandidate],
     out: &mut Vec<Aabb>,
@@ -611,7 +611,7 @@ fn add_block_boxes(w: &World, pos: BlockPos, mask: &Aabb, out: &mut Vec<Aabb>) {
 }
 
 /// [`add_block_boxes`] for a `state` the caller already read as `w.block_at(pos)`.
-fn add_block_boxes_for(
+pub(crate) fn add_block_boxes_for(
     w: &World,
     pos: BlockPos,
     state: BlockState,

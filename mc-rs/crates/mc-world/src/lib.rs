@@ -53,6 +53,7 @@ pub mod light;
 mod light_equivalence;
 pub mod map;
 pub mod tileent;
+pub mod v5;
 pub mod world;
 
 pub use chunk::ChunkSetOutcome;

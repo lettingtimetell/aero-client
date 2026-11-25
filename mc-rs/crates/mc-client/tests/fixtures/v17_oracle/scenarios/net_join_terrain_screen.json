@@ -1,0 +1,14 @@
+{
+  "name": "net_join_terrain_screen",
+  "about": "The join without the standard prologue: the terrain screen's keep-alives (C00 every 20 screen updates) while waiting long for chunks, keys pressed while the screen is up (swallowed: still up after it closes), the chunks, the spawn S08, then pressing again (the 1.8.9 oracle's long_terrain_download and keys_held_through_terrain_screen inputs).",
+  "world": "flat",
+  "prologue": false,
+  "steps": [
+    {"note": "join, then a long wait", "in": [{"join": [0, 0]}], "hold": 23},
+    {"note": "keys pressed under the terrain screen", "keys": ["forward", "sprint"], "hold": 3},
+    {"note": "the chunks", "in": [{"world": true}], "keys": ["forward", "sprint"], "hold": 21},
+    {"note": "the spawn S08 closes the screen", "in": [{"posLook": [8.5, 64.0, 8.5, 0.0, 0.0]}], "keys": ["forward", "sprint"], "hold": 10},
+    {"hold": 1},
+    {"note": "pressed again", "keys": ["forward", "sprint"], "hold": 15}
+  ]
+}

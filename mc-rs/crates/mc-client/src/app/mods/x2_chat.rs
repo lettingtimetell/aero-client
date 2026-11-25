@@ -248,6 +248,17 @@ impl Client {
             _ => false,
         }
     }
+
+    /// Whether [`Client::x2_chat_click`] would take a click on `style`, without acting (the
+    /// 1.7.10 screen phase keeps these clicks in the frame, `app/send_sites_v5.rs`).
+    pub(crate) fn x2_takes_chat_click(style: Option<&ResolvedStyle>, shift: bool) -> bool {
+        !shift
+            && style
+                .and_then(|style| style.click_event.as_ref())
+                .is_some_and(|click| {
+                    matches!(click.action, ClickAction::OpenFile | ClickAction::CopyImage)
+                })
+    }
 }
 
 #[cfg(test)]
@@ -851,5 +862,50 @@ mod tests {
         );
         assert!(sent(&mut to_net).is_empty());
         eprintln!("[COPY] click handled in {click_ms:.2} ms (provisional); chat: {newest:?}");
+    }
+
+    /// A 1.7.10 session's screen pass asks [`Client::x2_takes_chat_click`] whether a chat click
+    /// is one of the client's own links before it keeps the click in the frame
+    /// (`app/send_sites_v5.rs`), so the copy must answer what [`Client::x2_chat_click`] then
+    /// does: for no style, a style without a click and every click action, each with and
+    /// without shift. The links name a file that does not exist, so nothing opens or copies.
+    #[test]
+    fn x2_takes_chat_click_answers_what_x2_chat_click_does() {
+        use mc_ui::font::component::ClickEvent;
+
+        let Some((mut client, dir, mut to_net)) = client_in_game() else {
+            return;
+        };
+        let missing = dir.path().join("screenshots").join("missing.png");
+        let mut styles = vec![None, Some(ResolvedStyle::default())];
+        for action in [
+            ClickAction::OpenUrl,
+            ClickAction::OpenFile,
+            ClickAction::RunCommand,
+            ClickAction::TwitchUserInfo,
+            ClickAction::SuggestCommand,
+            ClickAction::ChangePage,
+            ClickAction::CopyImage,
+        ] {
+            styles.push(Some(ResolvedStyle {
+                click_event: Some(ClickEvent {
+                    action,
+                    value: missing.display().to_string(),
+                }),
+                ..ResolvedStyle::default()
+            }));
+        }
+        let mut taken = 0;
+        for style in &styles {
+            for shift in [false, true] {
+                let takes = Client::x2_takes_chat_click(style.as_ref(), shift);
+                let took = client.x2_chat_click(style.as_ref(), shift);
+                assert_eq!(takes, took, "{style:?}, shift {shift}");
+                taken += usize::from(took);
+            }
+        }
+        // Not vacuous: the two client-only actions are taken, without shift only.
+        assert_eq!(taken, 2);
+        assert!(sent(&mut to_net).is_empty(), "a chat link sends nothing");
     }
 }

@@ -736,8 +736,8 @@ impl Client {
     /// left alone.
     fn nw_rb_replay_modal_input(&mut self) {
         self.pending_unpress = true;
-        let step = self.controller.reset_block_removing();
-        self.apply_dig_step(step);
+        // 1.7.10 support: a 1.7.10 replay resets as 1.7.10 does (`app/interact_v5.rs`).
+        self.reset_block_removing_for_version();
         self.controller.lock_out();
     }
 

@@ -1,0 +1,26 @@
+{
+  "name": "place_sneak_bridge",
+  "about": "Sneak-bridging backwards over the pit's edge looking steeply down (the 1.8.9 oracle's backwards_sneak_bridging inputs): each placement is a C08 plus the client's own prediction, and the sneaking eye (1.7.10's decaying ySize) moves the ray origin.",
+  "world": "flat",
+  "spawn": [27.5, 64.0, -24.5, 90.0, 85.0],
+  "setup": [{"slot": 36, "item": 1, "count": 64}],
+  "watch": [[28, 63, -25], [29, 63, -25], [30, 63, -25], [31, 63, -25], [32, 63, -25]],
+  "steps": [
+    {"hold": 2},
+    {"keys": ["back", "sneak"], "hold": 10},
+    {"note": "sneak-bridge backwards", "tap": ["use"], "keys": ["back", "sneak"], "hold": 1},
+    {"keys": ["back", "sneak"], "hold": 5},
+    {"tap": ["use"], "keys": ["back", "sneak"], "hold": 1},
+    {"keys": ["back", "sneak"], "hold": 5},
+    {"tap": ["use"], "keys": ["back", "sneak"], "hold": 1},
+    {"keys": ["back", "sneak"], "hold": 5},
+    {"tap": ["use"], "keys": ["back", "sneak"], "hold": 1},
+    {"keys": ["back", "sneak"], "hold": 5},
+    {"tap": ["use"], "keys": ["back", "sneak"], "hold": 1},
+    {"keys": ["back", "sneak"], "hold": 5},
+    {"tap": ["use"], "keys": ["back", "sneak"], "hold": 1},
+    {"keys": ["back", "sneak"], "hold": 5},
+    {"note": "held use repeats every fourth tick", "keys": ["back", "sneak", "use"], "hold": 30},
+    {"keys": ["sneak"], "hold": 6}
+  ]
+}

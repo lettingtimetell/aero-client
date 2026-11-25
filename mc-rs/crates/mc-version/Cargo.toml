@@ -1,0 +1,10 @@
+[package]
+name        = "mc-version"
+description = "The Minecraft version a connection speaks: 1.8.9 (the default) or 1.7.10."
+version.workspace = true
+edition.workspace = true
+publish.workspace = true
+license.workspace = true
+repository.workspace = true
+
+[dependencies]

@@ -1,0 +1,13 @@
+{
+  "name": "focus_rightclick_while_digging",
+  "about": "Dig a stone by hand-speed with a stone block in hand, then also hold use. 1.7.10 places (C08 with a face) on the press and every 4 ticks while digging; 1.8.9 rightClickMouse returns while isHittingBlock, so no C08.",
+  "world": "focus",
+  "spawn": [6.5, 64.0, 24.5, -90.0, 35.0],
+  "setup": [{"slot": 36, "item": 1, "count": 64}],
+  "steps": [
+    {"hold": 3},
+    {"hold": 5, "keys": ["attack"]},
+    {"hold": 9, "keys": ["attack", "use"]},
+    {"hold": 3}
+  ]
+}

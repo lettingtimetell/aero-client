@@ -1,0 +1,28 @@
+{
+  "name": "dig_fatigue_and_tools",
+  "about": "Break times: stone with a diamond pickaxe under Mining Fatigue I, II, III (1.7.10: x0.8/0.6/0.4; 1.8.9: x0.3/0.09/0.0027), packed ice with the pickaxe (not effective in 1.7.10), melon and a ladder with a diamond axe (not effective in 1.7.10).",
+  "world": "arena",
+  "spawn": [8.5, 64.0, 2.5, 0.0, 60.0],
+  "setup": [{"slot": 36, "item": 278}, {"slot": 37, "item": 279}],
+  "watch": [[8, 63, 3], [10, 63, 3], [12, 63, 3], [4, 64, 3], [5, 64, 3], [7, 64, 3]],
+  "steps": [
+    {"note": "Mining Fatigue I", "in": [{"effect": [4, 0, 2000]}], "hold": 1},
+    {"keys": ["attack"], "hold": 40},
+    {"hold": 3},
+    {"note": "Mining Fatigue II", "in": [{"removeEffect": 4}, {"effect": [4, 1, 2000]}, {"posLook": [10.5, 64.0, 2.5, 0.0, 60.0]}], "hold": 1},
+    {"keys": ["attack"], "hold": 40},
+    {"hold": 3},
+    {"note": "Mining Fatigue III", "in": [{"removeEffect": 4}, {"effect": [4, 2, 2000]}, {"posLook": [12.5, 64.0, 2.5, 0.0, 60.0]}], "hold": 1},
+    {"keys": ["attack"], "hold": 30},
+    {"hold": 3},
+    {"note": "packed ice with the pickaxe", "in": [{"removeEffect": 4}, {"posLook": [4.5, 64.0, 0.5, 0.0, 24.1]}], "hold": 2},
+    {"keys": ["attack"], "hold": 40},
+    {"hold": 3},
+    {"note": "melon with the axe", "tap": ["hotbar2"], "in": [{"posLook": [5.5, 64.0, 0.5, 0.0, 24.1]}], "hold": 2},
+    {"keys": ["attack"], "hold": 40},
+    {"hold": 3},
+    {"note": "the ladder with the axe", "in": [{"posLook": [7.5, 64.0, 0.5, 0.0, 24.1]}], "hold": 2},
+    {"keys": ["attack"], "hold": 40},
+    {"hold": 3}
+  ]
+}

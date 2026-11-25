@@ -6,6 +6,7 @@
 
 pub mod capture;
 pub mod channel;
+pub(crate) mod chunk_v5;
 pub mod ping;
 pub mod replay;
 pub mod task;

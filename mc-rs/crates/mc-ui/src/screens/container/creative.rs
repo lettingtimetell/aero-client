@@ -23,6 +23,7 @@ use super::tooltip;
 use mc_assets::Language;
 use mc_data::{EnchantmentTarget, ItemId};
 use mc_nbt::{Nbt, NbtCompound};
+use mc_version::GameVersion;
 
 /// One creative-inventory tab.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -269,24 +270,43 @@ pub fn search_stacks(
     let needle = query.to_lowercase();
     searchable_pool()
         .into_iter()
-        .filter(|stack| {
-            let mut lines = language.map_or_else(
-                || tooltip::build(stack, advanced_tooltips),
-                |language| tooltip::build_localized(stack, advanced_tooltips, language),
-            );
-            if let Some((id, level)) = stored_enchantment(stack) {
-                if let Some(info) = mc_data::enchantment(id) {
-                    lines.push(format!("{} {}", info.display_name, level));
-                }
-            }
-            lines.into_iter().any(|line| {
-                strip_formatting_codes(&line)
-                    .to_lowercase()
-                    .contains(&needle)
-            })
-        })
+        .filter(|stack| search_matches(stack, &needle, advanced_tooltips, language, true))
         .collect()
 }
+
+/// Whether one of `stack`'s tooltip lines contains `needle` (already lowercased): the filter of
+/// `GuiContainerCreative.updateCreativeSearch`, which strips each line's formatting codes first
+/// when `strip_formatting` (java18 `:372`; java17 `:358` matches the raw line).
+fn search_matches(
+    stack: &ItemStack,
+    needle: &str,
+    advanced_tooltips: bool,
+    language: Option<&Language>,
+    strip_formatting: bool,
+) -> bool {
+    let mut lines = language.map_or_else(
+        || tooltip::build(stack, advanced_tooltips),
+        |language| tooltip::build_localized(stack, advanced_tooltips, language),
+    );
+    if let Some((id, level)) = stored_enchantment(stack) {
+        if let Some(info) = mc_data::enchantment(id) {
+            lines.push(format!("{} {}", info.display_name, level));
+        }
+    }
+    lines.into_iter().any(|line| {
+        let line = if strip_formatting {
+            strip_formatting_codes(&line)
+        } else {
+            line
+        };
+        line.to_lowercase().contains(needle)
+    })
+}
+
+// The lists of a 1.7.10 session's creative screen (1.7.10's own items and order).
+#[path = "creative_v5.rs"]
+mod v5;
+pub use v5::{search_stacks_in, stacks_for_tab_in};
 
 /// The content tab named by a search-result stack, including vanilla's single-enchantment book
 /// inference. Tabs are checked in array order, so Unbreaking names Tools before Combat.
@@ -436,14 +456,27 @@ pub fn click_tab_source(
     clicked_button: i32,
     shift: bool,
 ) -> Option<ItemStack> {
+    click_tab_source_in(GameVersion::V1_8_9, cursor, tab_item, clicked_button, shift)
+}
+
+/// [`click_tab_source`] with `version`'s item registry: its stack sizes (a full stack of doors is
+/// one door in 1.7.10) and the items it knows.
+#[must_use]
+pub fn click_tab_source_in(
+    version: GameVersion,
+    cursor: Option<ItemStack>,
+    tab_item: &ItemStack,
+    clicked_button: i32,
+    shift: bool,
+) -> Option<ItemStack> {
     // Network-owned unknown stacks remain opaque to local container simulation. The creative
     // tab grid is normally built exclusively from the 1.8.9 registry, but preserving this gate
     // at the public boundary prevents the zeroed fallback properties from fabricating a cursor
     // stack (or clearing an authoritative unknown cursor) if a caller supplies an unknown id.
-    if stack_ext::try_props(tab_item).is_none()
+    if stack_ext::try_props_in(version, tab_item).is_none()
         || cursor
             .as_ref()
-            .is_some_and(|held| stack_ext::try_props(held).is_none())
+            .is_some_and(|held| stack_ext::try_props_in(version, held).is_none())
     {
         return cursor;
     }
@@ -452,8 +485,8 @@ pub fn click_tab_source(
         Some(mut held) if stack_ext::is_item_equal(&held, tab_item) => {
             if clicked_button == 0 {
                 if shift {
-                    held.count = stack_ext::max_stack_size(&held);
-                } else if held.count < stack_ext::max_stack_size(&held) {
+                    held.count = stack_ext::max_stack_size_in(version, &held);
+                } else if held.count < stack_ext::max_stack_size_in(version, &held) {
                     held.count += 1;
                 }
                 Some(held)
@@ -468,7 +501,7 @@ pub fn click_tab_source(
         None => {
             let mut fresh = tab_item.clone();
             if shift {
-                fresh.count = stack_ext::max_stack_size(&fresh);
+                fresh.count = stack_ext::max_stack_size_in(version, &fresh);
             }
             Some(fresh)
         }

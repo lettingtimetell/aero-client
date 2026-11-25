@@ -1,0 +1,12 @@
+{
+  "name": "focus_tool_packed_ice",
+  "about": "Diamond pickaxe on packed ice. 1.7.10 pickaxe is not effective (strength 1.0: 15 ticks); 1.8.9 efficiency 8 (2 ticks).",
+  "world": "focus",
+  "spawn": [6.5, 64.0, 26.5, -90.0, 35.0],
+  "setup": [{"slot": 36, "item": 278}],
+  "steps": [
+    {"hold": 3},
+    {"hold": 20, "keys": ["attack"]},
+    {"hold": 3}
+  ]
+}

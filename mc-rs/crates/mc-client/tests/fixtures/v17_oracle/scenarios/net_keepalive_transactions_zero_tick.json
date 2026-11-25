@@ -1,0 +1,22 @@
+{
+  "name": "net_keepalive_transactions_zero_tick",
+  "about": "Keep-alives (answered on arrival in both), unaccepted transactions (C0F: 1.7.10 replies in the tick's gameMode section, 1.8.9 before the tick), the same in render-only frames (1.7.10 waits for the next tick), an accepted one and an unknown window (no reply), an S08 in a render-only frame, a slow frame with an S08 and a transaction, keys during a slow frame.",
+  "world": "arena",
+  "spawn": [8.5, 64.0, 8.5, 0.0, 0.0],
+  "steps": [
+    {"hold": 2},
+    {"note": "keep-alive", "in": [{"keepAlive": 11}], "hold": 2},
+    {"note": "keep-alive in a render-only frame", "in": [{"keepAlive": 12}], "ticks": 0, "hold": 1},
+    {"hold": 2},
+    {"note": "a transaction", "in": [{"transaction": [0, -1, false]}], "hold": 2},
+    {"note": "a transaction in a render-only frame", "in": [{"transaction": [0, -2, false]}], "ticks": 0, "hold": 1},
+    {"hold": 2},
+    {"note": "accepted, and an unknown window", "in": [{"transaction": [0, -3, true]}, {"transaction": [9, -4, false]}], "hold": 2},
+    {"note": "S08 in a render-only frame", "in": [{"posLook": [9.5, 64.0, 9.5, 0.0, 0.0]}], "ticks": 0, "hold": 1},
+    {"hold": 3},
+    {"note": "a slow frame (4 ticks) with an S08 and a transaction", "in": [{"posLook": [10.5, 64.0, 10.5, 0.0, 0.0]}, {"transaction": [0, -5, false]}], "ticks": 4, "hold": 1},
+    {"hold": 2},
+    {"note": "keys during slow frames", "ticks": 3, "keys": ["forward"], "hold": 2},
+    {"hold": 3}
+  ]
+}

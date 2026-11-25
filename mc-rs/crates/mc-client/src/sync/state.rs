@@ -14,6 +14,7 @@ use uuid::Uuid;
 use crate::sync::entities::EntityTracker;
 use crate::sync::env::Environment;
 use crate::sync::players::PlayerList;
+use crate::sync::players_v5::PlayerListV5;
 use crate::sync::scoreboard::Scoreboard;
 
 /// `WorldSettings.GameType.getByID` — note that an unrecognised id becomes `Survival`, **not**
@@ -588,6 +589,8 @@ pub struct ClientState {
     pub entities: EntityTracker,
     /// The tab list.
     pub players: PlayerList,
+    /// A 1.7.10 connection's tab list, keyed by name; empty on a 1.8.9 one.
+    pub players_v5: PlayerListV5,
     /// Objectives, scores, display slots and teams. java: `WorldClient.getScoreboard()`.
     pub scoreboard: Scoreboard,
     /// Time, weather, difficulty, border.
@@ -625,6 +628,7 @@ impl ClientState {
             world: World::new(),
             entities: EntityTracker::new(),
             players: PlayerList::new(),
+            players_v5: PlayerListV5::new(),
             scoreboard: Scoreboard::new(),
             env: Environment::new(),
             local: LocalPlayer::default(),

@@ -46,6 +46,8 @@ mod rin_checks;
 pub(crate) mod checkpoint;
 // Replay QA fixes: the world border's clock.
 mod nw_rq;
+// Replays recorded on a 1.7.10 connection (protocol 5).
+mod v5;
 
 use std::path::Path;
 use std::time::{Duration, Instant};
@@ -417,6 +419,8 @@ impl FreeCamera {
 /// What one non-tick record asks playback to do, decoded before the record's borrow ends.
 enum Work {
     Packet(Result<S2CPlay, String>),
+    /// A packet of a 1.7.10 recording (`v5.rs`).
+    PacketV5(Result<mc_protocol::v5::S2CPlay5, String>),
     Sound(SoundRecord),
     Session(SessionRecord),
     Event(EventRecord),
@@ -1356,7 +1360,16 @@ impl Client {
                     break true;
                 }
                 let record_time = record.time;
+                // A 1.7.10 recording's packets are protocol 5 (`v5.rs`).
+                let protocol_5 = v5::recorded_version(playback.meta.protocol).is_1_7_10();
                 let work = match record.stream {
+                    StreamId::Packet if protocol_5 => Work::PacketV5(
+                        playback
+                            .records
+                            .payload_with(playback.cursor, &mut playback.block_cache)
+                            .map_err(|error| error.to_string())
+                            .and_then(v5::decode_packet_v5),
+                    ),
                     // A large packet's bytes are read back from the file.
                     StreamId::Packet => Work::Packet(
                         playback
@@ -1385,6 +1398,7 @@ impl Client {
                 self.nw_rq_replay_clock(record_time);
                 match work {
                     Work::Packet(decoded) => self.tw_rb_apply_packet(decoded),
+                    Work::PacketV5(decoded) => self.tw_rb_apply_packet_v5(decoded),
                     Work::Sound(sound) => self.tw_rb_play_sound(record_time, &sound),
                     // Stream order: the packets pushed before this record are applied first (a
                     // session record's reseed must land after the JoinGame's, as recorded).
@@ -1463,6 +1477,8 @@ impl Client {
             return;
         }
         self.poll_in_place();
+        // A 1.7.10 session's packets wait for a tick drain: apply them now, as recorded.
+        self.drain_v5_all();
         self.tw_rb_close_game_screens();
     }
 
@@ -1687,7 +1703,13 @@ impl Client {
         } else {
             playback.meta.player_name.clone()
         };
-        let mut session = Session::new(crate::net::NetHandle::driven(), self.join_settings());
+        // The recording's version: a 1.7.10 replay plays back through the 1.7.10 session.
+        let version = v5::recorded_version(playback.meta.protocol);
+        let mut session = Session::with_version(
+            crate::net::NetHandle::driven(),
+            self.join_settings(),
+            version,
+        );
         session.push_driven(ToGame::Connected(LoginOutcome {
             uuid,
             username,

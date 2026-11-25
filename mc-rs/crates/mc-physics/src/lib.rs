@@ -63,6 +63,7 @@ pub mod player;
 pub mod prediction;
 pub mod scene;
 pub mod state;
+pub mod v5;
 
 pub use collision::{
     collision_boxes_at, collision_boxes_in, collision_boxes_in_with_entities,

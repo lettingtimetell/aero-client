@@ -1,0 +1,19 @@
+{
+  "name": "focus_fly_speeds",
+  "about": "Creative, toggle flight with a jump double press, ascend, descend, then sprint-fly. 1.7.10 vertical +-0.15D constant and no sprint doubling of the fly acceleration; 1.8.9 +-(double)(flySpeed*3F) and x2 when sprinting. Second half repeats with flySpeed 0.1 from S39.",
+  "world": "focus",
+  "gameType": 1,
+  "spawn": [-10.5, 64.0, -20.5, 0.0, 0.0],
+  "setup": [{"abilities": [13, 0.05, 0.1]}],
+  "steps": [
+    {"hold": 3},
+    {"hold": 1, "keys": ["jump"]},
+    {"hold": 1},
+    {"hold": 10, "keys": ["jump"]},
+    {"hold": 10, "keys": ["sneak"]},
+    {"hold": 15, "keys": ["forward", "sprint"]},
+    {"hold": 3, "in": [{"abilities": [15, 0.1, 0.1]}]},
+    {"hold": 10, "keys": ["jump"]},
+    {"hold": 5}
+  ]
+}

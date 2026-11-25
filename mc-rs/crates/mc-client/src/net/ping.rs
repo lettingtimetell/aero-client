@@ -14,6 +14,7 @@ use std::{future::Future, net::SocketAddr, process::Command};
 
 use base64::Engine as _;
 use mc_ui::font::component::ChatComponent;
+use mc_version::GameVersion;
 use serde_json::Value;
 use tokio::io::{AsyncRead, AsyncReadExt, AsyncWrite, AsyncWriteExt};
 use tokio::net::TcpStream;
@@ -347,14 +348,17 @@ async fn ping_with_lookup_result(
     port: u16,
     lookup: std::io::Result<Option<SocketAddr>>,
 ) -> Result<ServerPing, ClientError> {
-    ping_with_lookup_result_timeout(host, port, lookup, None).await
+    ping_with_lookup_result_timeout(host, port, lookup, None, GameVersion::V1_8_9).await
 }
 
+/// `version`: the client the status is asked for; its protocol goes in the handshake (a server
+/// that speaks several versions answers for that one).
 async fn ping_with_lookup_result_timeout(
     host: &str,
     port: u16,
     lookup: std::io::Result<Option<SocketAddr>>,
     idle_timeout: Option<Duration>,
+    version: GameVersion,
 ) -> Result<ServerPing, ClientError> {
     let resolved = match lookup {
         Ok(Some(resolved)) => resolved,
@@ -378,11 +382,12 @@ async fn ping_with_lookup_result_timeout(
             .map_err(|_| ping_timeout_error(timeout_budget))??,
             None => mc_protocol::connection::Connection::connect(resolved).await?,
         };
-        let handshake = mc_protocol::connection::handshake(
+        let handshake = mc_protocol::connection::handshake_for(
             &mut conn,
             host,
             port,
             mc_protocol::handshake::NextState::Status,
+            version,
         );
         match idle_timeout {
             Some(timeout_budget) => tokio::time::timeout(timeout_budget, handshake)
@@ -576,9 +581,12 @@ pub async fn ping_address(address: &str) -> Result<ServerPing, ClientError> {
 /// the modern status exchange's read deadline idle-based, so a fragmented response or a retained
 /// post-Response row is not cut off by a fixed total wall-clock timer. A row Refresh or screen
 /// close can still abort the whole task instead of leaving a detached read behind.
+///
+/// `version` is the version the list is shown for: the status handshake carries its protocol.
 pub(crate) async fn ping_with_timeout(
     address: &str,
     timeout_budget: Duration,
+    version: GameVersion,
 ) -> Result<ServerPing, ClientError> {
     let (host, port) =
         match tokio::time::timeout(timeout_budget, resolve_server_address(address)).await {
@@ -595,7 +603,7 @@ pub(crate) async fn ping_with_timeout(
         Ok(Err(error)) => Err(error),
         Err(_) => return Err(ping_timeout_error(timeout_budget)),
     };
-    ping_with_lookup_result_timeout(&host, port, lookup, Some(timeout_budget)).await
+    ping_with_lookup_result_timeout(&host, port, lookup, Some(timeout_budget), version).await
 }
 
 /// Parse and asynchronously resolve one saved/direct-connect server address exactly as Java's
@@ -1086,7 +1094,12 @@ mod tests {
 
         let result = tokio::time::timeout(Duration::from_secs(2), async {
             if timed {
-                ping_with_timeout(&format!("localhost:{port}"), Duration::from_secs(1)).await
+                ping_with_timeout(
+                    &format!("localhost:{port}"),
+                    Duration::from_secs(1),
+                    GameVersion::V1_8_9,
+                )
+                .await
             } else {
                 ping("localhost", port).await
             }
@@ -1114,6 +1127,50 @@ mod tests {
     #[tokio::test]
     async fn localhost_ipv4_server_accepts_timed_modern_ping() {
         assert_localhost_ipv4_modern_status(true).await;
+    }
+
+    /// A list shown for 1.7.10 asks with protocol 5 (java17 `OldServerPinger.ping`), so a server
+    /// that speaks several versions answers for 1.7.10.
+    #[tokio::test]
+    async fn a_ping_for_1_7_10_asks_with_protocol_5() {
+        use mc_protocol::Packet;
+
+        for (version, protocol) in [(GameVersion::V1_7_10, 5), (GameVersion::V1_8_9, 47)] {
+            let listener = tokio::net::TcpListener::bind("127.0.0.1:0")
+                .await
+                .expect("IPv4 loopback listener");
+            let port = listener.local_addr().expect("listener address").port();
+            let server = tokio::spawn(async move {
+                let (socket, _) = listener.accept().await.expect("accept the ping");
+                let mut conn = mc_protocol::connection::Connection::new(socket);
+                let (_, mut body) = conn.read_packet().await.expect("handshake");
+                let handshake = mc_protocol::handshake::Handshake::read(&mut body).unwrap();
+                let asked = handshake.protocol_version;
+                conn.set_state(mc_protocol::State::Status).unwrap();
+                let _ = conn.read_packet().await.expect("status request");
+                // A server that speaks several versions answers for the one asked about.
+                let name = if asked == 5 { "1.7.10" } else { "1.8.9" };
+                conn.send(&mc_protocol::status::Response {
+                    json: format!(r#"{{"version":{{"name":"{name}","protocol":{asked}}}}}"#),
+                })
+                .await
+                .expect("status response");
+                let (_, mut body) = conn.read_packet().await.expect("ping");
+                let ping = mc_protocol::status::Ping::read(&mut body).unwrap();
+                conn.send(&mc_protocol::status::Pong {
+                    payload: ping.payload,
+                })
+                .await
+                .expect("pong");
+                asked
+            });
+            let address = format!("127.0.0.1:{port}");
+            let status = ping_with_timeout(&address, Duration::from_secs(1), version)
+                .await
+                .expect("ping");
+            assert_eq!(server.await.expect("server task"), protocol, "{version}");
+            assert_eq!(status.protocol, protocol);
+        }
     }
 
     #[test]
@@ -1598,7 +1655,11 @@ mod tests {
 
         let result = tokio::time::timeout(
             Duration::from_secs(1),
-            ping_with_timeout(&format!("127.0.0.1:{port}"), Duration::from_millis(40)),
+            ping_with_timeout(
+                &format!("127.0.0.1:{port}"),
+                Duration::from_millis(40),
+                GameVersion::V1_8_9,
+            ),
         )
         .await
         .expect("the test itself must remain bounded")
@@ -1628,8 +1689,12 @@ mod tests {
             }
         });
 
-        let result =
-            ping_with_timeout(&format!("127.0.0.1:{port}"), Duration::from_millis(40)).await;
+        let result = ping_with_timeout(
+            &format!("127.0.0.1:{port}"),
+            Duration::from_millis(40),
+            GameVersion::V1_8_9,
+        )
+        .await;
         assert!(
             matches!(
                 &result,

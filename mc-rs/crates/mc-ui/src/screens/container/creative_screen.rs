@@ -243,6 +243,11 @@ pub struct CreativeScreen {
     drag_splitting: bool,
     drag_splitting_button: i32,
     drag_splitting_limit: i32,
+    /// The limit the last drag started with. 1.7.10's pick-block drag reuses it (java17
+    /// `GuiContainer.mouseClicked` never resets `dragSplittingLimit`).
+    last_drag_limit: i32,
+    /// The left edge a 1.7.10 inventory keeps until its next layout (`container/v5.rs`).
+    init_shift_v5: super::v5::InitShiftV5,
     drag_splitting_slots: Vec<u16>,
     /// java: `GuiContainer.dragSplittingRemnant`, what the held stack
     /// would keep after the sweep. Recomputed only by [`Self::update_drag_splitting`] (each
@@ -342,6 +347,8 @@ impl CreativeScreen {
             drag_splitting: false,
             drag_splitting_button: 0,
             drag_splitting_limit: 0,
+            last_drag_limit: 0,
+            init_shift_v5: super::v5::InitShiftV5::default(),
             drag_splitting_slots: Vec::new(),
             drag_splitting_remnant: 0,
             last_click_slot: None,
@@ -439,6 +446,12 @@ impl CreativeScreen {
         } else {
             160 + (self.screen_width - X_SIZE - 200) / 2
         };
+        // 1.7.10 keeps the position its `initGui` chose (`container/v5.rs`).
+        if self.player.game_version().is_1_7_10() {
+            self.gui_left = self
+                .init_shift_v5
+                .left(self.gui_left, self.effects_centered);
+        }
         if self.gui_left != old_left {
             self.search.rect.x = self.gui_left + 82;
         }
@@ -591,7 +604,8 @@ impl CreativeScreen {
         match slot {
             CreativeSlot::Grid(index) => {
                 if let Some(mut source) = self.stack_at(CreativeSlot::Grid(index)).cloned() {
-                    source.count = stack_ext::max_stack_size(&source);
+                    source.count =
+                        stack_ext::max_stack_size_in(self.player.game_version(), &source);
                     self.player
                         .set_slot_contents(36 + hotbar as usize, Some(source));
                     self.emit_changes();
@@ -736,6 +750,10 @@ impl CreativeScreen {
     #[must_use]
     fn drag_limit(&self, button: i32) -> Option<i32> {
         if button == self.bindings.pick_block_button {
+            // java17 sets the limit for the left and right buttons only.
+            if self.player.game_version().is_1_7_10() {
+                return Some(self.last_drag_limit);
+            }
             Some(2)
         } else {
             match button {
@@ -753,6 +771,7 @@ impl CreativeScreen {
         self.drag_splitting = true;
         self.drag_splitting_button = button;
         self.drag_splitting_limit = limit;
+        self.last_drag_limit = limit;
         self.drag_splitting_slots.clear();
     }
 
@@ -816,12 +835,12 @@ impl CreativeScreen {
             0 => cursor.count.div_euclid(swept),
             1 => 1,
             // java: `getItem().getItemStackLimit()`, a full stack (the creative-only mode).
-            2 => stack_ext::max_stack_size(cursor),
+            2 => stack_ext::max_stack_size_in(self.player.game_version(), cursor),
             _ => cursor.count,
         }
         .saturating_add(existing);
         let mut yellow = None;
-        let item_max = stack_ext::max_stack_size(&preview);
+        let item_max = stack_ext::max_stack_size_in(self.player.game_version(), &preview);
         if preview.count > item_max {
             yellow = Some(item_max);
             preview.count = item_max;
@@ -1003,7 +1022,8 @@ impl CreativeScreen {
         if self.player.slot_stack(usize::from(clicked)).is_some() {
             return;
         }
-        let max = stack_ext::max_stack_size(&held);
+        let version = self.player.game_version();
+        let max = stack_ext::max_stack_size_in(version, &held);
         for pass in 0..2 {
             for id in 36..45u16 {
                 if held.count >= max {
@@ -1013,7 +1033,8 @@ impl CreativeScreen {
                     continue;
                 };
                 if !self.player.slot_stack_would_accept(id, &held)
-                    || (pass == 0 && existing.count == stack_ext::max_stack_size(&existing))
+                    || (pass == 0
+                        && existing.count == stack_ext::max_stack_size_in(version, &existing))
                 {
                     continue;
                 }
@@ -1130,15 +1151,20 @@ impl CreativeScreen {
         self.selected_tab = index % TAB_COUNT;
         remember_selected_tab(self.selected_tab);
         let tab = self.tab();
+        // A 1.7.10 session lists 1.7.10's items (`creative_v5.rs`).
+        let version = self.player.game_version();
         self.item_list = match tab {
-            CreativeTab::Items(label) => creative::stacks_for_tab(label),
+            CreativeTab::Items(label) => creative::stacks_for_tab_in(version, label),
             // java: `setCurrentCreativeTab` does `searchField.setText("")` and then
             // `updateCreativeSearch()`, and an empty needle matches every tooltip line, so the
             // tab opens showing the **whole** pool. (The old comment here claimed the opposite
             // and the grid opened blank -- audit `F-P2-creativetab-01-4`.)
-            CreativeTab::Search => {
-                creative::search_stacks("", self.advanced_tooltips, self.language.as_ref())
-            }
+            CreativeTab::Search => creative::search_stacks_in(
+                version,
+                "",
+                self.advanced_tooltips,
+                self.language.as_ref(),
+            ),
             CreativeTab::Inventory => Vec::new(),
         };
         self.search.visible = tab == CreativeTab::Search;
@@ -1174,7 +1200,8 @@ impl CreativeScreen {
     /// Re-run the search against the box's current contents. java:
     /// `GuiContainerCreative.updateCreativeSearch`.
     pub fn update_search(&mut self) {
-        self.item_list = creative::search_stacks(
+        self.item_list = creative::search_stacks_in(
+            self.player.game_version(),
             &self.search.text(),
             self.advanced_tooltips,
             self.language.as_ref(),
@@ -1560,15 +1587,16 @@ impl CreativeScreen {
                 // java: GuiContainer.mouseClicked turns the pick-block mouse binding into
                 // clickType 3. The creative grid consumes that mode before its ordinary
                 // clickedButton test: only an empty cursor receives a max-size clone.
+                let version = self.player.game_version();
                 if pick_block {
                     if cursor.is_none() {
                         let mut full = source;
-                        full.count = stack_ext::max_stack_size(&full);
+                        full.count = stack_ext::max_stack_size_in(version, &full);
                         self.player.set_cursor(Some(full));
                     }
                     return;
                 }
-                let next = creative::click_tab_source(cursor, &source, button, shift);
+                let next = creative::click_tab_source_in(version, cursor, &source, button, shift);
                 self.player.set_cursor(next);
             }
             CreativeSlot::Player(id) => {
@@ -1798,6 +1826,7 @@ impl Screen for CreativeScreen {
     // java: GuiContainerCreative.java:263 (initGui)
     fn init(&mut self, ctx: &ScreenCtx) {
         self.screen_width = ctx.width;
+        self.init_shift_v5.laid_out(ctx.width, ctx.height);
         self.update_active_potion_effects();
         self.gui_top = (ctx.height - Y_SIZE) / 2;
         self.search.rect.x = self.gui_left + 82;
@@ -2077,7 +2106,7 @@ impl Screen for CreativeScreen {
                 Some(CreativeSlot::Grid(index)) => {
                     if let Some(mut dropped) = self.stack_at(CreativeSlot::Grid(index)).cloned() {
                         dropped.count = if mods.ctrl {
-                            stack_ext::max_stack_size(&dropped)
+                            stack_ext::max_stack_size_in(self.player.game_version(), &dropped)
                         } else {
                             1
                         };
@@ -2094,7 +2123,7 @@ impl Screen for CreativeScreen {
                     // then `sendPacketDropItem`; no `detectAndSendChanges`.
                     if let Some(mut remaining) = self.player.slot_stack(id as usize).cloned() {
                         let amount = if mods.ctrl {
-                            stack_ext::max_stack_size(&remaining)
+                            stack_ext::max_stack_size_in(self.player.game_version(), &remaining)
                         } else {
                             1
                         };
@@ -4283,5 +4312,72 @@ mod tests {
         assert_eq!(s.search.text(), "e", "and was not typed");
         s.key_typed_with_font(Some('a'), 0, Modifiers::NONE, &font);
         assert_eq!(s.search.text(), "a");
+    }
+
+    /// The tab cell holding an oak door, scrolling each tab until one shows it.
+    fn door_cell(s: &mut CreativeScreen) -> CreativeSlot {
+        for tab in 0..TAB_COUNT {
+            s.set_tab(tab);
+            for step in 0..=20u8 {
+                s.scroll_to(f32::from(step) / 20.0);
+                let door = s
+                    .grid()
+                    .iter()
+                    .position(|cell| cell.as_ref().is_some_and(|stack| stack.item_id == 324));
+                if let Some(index) = door {
+                    return CreativeSlot::Grid(index as u8);
+                }
+            }
+        }
+        panic!("no tab lists the oak door");
+    }
+
+    /// A full stack from a tab has the session's own maximum size (java17
+    /// `GuiContainerCreative.handleMouseClick` sizes it with `getMaxStackSize`): one door in
+    /// 1.7.10, where doors stack to one, and sixty-four in 1.8.9. It is what the `C10` carries.
+    #[test]
+    fn a_full_stack_of_doors_from_a_tab_is_one_door_in_a_1_7_10_session() {
+        let mut font = uniform_font();
+        for (version, full) in [
+            (mc_version::GameVersion::V1_7_10, 1),
+            (mc_version::GameVersion::V1_8_9, 64),
+        ] {
+            remember_selected_tab(0);
+            let mut s =
+                CreativeScreen::over(layouts::player_container(0).with_game_version(version));
+            s.init(&ctx());
+            let door = door_cell(&mut s);
+
+            s.click_slot(door, 0, true);
+            assert_eq!(
+                s.player.cursor().map(|c| c.count),
+                Some(full),
+                "{version:?} shift"
+            );
+            s.player.set_cursor(None);
+            s.click_slot(door, DEFAULT_PICK_BLOCK_BUTTON, false);
+            assert_eq!(
+                s.player.cursor().map(|c| c.count),
+                Some(full),
+                "{version:?} pick"
+            );
+            s.player.set_cursor(None);
+
+            s.take_outgoing();
+            let (x, y) = centre_of(&s, door);
+            s.draw(&mut DrawList::new(), &mut font, &ctx(), (x, y));
+            s.key_typed_with_font(Some('1'), KEY_HOTBAR_1, Modifiers::NONE, &font);
+            assert_eq!(
+                s.player.slot_stack(36).map(|c| c.count),
+                Some(full),
+                "{version:?} key"
+            );
+            let sent = s.take_outgoing();
+            assert!(
+                sent.iter().any(|packet| packet.slot_id == 36
+                    && packet.stack.as_ref().map(|c| c.count) == Some(full)),
+                "{version:?}: the C10 carries the full stack, got {sent:?}"
+            );
+        }
     }
 }

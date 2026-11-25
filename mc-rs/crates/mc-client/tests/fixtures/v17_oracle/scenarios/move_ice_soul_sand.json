@@ -1,0 +1,18 @@
+{
+  "name": "move_ice_soul_sand",
+  "about": "Sprint-jumping over ice and packed ice, a shove on the ice, sliding, walking onto soul sand over ice, and back (the 1.8.9 oracle's edge_ice inputs without the slime strip).",
+  "world": "edge",
+  "spawn": [-12.5, 64.0, -12.5, 0.0, 0.0],
+  "steps": [
+    {"hold": 2},
+    {"note": "sprint-jump over the ice and the packed ice", "keys": ["forward", "sprint", "jump"], "hold": 30},
+    {"note": "a shove on the ice", "in": [{"velocity": [0.15, 0.36, -0.2]}], "keys": ["forward", "sprint"], "hold": 8},
+    {"keys": ["forward", "sprint", "jump"], "hold": 36},
+    {"note": "let go and slide", "hold": 10},
+    {"keys": ["forward"], "hold": 30},
+    {"keys": ["forward", "jump"], "hold": 10},
+    {"note": "soul sand over ice", "keys": ["forward"], "hold": 24},
+    {"note": "turn round and sprint-jump back", "look": [180.0, 0.0], "keys": ["forward", "sprint", "jump"], "hold": 50},
+    {"hold": 12}
+  ]
+}

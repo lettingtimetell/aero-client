@@ -1,0 +1,13 @@
+{
+  "name": "focus_dig_while_blocking",
+  "about": "Block with a sword, then also hold attack on a stone. 1.7.10 sendClickBlockToController has no isUsingItem gate: C07 start, a swing every tick, damage accumulates; on release C07 release-use then abort. 1.8.9: nothing while using the item.",
+  "world": "focus",
+  "spawn": [6.5, 64.0, 24.5, -90.0, 35.0],
+  "setup": [{"slot": 36, "item": 276}],
+  "steps": [
+    {"hold": 3},
+    {"hold": 3, "keys": ["use"]},
+    {"hold": 10, "keys": ["use", "attack"]},
+    {"hold": 3}
+  ]
+}

@@ -6,6 +6,7 @@
 
 use mc_protocol::connection::LoginOutcome;
 use mc_protocol::play::{C2SPlay, S2CPlay};
+use mc_protocol::v5::{C2SPlay5, S2CPlay5};
 use tokio::sync::mpsc;
 
 use crate::error::ClientError;
@@ -53,6 +54,29 @@ pub enum ToGame {
         std::sync::Arc<crate::sync::prebuild::PrebuildingChunkPacket>,
         Box<[u8]>,
     ),
+    /// One decoded protocol-5 (1.7.10) Play packet. Only a 1.7.10 connection or recording sends
+    /// it ([`crate::net::task`]'s protocol-5 path). The session queues it for its tick: 1.7.10
+    /// applies inbound packets inside `runTick`, not per frame (`crate::session`'s 1.7.10
+    /// drain). Boxed so that `ToGame` does not grow.
+    PacketV5(Box<S2CPlay5>),
+    /// A protocol-5 chunk packet, already converted into its 1.8.9 form on the network thread
+    /// and unpacking like a [`ToGame::ChunkPacket`], with the converted chunk data's size in
+    /// bytes (what it holds while it waits). Queued for the tick like [`ToGame::PacketV5`], in
+    /// the same position.
+    ChunkPacketV5(
+        std::sync::Arc<crate::sync::prebuild::PrebuildingChunkPacket>,
+        usize,
+    ),
+    /// A [`ToGame::PacketV5`] plus its exact protocol-5 bytes, for the replay recorder; see
+    /// [`ToGame::RawPacket`].
+    RawPacketV5(Box<(S2CPlay5, Box<[u8]>)>),
+    /// A [`ToGame::ChunkPacketV5`] plus the exact protocol-5 bytes it was converted from, for the
+    /// replay recorder; see [`ToGame::RawPacket`].
+    RawChunkPacketV5(
+        std::sync::Arc<crate::sync::prebuild::PrebuildingChunkPacket>,
+        usize,
+        Box<[u8]>,
+    ),
 }
 
 impl ToGame {
@@ -63,6 +87,19 @@ impl ToGame {
         match (self, raw) {
             (ToGame::Packet(packet), Some(raw)) => ToGame::RawPacket(Box::new((packet, raw))),
             (ToGame::ChunkPacket(job), Some(raw)) => ToGame::RawChunkPacket(job, raw),
+            (message, _) => message,
+        }
+    }
+
+    /// [`ToGame::with_raw`] for the protocol-5 messages: a [`ToGame::PacketV5`] or
+    /// [`ToGame::ChunkPacketV5`] with bytes becomes its raw form.
+    #[must_use]
+    pub(crate) fn with_raw_v5(self, raw: Option<Box<[u8]>>) -> ToGame {
+        match (self, raw) {
+            (ToGame::PacketV5(packet), Some(raw)) => ToGame::RawPacketV5(Box::new((*packet, raw))),
+            (ToGame::ChunkPacketV5(job, bytes), Some(raw)) => {
+                ToGame::RawChunkPacketV5(job, bytes, raw)
+            }
             (message, _) => message,
         }
     }
@@ -184,6 +221,11 @@ pub enum ToNet {
     /// Close the connection cleanly. The task answers with
     /// [`DisconnectReason::ClosedByClient`] and exits.
     Disconnect,
+    /// Serialise and send one protocol-5 (1.7.10) serverbound Play packet, exactly as built.
+    /// Only a 1.7.10 connection writes it; a 1.8.9 one logs and drops it, never sending it (see
+    /// [`crate::net::task`]). On a 1.7.10 connection a [`ToNet::Send`] is converted with
+    /// `C2SPlay5::from_v47`, and refused (logged, never sent) where that has no exact form.
+    SendV5(C2SPlay5),
 }
 
 /// Where a handle's inbound messages come from.
@@ -451,6 +493,18 @@ impl NetHandle {
     pub fn send(&self, packet: C2SPlay) -> Result<(), ClientError> {
         self.outbound
             .send(ToNet::Send(packet))
+            .map_err(|_| ClientError::NotConnected)
+    }
+
+    /// Queue one protocol-5 (1.7.10) packet for the connection task, in order with
+    /// [`NetHandle::send`]'s packets (one queue carries both).
+    ///
+    /// # Errors
+    ///
+    /// [`ClientError::NotConnected`] once the task has exited, as [`NetHandle::send`].
+    pub fn send_v5(&self, packet: C2SPlay5) -> Result<(), ClientError> {
+        self.outbound
+            .send(ToNet::SendV5(packet))
             .map_err(|_| ClientError::NotConnected)
     }
 

@@ -71,6 +71,8 @@ pub mod tooltip;
 pub mod tooltip_box;
 // The `scrollable_tooltips` mod
 pub mod tooltip_scroll;
+// Minecraft 1.7.10's windows: what a 1.7.10 server's open-window packet builds.
+pub mod v5;
 
 pub use creative_screen::CreativeScreen;
 pub use interaction::{MouseState, SlotTarget};

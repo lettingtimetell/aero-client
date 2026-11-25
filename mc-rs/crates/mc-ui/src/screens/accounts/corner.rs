@@ -466,6 +466,7 @@ mod tests {
                 mc_font: &mut self.mc,
                 labels: &self.labels,
                 version: "Minecraft 1.8.9",
+                game_version: mc_version::GameVersion::V1_8_9,
                 copyright: "",
                 screen,
                 now: self.t0 + Duration::from_millis(ms),

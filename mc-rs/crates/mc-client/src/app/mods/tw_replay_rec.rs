@@ -90,7 +90,7 @@ fn writer_options() -> WriterOptions {
     WriterOptions::default()
 }
 
-// ---- what a packet means to the recorder (protocol 47) ----------------------------------------
+// ---- what a packet means to the recorder (protocols 47 and 5) ---------------------------------
 
 /// What the recorder makes of one clientbound packet.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -130,6 +130,15 @@ pub(crate) enum Sticky {
 }
 
 /// Classify one packet from its bytes (packet id varint, then body).
+///
+/// The ids and offsets are protocol 47's, and they read a 1.7.10 recording (protocol 5) right
+/// too: protocol 5 registers the same packets at the same ids (java17
+/// `EnumConnectionState.java:115-183`), its join game has the dimension byte after an int and a
+/// byte (`S01PacketJoinGame.java:54-65`), its respawn starts with the dimension int
+/// (`S07PacketRespawn.java:48-54`), and its plugin message with the channel name as a varint-
+/// prefixed string (`S3FPacketCustomPayload.java:41-46`, `PacketBuffer.java:164-177`). The
+/// player list and scoreboard packets differ in their bodies, which are not read here. Its last
+/// clientbound id is `0x40`, so the header-footer and difficulty arms never match one.
 pub(crate) fn classify(raw: &[u8]) -> PacketClass {
     let mut pos = 0;
     let Some(id) = varint(raw, &mut pos) else {
@@ -536,6 +545,8 @@ struct Conn {
     /// decides a split), and the Bookmark key's presses kept for clips (`nw_ra.rs`).
     world_started: ReplayTime,
     bookmarks: Vec<ReplayTime>,
+    /// The protocol the session speaks (its version's), stamped on every file it records.
+    protocol: i32,
 }
 
 impl Conn {
@@ -1042,7 +1053,7 @@ fn new_meta(conn: &Conn, zero: ReplayTime, title_unix_ms: u64) -> ReplayMeta {
         started_unix_ms: conn.unix_ms_at(zero),
         player_name: conn.player_name.clone(),
         player_uuid: conn.player_uuid.clone(),
-        protocol: 47,
+        protocol: conn.protocol,
         client_version: format!("Aero Client {}", env!("CARGO_PKG_VERSION")),
         world_resets: vec![0],
         ..ReplayMeta::default()
@@ -1328,6 +1339,7 @@ impl Client {
             })
             .unwrap_or_else(|| "Unknown server".to_owned());
         tracing::debug!(%server, "replay recorder following a session");
+        let protocol = session.version().protocol();
         self.rec.conn = Some(Box::new(Conn {
             started: now,
             now: 0,
@@ -1347,6 +1359,7 @@ impl Client {
             title_checked: None,
             world_started: 0,
             bookmarks: Vec::new(),
+            protocol,
         }));
     }
 
@@ -1720,6 +1733,66 @@ mod tests {
         assert_eq!(classify(&[]), PacketClass::Plain);
         // A JoinGame cut short is not a reset.
         assert_eq!(classify(&[0x01, 0, 0]), PacketClass::Plain);
+    }
+
+    /// A 1.7.10 recording's packets, as the protocol-5 codec writes them, read the same way.
+    #[test]
+    fn protocol_5_world_resets_and_sticky_packets_are_recognised_from_their_bytes() {
+        use mc_protocol::v5::{s2c as s2c5, S2CPlay5};
+        let bytes = |packet: &S2CPlay5| {
+            let mut buf = PacketBuffer::new();
+            buf.write_varint(packet.id());
+            packet.write(&mut buf);
+            buf.as_slice().to_vec()
+        };
+        let join = S2CPlay5::JoinGame(s2c5::JoinGame {
+            entity_id: 42,
+            hardcore_mode: true,
+            game_mode: 2,
+            dimension: -1,
+            difficulty: 3,
+            max_players: 20,
+            level_type: "default".into(),
+        });
+        assert_eq!(classify(&bytes(&join)), PacketClass::Join { dimension: -1 });
+        let respawn = S2CPlay5::Respawn(s2c5::Respawn {
+            dimension: 1,
+            difficulty: 2,
+            game_mode: 0,
+            level_type: "default".into(),
+        });
+        assert_eq!(
+            classify(&bytes(&respawn)),
+            PacketClass::Respawn { dimension: 1 }
+        );
+        // 1.7.10's brand payload is raw bytes, not a string; only the channel is read.
+        let brand = S2CPlay5::PluginMessage(s2c5::PluginMessage {
+            channel: "MC|Brand".into(),
+            data: b"vanilla".to_vec(),
+        });
+        assert_eq!(classify(&bytes(&brand)), PacketClass::Sticky(Sticky::Brand));
+        let other = S2CPlay5::PluginMessage(s2c5::PluginMessage {
+            channel: "MC|TrList".into(),
+            data: Vec::new(),
+        });
+        assert_eq!(classify(&bytes(&other)), PacketClass::Plain);
+        let tab = S2CPlay5::PlayerListItem(s2c5::PlayerListItem {
+            name: "Steve".into(),
+            online: true,
+            ping: 25,
+        });
+        assert_eq!(classify(&bytes(&tab)), PacketClass::Sticky(Sticky::TabList));
+        let objective = S2CPlay5::ScoreboardObjective(s2c5::ScoreboardObjective {
+            objective_name: "kills".into(),
+            display_name: "Kills".into(),
+            mode: 0,
+        });
+        assert_eq!(
+            classify(&bytes(&objective)),
+            PacketClass::Sticky(Sticky::Scoreboard)
+        );
+        let keep_alive = S2CPlay5::KeepAlive(s2c5::KeepAlive { id: 7 });
+        assert_eq!(classify(&bytes(&keep_alive)), PacketClass::Plain);
     }
 
     #[test]

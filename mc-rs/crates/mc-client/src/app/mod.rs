@@ -34,6 +34,8 @@ pub mod config;
 pub mod crash;
 mod diagnostic;
 pub mod driver;
+// 1.7.10 sessions: the world events whose 1.7.10 table differs.
+mod effects_v5;
 pub mod entrender;
 // Which chat/book link values may leave the client.
 mod external_links;

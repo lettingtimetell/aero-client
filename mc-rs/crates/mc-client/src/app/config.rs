@@ -28,6 +28,7 @@
 
 use std::path::{Path, PathBuf};
 
+use mc_version::GameVersion;
 use uuid::Uuid;
 
 use crate::app::campath::{CameraScript, DEFAULT_PERIOD_FRAMES, DEFAULT_RADIUS};
@@ -188,6 +189,11 @@ pub struct ClientConfig {
     /// The vanilla jar that supplies models, blockstates and block textures. No vanilla
     /// equivalent — see this module's header.
     pub version_jar: Option<PathBuf>,
+    /// `--gameVersion`: the Minecraft version to play for this run instead of the one picked on
+    /// the title screen; nothing is saved, and picking one on the title screen ends it. No
+    /// vanilla equivalent: it is for tests and `--server` launches, which skip the title screen.
+    /// Unrelated to [`ClientConfig::version`], the launcher's label.
+    pub game_version: Option<GameVersion>,
     /// java: `--server` / `--port`. When set, vanilla goes straight to `GuiConnecting` instead
     /// of `GuiMainMenu` (`Minecraft.startGame:571`).
     pub server: Option<(String, u16)>,
@@ -255,6 +261,7 @@ impl Default for ClientConfig {
             asset_index: DEFAULT_ASSET_INDEX.to_owned(),
             version: "1.8.9".to_owned(),
             version_jar: None,
+            game_version: None,
             server: None,
             proxy: None,
             width: 854,
@@ -402,6 +409,14 @@ impl ClientConfig {
                 "assetIndex" => config.asset_index = value("assetIndex")?,
                 "version" => config.version = value("version")?,
                 "versionJar" => config.version_jar = Some(PathBuf::from(value("versionJar")?)),
+                "gameVersion" => {
+                    let raw = value("gameVersion")?;
+                    let version = GameVersion::from_name(&raw).ok_or_else(|| {
+                        let names = GameVersion::ALL.map(GameVersion::name).join(" or ");
+                        format!("--gameVersion must be {names}, got {raw:?}")
+                    })?;
+                    config.game_version = Some(version);
+                }
                 "server" => server = Some(value("server")?),
                 "port" => {
                     let raw = value("port")?;
@@ -934,6 +949,27 @@ mod tests {
         ])
         .unwrap();
         assert_eq!(config.width, 1280);
+    }
+
+    #[test]
+    fn game_version_picks_the_version_for_one_run_and_is_not_the_launcher_label() {
+        let parse = |args: &[&str]| ClientConfig::parse_args(args).map(|c| c.game_version);
+        assert_eq!(parse(&[]), Ok(None), "the title screen's pick");
+        assert_eq!(
+            parse(&["--gameVersion", "1.7.10"]),
+            Ok(Some(GameVersion::V1_7_10))
+        );
+        assert_eq!(
+            parse(&["--gameVersion", "1.8.9"]),
+            Ok(Some(GameVersion::V1_8_9))
+        );
+        let error = parse(&["--gameVersion", "1.8"]).expect_err("not a version");
+        assert!(error.contains("1.7.10 or 1.8.9"), "{error}");
+        assert!(parse(&["--gameVersion"]).is_err(), "a value is required");
+        // `--version` is the launcher's label and never selects what is played.
+        let config = ClientConfig::parse_args(&["--version", "1.7.10"]).expect("parse");
+        assert_eq!(config.version, "1.7.10");
+        assert_eq!(config.game_version, None);
     }
 
     /// The launcher-facing options that have no current Rust consumer still need to consume their

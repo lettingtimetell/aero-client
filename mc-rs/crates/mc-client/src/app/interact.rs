@@ -25,6 +25,11 @@ use mc_protocol::{play::s2c::GameMode, ItemStack};
 use mc_world::world::LocalBlockClick;
 use mc_world::World;
 
+// 1.7.10 support: the 1.7.10 pick, ray trace and dig rules, a child so they share
+// `PlayerController`'s fields.
+#[path = "interact_rules_v5.rs"]
+pub(crate) mod v5;
+
 /// A block the look vector intersects. java: `MovingObjectPosition` with `typeOfHit == BLOCK`.
 #[derive(Debug, Clone, Copy, PartialEq)]
 pub struct BlockHit {

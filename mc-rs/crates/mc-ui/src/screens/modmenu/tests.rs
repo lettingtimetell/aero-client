@@ -1140,6 +1140,45 @@ fn a_search_matches_choice_labels_and_dynamic_row_labels() {
     );
 }
 
+/// A dynamic row's badge with `cycle` set is a choice (the title screen's Game version row): a
+/// left click asks for the next value, a right click for the one before. Without `cycle` (that
+/// row during a session, greyed) the badge takes no click.
+#[test]
+fn a_cycle_badge_asks_for_the_next_value_and_a_fixed_badge_takes_no_click() {
+    let fill = |rows: &mut DynamicRows, choice: bool| {
+        rows.begin();
+        let row = rows.push(1);
+        row.label.push_str("Game version");
+        row.badge.push_str("1.8.9");
+        row.cycle = choice;
+        row.muted = !choice;
+    };
+    let mut h = Harness::new();
+    let title = h.settings.index_of("aero_title").unwrap();
+    fill(&mut h.rows[title], true);
+    h.build(1000);
+    h.type_text("game version", 1000);
+    h.build(1016);
+    h.click_target(|t| *t == Target::Found(title), 1016);
+    h.build(1032);
+    let badge = |t: &Target| matches!(t, Target::DynCycle(m, 1) if *m == title);
+    let (x, y) = h.hit_where(badge).expect("the badge is a choice").center();
+    h.click(x, y, 0, 1032);
+    h.click(x, y, 1, 1048);
+    let cycle = |forward| ModEvent::RowCycle {
+        mod_id: "aero_title",
+        row: 1,
+        forward,
+    };
+    assert_eq!(h.events, [cycle(true), cycle(false)]);
+
+    fill(&mut h.rows[title], false);
+    h.build(1064);
+    assert!(h.hit_where(badge).is_none(), "a fixed badge is no choice");
+    h.click(x, y, 0, 1064);
+    assert_eq!(h.events.len(), 2, "the click asked for nothing");
+}
+
 /// A printable menu key (M) closes the menu, except while a search is being typed: then it
 /// types (searching "zoom" with M as the menu key must work).
 #[test]

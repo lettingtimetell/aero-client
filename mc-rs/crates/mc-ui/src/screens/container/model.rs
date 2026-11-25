@@ -55,23 +55,31 @@
 use std::collections::{BTreeMap, BTreeSet};
 
 use mc_nbt::{Nbt, NbtCompound};
+use mc_version::GameVersion;
 
 use super::slot::{Slot, DEFAULT_STACK_LIMIT};
 use super::stack_ext::{self, ItemStack};
 
-/// Whether a network stack names an actual 1.8.9 registry entry. Unknown stacks remain in the
-/// authoritative slot/cursor snapshots so the UI can display and echo them, but must never enter
-/// the local Java container simulation through the fabricated fallback properties.
-fn registered_stack(stack: &ItemStack) -> bool {
-    stack_ext::try_props(stack).is_some()
+// The 1.7.10 click, anvil and crafting rules: a child module, for this type's private state.
+#[path = "model_v5.rs"]
+mod v5;
+
+/// Whether a network stack names an actual entry of `version`'s item registry. Unknown stacks
+/// remain in the authoritative slot/cursor snapshots so the UI can display and echo them, but
+/// must never enter the local Java container simulation through the fabricated fallback
+/// properties.
+fn registered_stack(version: GameVersion, stack: &ItemStack) -> bool {
+    stack_ext::try_props_in(version, stack).is_some()
 }
 
-fn known_or_empty(stack: Option<&ItemStack>) -> bool {
-    stack.is_none_or(registered_stack)
+fn known_or_empty(version: GameVersion, stack: Option<&ItemStack>) -> bool {
+    stack.is_none_or(|stack| registered_stack(version, stack))
 }
 
-fn all_registered(stacks: &[Option<ItemStack>]) -> bool {
-    stacks.iter().all(|stack| known_or_empty(stack.as_ref()))
+fn all_registered(version: GameVersion, stacks: &[Option<ItemStack>]) -> bool {
+    stacks
+        .iter()
+        .all(|stack| known_or_empty(version, stack.as_ref()))
 }
 
 /// A locally evaluated crafting result and its recipe provenance. Keeping the provenance is
@@ -413,6 +421,10 @@ pub enum ContainerKind {
     BrewingStand,
     /// `ContainerEnchantment`: item(0) lapis(1), then 27 main + 9 hotbar.
     Enchanting,
+    /// 1.7.10's `ContainerEnchantment`: the item slot (0) only, no lapis, then 27 main + 9
+    /// hotbar, so every player slot id is one lower than in [`ContainerKind::Enchanting`].
+    /// java17: `inventory/ContainerEnchantment.java` (`tableInventory` of size 1).
+    EnchantingV5,
     /// `ContainerRepair` (anvil): input1(0) input2(1) output(2), then 27 main + 9 hotbar.
     Anvil,
     /// `ContainerBeacon`: payment(0), then 27 main + 9 hotbar.
@@ -520,6 +532,8 @@ pub struct Container {
     anvil_input_display_name: Option<(ItemStack, String)>,
     /// The currently selected merchant offer, if the host has delivered `MC|TrList`.
     merchant_recipe: Option<MerchantRecipe>,
+    /// A 1.7.10 merchant window's whole offer list and matching state (`model_v5.rs`).
+    merchant_v5: v5::MerchantV5,
     /// `EntityPlayer.experienceLevel`, or `None` when the host has not supplied it.
     ///
     /// [`Self::can_take_stack`]'s anvil predicate needs it. Treating a missing level as `0`
@@ -535,6 +549,9 @@ pub struct Container {
     /// and the creative screen's `CreativeCrafting` listener uploads only what changed since its
     /// last look, also across openings. Server writes (`putStackInSlot`) never touch it.
     listener_mirror: Vec<Option<ItemStack>>,
+    /// The game version whose click, anvil and crafting rules this container predicts with:
+    /// 1.8.9 unless built for a 1.7.10 session (`model_v5.rs`).
+    version: GameVersion,
 }
 
 impl Container {
@@ -566,8 +583,10 @@ impl Container {
             anvil_creative: false,
             anvil_input_display_name: None,
             merchant_recipe: None,
+            merchant_v5: v5::MerchantV5::default(),
             player_experience_level: None,
             listener_mirror,
+            version: GameVersion::V1_8_9,
         }
     }
 
@@ -608,7 +627,10 @@ impl Container {
             return;
         }
         if let Some(slot) = self.slots.get_mut(1) {
-            slot.role = super::slot::SlotRole::HorseArmor { can_wear };
+            slot.role = match self.version {
+                GameVersion::V1_8_9 => super::slot::SlotRole::HorseArmor { can_wear },
+                GameVersion::V1_7_10 => super::slot::SlotRole::HorseArmorV5 { can_wear },
+            };
         }
     }
 
@@ -749,12 +771,12 @@ impl Container {
 
     fn result_inputs_registered(&self, index: usize) -> bool {
         if self.is_crafting_result_slot(index) {
-            return self
-                .crafting_grid_shape()
-                .is_none_or(|(start, end, _, _)| all_registered(&self.items[start..end]));
+            return self.crafting_grid_shape().is_none_or(|(start, end, _, _)| {
+                all_registered(self.version, &self.items[start..end])
+            });
         }
         if index == 2 && matches!(self.kind, ContainerKind::Anvil | ContainerKind::Merchant) {
-            return all_registered(&self.items[..2]);
+            return all_registered(self.version, &self.items[..2]);
         }
         true
     }
@@ -1025,10 +1047,14 @@ impl Container {
     /// recipes deliberately leave an authoritative server result untouched; only a result
     /// previously produced here may be retracted.
     fn recompute_craft_result(&mut self) {
+        // 1.7.10 has its own recipe list and special recipes (`crafting_v5.rs`).
+        if self.version.is_1_7_10() {
+            return self.recompute_craft_result_v5();
+        }
         let Some((start, end, _, _)) = self.crafting_grid_shape() else {
             return;
         };
-        if !all_registered(&self.items[start..end]) {
+        if !all_registered(self.version, &self.items[start..end]) {
             return;
         }
         let Some((slots, width, height)) = self.crafting_grid() else {
@@ -1084,6 +1110,10 @@ impl Container {
     fn pickup_craft_result(&mut self, index: usize) {
         if !self.is_crafting_result_slot(index) {
             return;
+        }
+        // 1.7.10 puts a container item in the inventory first (`model_v5.rs`).
+        if self.version.is_1_7_10() {
+            return self.pickup_craft_result_v5();
         }
         let Some((slots, width, height)) = self.crafting_grid() else {
             return;
@@ -1198,6 +1228,8 @@ impl Container {
             | ContainerKind::Enchanting
             | ContainerKind::Beacon
             | ContainerKind::Merchant => true,
+            // java17: the table's `InventoryBasic` clamps too.
+            ContainerKind::EnchantingV5 => true,
         }
     }
 
@@ -1305,8 +1337,12 @@ impl Container {
         let Some(slot) = self.slots.get(slot_id as usize) else {
             return false;
         };
-        Self::can_add_item_to_slot(self.items[slot_id as usize].as_ref(), stack, true)
-            && slot.is_item_valid_for(self.items[slot_id as usize].as_ref(), stack)
+        Self::can_add_item_to_slot(
+            self.version,
+            self.items[slot_id as usize].as_ref(),
+            stack,
+            true,
+        ) && slot.is_item_valid_for(self.items[slot_id as usize].as_ref(), stack)
             && self.can_drag_into_slot(slot_id)
     }
 
@@ -1318,6 +1354,7 @@ impl Container {
     #[must_use]
     pub fn slot_stack_would_accept(&self, slot_id: u16, stack: &ItemStack) -> bool {
         Self::can_add_item_to_slot(
+            self.version,
             self.items.get(slot_id as usize).and_then(Option::as_ref),
             stack,
             true,
@@ -1331,6 +1368,7 @@ impl Container {
     #[must_use]
     pub fn slot_stack_accepts_touch(&self, slot_id: u16, stack: &ItemStack) -> bool {
         Self::can_add_item_to_slot(
+            self.version,
             self.items.get(slot_id as usize).and_then(Option::as_ref),
             stack,
             false,
@@ -1433,7 +1471,11 @@ impl Container {
         if self.kind != ContainerKind::Merchant {
             return;
         }
-        if !all_registered(&self.items[..2]) {
+        // 1.7.10 matches against the whole offer list (`model_v5.rs`).
+        if self.version.is_1_7_10() {
+            return self.recompute_merchant_result_v5();
+        }
+        if !all_registered(self.version, &self.items[..2]) {
             return;
         }
         let Some(recipe) = self.merchant_recipe.clone() else {
@@ -1449,6 +1491,10 @@ impl Container {
     pub fn set_merchant_recipe(&mut self, recipe: Option<MerchantRecipe>) {
         if self.kind != ContainerKind::Merchant {
             return;
+        }
+        // A 1.7.10 window given one offer has a list of that one (`model_v5.rs`).
+        if self.version.is_1_7_10() {
+            return self.set_merchant_offers_v5(recipe.as_slice(), 0);
         }
         self.merchant_recipe = recipe;
         if self.merchant_recipe.is_some() {
@@ -1503,6 +1549,10 @@ impl Container {
         if self.kind != ContainerKind::Merchant {
             return;
         }
+        // 1.7.10 pays the offer the output came from (`model_v5.rs`).
+        if self.version.is_1_7_10() {
+            return self.pickup_merchant_result_v5();
+        }
         let Some(recipe) = self.merchant_recipe.clone() else {
             return;
         };
@@ -1534,6 +1584,10 @@ impl Container {
         if self.kind != ContainerKind::Anvil {
             return;
         }
+        // 1.7.10 prices repairs, enchantments and names its own way (`model_v5.rs`).
+        if self.version.is_1_7_10() {
+            return self.update_repair_output_v5();
+        }
         self.anvil_material_cost = 0;
         let Some(input) = self.items.first().and_then(Option::as_ref).cloned() else {
             self.items[2] = None;
@@ -1542,7 +1596,8 @@ impl Container {
         };
 
         let second = self.items.get(1).and_then(Option::as_ref).cloned();
-        if !registered_stack(&input) || !known_or_empty(second.as_ref()) {
+        if !registered_stack(self.version, &input) || !known_or_empty(self.version, second.as_ref())
+        {
             self.items[2] = None;
             self.anvil_material_cost = 0;
             self.maximum_cost = Some(0);
@@ -1886,6 +1941,7 @@ impl Container {
             ContainerKind::Furnace => 3,
             ContainerKind::BrewingStand => 4,
             ContainerKind::Enchanting => 2,
+            ContainerKind::EnchantingV5 => 1,
             ContainerKind::Anvil => 3,
             ContainerKind::Beacon => 1,
             ContainerKind::Merchant => 3,
@@ -1959,11 +2015,12 @@ impl Container {
         start: usize,
         end: usize,
     ) -> Option<usize> {
+        let version = self.version;
         let matches = |&i: &usize| {
             self.items[i].as_ref().is_some_and(|existing| {
-                stack_ext::same_item_respecting_subtypes(existing, stack)
-                    && stack_ext::is_stackable(existing)
-                    && existing.count < stack_ext::max_stack_size(existing)
+                stack_ext::same_item_respecting_subtypes_in(version, existing, stack)
+                    && stack_ext::is_stackable_in(version, existing)
+                    && existing.count < stack_ext::max_stack_size_in(version, existing)
                     && existing.count < DEFAULT_STACK_LIMIT
                     && stack_ext::tags_equal(Some(existing), Some(stack))
             })
@@ -1979,6 +2036,10 @@ impl Container {
     /// java: `InventoryPlayer.storePartialItemStack`. Returns the amount of `stack` that did
     /// not fit into the one slot this call chose (`0` if it all fit).
     fn store_partial_item_stack(&mut self, stack: &ItemStack, start: usize, end: usize) -> i32 {
+        // 1.7.10 stores an item that stacks to one whole (`model_v5.rs`).
+        if let Some(left) = self.store_unstackable_v5(stack, start, end) {
+            return left;
+        }
         let i = stack.count;
         let Some(j) = self
             .find_partial_stack_slot(stack, start, end)
@@ -1997,7 +2058,7 @@ impl Container {
             self.renew_item_identity(j);
         }
         let slot_stack = self.items[j].as_mut().unwrap();
-        let max = stack_ext::max_stack_size(slot_stack);
+        let max = stack_ext::max_stack_size_in(self.version, slot_stack);
         let mut k = i;
         k = k.min(max.saturating_sub(slot_stack.count));
         k = k.min(DEFAULT_STACK_LIMIT.saturating_sub(slot_stack.count));
@@ -2012,13 +2073,13 @@ impl Container {
     /// 36-slot main+hotbar range (the only range `mode == 2` ever routes an overflow item into).
     /// Returns the leftover that did not fit (`count == 0` when everything was placed).
     fn add_stack_to_player_inventory(&mut self, stack: ItemStack) -> ItemStack {
-        if !registered_stack(&stack) {
+        if !registered_stack(self.version, &stack) {
             return stack;
         }
         let end = self.slots.len();
         let start = end.saturating_sub(36);
         let mut remaining = stack;
-        if stack_ext::is_item_damaged(&remaining) {
+        if stack_ext::is_item_damaged_in(self.version, &remaining) {
             if let Some(empty) = self.find_empty_slot(start, end) {
                 // java copies the entire damaged stack in one assignment, even if a malformed
                 // server stack carries count > 1, then zeroes the source count.
@@ -2043,11 +2104,12 @@ impl Container {
     /// (`null` slot vs. empty slot collapse to the same case here, since every slot this port
     /// addresses is real).
     fn can_add_item_to_slot(
+        version: GameVersion,
         existing: Option<&ItemStack>,
         stack: &ItemStack,
         stack_size_matters: bool,
     ) -> bool {
-        if !registered_stack(stack) || !known_or_empty(existing) {
+        if !registered_stack(version, stack) || !known_or_empty(version, existing) {
             return false;
         }
         let mut flag = existing.is_none();
@@ -2056,7 +2118,7 @@ impl Container {
                 && stack_ext::tags_equal(Some(existing), Some(stack))
             {
                 let extra = if stack_size_matters { 0 } else { stack.count };
-                flag |= existing.count + extra <= stack_ext::max_stack_size(stack);
+                flag |= existing.count + extra <= stack_ext::max_stack_size_in(version, stack);
             }
         }
         flag
@@ -2065,6 +2127,7 @@ impl Container {
     /// java: `Container.computeStackSize` (static). `drag_stack` starts as a copy of the full
     /// cursor stack; this sets its size per the drag mode, then adds `existing_in_slot`.
     fn compute_stack_size(
+        version: GameVersion,
         drag_mode: i32,
         drag_stack: &mut ItemStack,
         existing_in_slot: i32,
@@ -2073,7 +2136,7 @@ impl Container {
         match drag_mode {
             0 => drag_stack.count /= slot_count.max(1) as i32,
             1 => drag_stack.count = 1,
-            2 => drag_stack.count = stack_ext::max_stack_size(drag_stack),
+            2 => drag_stack.count = stack_ext::max_stack_size_in(version, drag_stack),
             _ => {}
         }
         drag_stack.count = drag_stack.count.saturating_add(existing_in_slot);
@@ -2100,10 +2163,16 @@ impl Container {
         let index = usize::from(slot_id);
         let existing_count = self.items[index].as_ref().map_or(0, |stack| stack.count);
         let mut preview = cursor.clone();
-        Self::compute_stack_size(drag_mode, &mut preview, existing_count, slot_count as u32);
+        Self::compute_stack_size(
+            self.version,
+            drag_mode,
+            &mut preview,
+            existing_count,
+            slot_count as u32,
+        );
 
         let mut override_count = None;
-        let item_max = stack_ext::max_stack_size(&preview);
+        let item_max = stack_ext::max_stack_size_in(self.version, &preview);
         if preview.count > item_max {
             preview.count = item_max;
             override_count = Some(item_max);
@@ -2157,7 +2226,7 @@ impl Container {
     pub fn transfer_stack_in_slot(&mut self, index: usize) -> Option<ItemStack> {
         let anvil_inputs_before = self.anvil_inputs_snapshot();
         let original = self.items.get(index)?.clone()?;
-        if !registered_stack(&original) || !self.result_inputs_registered(index) {
+        if !registered_stack(self.version, &original) || !self.result_inputs_registered(index) {
             return None;
         }
         let mut working = original.clone();
@@ -2173,7 +2242,9 @@ impl Container {
                     if !self.merge_item_stack(&mut working, 9, 45, false) {
                         return None;
                     }
-                } else if let Some(armor_index) = stack_ext::props(&working).armor_slot {
+                } else if let Some(armor_index) =
+                    stack_ext::props_in(self.version, &working).armor_slot
+                {
                     let target = 5 + armor_index as usize;
                     if self.items[target].is_none() {
                         if !self.merge_item_stack(&mut working, target, target + 1, false) {
@@ -2271,11 +2342,15 @@ impl Container {
                     // accepts the click and runs *its* routing, and `isChangingQuantityOnly`
                     // then suppresses the corrective `SetSlot` -- leaving the item in a
                     // different slot on each side with no resync.
-                    if super::slot::is_smeltable(&working) {
+                    let smelts = match self.version {
+                        GameVersion::V1_8_9 => super::slot::is_smeltable(&working),
+                        GameVersion::V1_7_10 => super::v5::is_smeltable_v5(&working),
+                    };
+                    if smelts {
                         if !self.merge_item_stack(&mut working, 0, 1, false) {
                             return None;
                         }
-                    } else if super::slot::is_furnace_fuel(&working) {
+                    } else if self.is_furnace_fuel(&working) {
                         if !self.merge_item_stack(&mut working, 1, 2, false) {
                             return None;
                         }
@@ -2345,6 +2420,11 @@ impl Container {
                     }
                     // A copy / `new ItemStack(..)` in the item slot.
                     self.renew_item_identity(0);
+                }
+            }
+            ContainerKind::EnchantingV5 => {
+                if !self.transfer_enchanting_v5(index, &mut working) {
+                    return None;
                 }
             }
             ContainerKind::Anvil => {
@@ -2436,7 +2516,7 @@ impl Container {
         end: usize,
         reverse: bool,
     ) -> bool {
-        if !registered_stack(stack) {
+        if !registered_stack(self.version, stack) {
             return false;
         }
         let end = end.min(self.items.len());
@@ -2450,16 +2530,16 @@ impl Container {
         };
         let mut changed = false;
 
-        if stack_ext::is_stackable(stack) {
+        if stack_ext::is_stackable_in(self.version, stack) {
             for &i in &indices {
                 if stack.count == 0 {
                     break;
                 }
                 if let Some(existing) = self.items[i].as_mut() {
-                    if stack_ext::same_item_respecting_subtypes(existing, stack)
+                    if stack_ext::same_item_respecting_subtypes_in(self.version, existing, stack)
                         && stack_ext::tags_equal(Some(existing), Some(stack))
                     {
-                        let max = stack_ext::max_stack_size(stack);
+                        let max = stack_ext::max_stack_size_in(self.version, stack);
                         let total = existing.count + stack.count;
                         if total <= max {
                             stack.count = 0;
@@ -2515,6 +2595,7 @@ impl Container {
             .cloned();
         let hotbar_known = !(mode == 2 && clicked_button < 9)
             || known_or_empty(
+                self.version,
                 self.items
                     .get(self.hotbar_slot_id(clicked_button) as usize)
                     .and_then(Option::as_ref),
@@ -2524,13 +2605,13 @@ impl Container {
                 self.items
                     .get(*slot as usize)
                     .and_then(Option::as_ref)
-                    .is_none_or(registered_stack)
+                    .is_none_or(|stack| registered_stack(self.version, stack))
             });
         let dependent_inputs_known = self
             .slot_at(slot_id)
             .is_none_or(|slot| self.result_inputs_registered(slot.id as usize));
-        if !known_or_empty(clicked_stack.as_ref())
-            || !known_or_empty(self.cursor.as_ref())
+        if !known_or_empty(self.version, clicked_stack.as_ref())
+            || !known_or_empty(self.version, self.cursor.as_ref())
             || !hotbar_known
             || !drag_slots_known
             || !dependent_inputs_known
@@ -2591,6 +2672,8 @@ impl Container {
             self.reset_drag();
         } else if self.drag_event == 0 {
             self.drag_mode = extract_drag_mode(clicked_button);
+            // java17 `Container.isValidDragMode` takes modes 0 and 1 only, creative or not.
+            let creative = creative && !self.version.is_1_7_10();
             if is_valid_drag_mode(self.drag_mode, creative) {
                 self.drag_event = 1;
                 self.drag_slots.clear();
@@ -2601,7 +2684,7 @@ impl Container {
             if let Some(slot) = self.slot_at(slot_id).map(|s| s.id) {
                 let cursor = self.cursor.clone().unwrap();
                 let existing = self.items[slot as usize].clone();
-                let ok = Self::can_add_item_to_slot(existing.as_ref(), &cursor, true)
+                let ok = Self::can_add_item_to_slot(self.version, existing.as_ref(), &cursor, true)
                     && self.slots[slot as usize]
                         .is_item_valid_for(self.items[slot as usize].as_ref(), &cursor)
                     && cursor.count > self.drag_slots.len() as i32
@@ -2619,8 +2702,13 @@ impl Container {
                     let idx = sid as usize;
                     let cursor = self.cursor.clone().unwrap();
                     let existing_stack = self.items[idx].clone();
-                    let ok = Self::can_add_item_to_slot(existing_stack.as_ref(), &cursor, true)
-                        && self.slots[idx].is_item_valid_for(self.items[idx].as_ref(), &cursor)
+                    let ok = Self::can_add_item_to_slot(
+                        self.version,
+                        existing_stack.as_ref(),
+                        &cursor,
+                        true,
+                    ) && self.slots[idx]
+                        .is_item_valid_for(self.items[idx].as_ref(), &cursor)
                         && cursor.count >= n as i32
                         && self.can_drag_into_slot(sid);
                     if !ok {
@@ -2628,8 +2716,14 @@ impl Container {
                     }
                     let existing_count = existing_stack.as_ref().map_or(0, |s| s.count);
                     let mut candidate = remaining.clone();
-                    Self::compute_stack_size(self.drag_mode, &mut candidate, existing_count, n);
-                    let max = stack_ext::max_stack_size(&candidate);
+                    Self::compute_stack_size(
+                        self.version,
+                        self.drag_mode,
+                        &mut candidate,
+                        existing_count,
+                        n,
+                    );
+                    let max = stack_ext::max_stack_size_in(self.version, &candidate);
                     if candidate.count > max {
                         candidate.count = max;
                     }
@@ -2776,7 +2870,10 @@ impl Container {
                         let desired = if clicked_button == 0 { cursor.count } else { 1 };
                         let amount = desired
                             .min(slot.item_stack_limit(&cursor) - existing.count)
-                            .min(stack_ext::max_stack_size(&cursor) - existing.count);
+                            .min(
+                                stack_ext::max_stack_size_in(self.version, &cursor)
+                                    - existing.count,
+                            );
                         cursor.count -= amount;
                         self.cursor = if cursor.count == 0 {
                             None
@@ -2793,12 +2890,18 @@ impl Container {
                         self.cursor = Some(existing);
                         self.cursor_identity = slot_identity;
                     }
-                } else if stack_ext::same_item_respecting_subtypes(&existing, &cursor)
-                    && stack_ext::max_stack_size(&cursor) > 1
+                } else if stack_ext::same_item_respecting_subtypes_in(
+                    self.version,
+                    &existing,
+                    &cursor,
+                ) && stack_ext::max_stack_size_in(self.version, &cursor) > 1
                     && stack_ext::tags_equal(Some(&existing), Some(&cursor))
                 {
                     let moving = existing.count;
-                    if moving > 0 && moving + cursor.count <= stack_ext::max_stack_size(&cursor) {
+                    if moving > 0
+                        && moving + cursor.count
+                            <= stack_ext::max_stack_size_in(self.version, &cursor)
+                    {
                         cursor.count += moving;
                         self.cursor = Some(cursor);
                         self.decr_stack_size(sid, moving);
@@ -2878,7 +2981,7 @@ impl Container {
         };
         if let Some(existing) = self.items[slot.id as usize].clone() {
             let mut copy = existing;
-            copy.count = stack_ext::max_stack_size(&copy);
+            copy.count = stack_ext::max_stack_size_in(self.version, &copy);
             self.cursor = Some(copy);
             // `itemstack.copy()`: a new object on the cursor.
             self.cursor_identity = 0;
@@ -2930,17 +3033,17 @@ impl Container {
                 (0..n).rev().collect()
             };
             for i in indices {
-                if cursor.count >= stack_ext::max_stack_size(&cursor) {
+                if cursor.count >= stack_ext::max_stack_size_in(self.version, &cursor) {
                     break;
                 }
                 let Some(existing) = self.items[i].clone() else {
                     continue;
                 };
-                let full = existing.count >= stack_ext::max_stack_size(&existing);
+                let full = existing.count >= stack_ext::max_stack_size_in(self.version, &existing);
                 if pass == 0 && full {
                     continue;
                 }
-                if !Self::can_add_item_to_slot(Some(&existing), &cursor, true) {
+                if !Self::can_add_item_to_slot(self.version, Some(&existing), &cursor, true) {
                     continue;
                 }
                 // java: `&& slot8.canTakeStack(playerIn)` -- `Container.java:473`.
@@ -2956,7 +3059,7 @@ impl Container {
                 {
                     continue;
                 }
-                let room = stack_ext::max_stack_size(&cursor) - cursor.count;
+                let room = stack_ext::max_stack_size_in(self.version, &cursor) - cursor.count;
                 let take = room.min(existing.count);
                 if take == 0 {
                     continue;
@@ -3443,8 +3546,14 @@ mod tests {
         assert_eq!(collect.cursor(), Some(&unknown));
         assert_eq!(collect.slot_stack(0), Some(&unknown));
 
-        assert!(!Container::can_add_item_to_slot(None, &unknown, false));
         assert!(!Container::can_add_item_to_slot(
+            GameVersion::V1_8_9,
+            None,
+            &unknown,
+            false
+        ));
+        assert!(!Container::can_add_item_to_slot(
+            GameVersion::V1_8_9,
             Some(&unknown),
             &stack(1, 1),
             false

@@ -15,3 +15,5 @@ serde_json.workspace = true
 # `mc_core::durable::write_atomic` (flushed to the disk before the rename). mc-core is in every
 # build of the client already; this adds no crate.
 mc-core.workspace = true
+# The game version picked on the title screen is saved with the settings (`game_version`).
+mc-version.workspace = true

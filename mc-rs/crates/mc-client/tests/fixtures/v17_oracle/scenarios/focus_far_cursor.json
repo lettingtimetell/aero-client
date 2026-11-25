@@ -1,0 +1,12 @@
+{
+  "name": "focus_far_cursor",
+  "about": "Right-click the top face of a block near x = 1,000,008 with a stone block in hand. The true hit fraction in x is about 0.547. 1.7.10 computes (float)hitX - (float)x, and float has a 0.0625 ulp there, so the fraction becomes 0.5625 and the C08 cursor x byte is 9; 1.8.9 rounds once after the double subtraction and sends 8.",
+  "world": "focus_far",
+  "spawn": [1000006.5, 64.0, 1000004.5, -90.0, 16.85],
+  "setup": [{"slot": 36, "item": 1, "count": 64}],
+  "steps": [
+    {"hold": 3},
+    {"hold": 1, "tap": ["use"]},
+    {"hold": 3}
+  ]
+}

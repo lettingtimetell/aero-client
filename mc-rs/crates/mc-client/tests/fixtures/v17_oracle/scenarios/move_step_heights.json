@@ -1,0 +1,25 @@
+{
+  "name": "move_step_heights",
+  "about": "Walking into a bottom slab (0.5), a bed (0.5625), a slab under a top-slab ceiling and a slab under a full-block ceiling: 1.7.10's step height is 0.5 (a bed is a wall) and its step-up is the single-path, full-height step-down algorithm.",
+  "world": "edge",
+  "spawn": [10.5, 64.0, 24.5, 0.0, 0.0],
+  "steps": [
+    {"hold": 2},
+    {"note": "bottom slab: a step in both", "keys": ["forward"], "hold": 20},
+    {"hold": 5},
+    {"note": "bed: 1.7.10 (step 0.5) is blocked, 1.8.9 (0.6) climbs it", "in": [{"posLook": [12.5, 64.0, 24.5, 0.0, 0.0]}], "hold": 2},
+    {"keys": ["forward"], "hold": 20},
+    {"note": "jump onto it", "keys": ["forward", "jump"], "hold": 10},
+    {"hold": 5},
+    {"note": "slab under a top-slab ceiling (2.0 headroom over the slab)", "in": [{"posLook": [14.5, 64.0, 24.5, 0.0, 0.0]}], "hold": 2},
+    {"keys": ["forward"], "hold": 20},
+    {"hold": 5},
+    {"note": "slab under a full-block ceiling (1.5 headroom over the slab)", "in": [{"posLook": [17.5, 64.0, 24.5, 0.0, 0.0]}], "hold": 2},
+    {"keys": ["forward"], "hold": 20},
+    {"keys": ["forward", "sneak"], "hold": 10},
+    {"hold": 5},
+    {"note": "sprint into the bed", "in": [{"posLook": [12.5, 64.0, 22.5, 0.0, 0.0]}], "hold": 2},
+    {"keys": ["forward", "sprint"], "hold": 15},
+    {"hold": 5}
+  ]
+}

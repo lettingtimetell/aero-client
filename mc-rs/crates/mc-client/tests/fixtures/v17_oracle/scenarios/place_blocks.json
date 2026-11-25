@@ -1,0 +1,28 @@
+{
+  "name": "place_blocks",
+  "about": "Placing stone on the floor, the held-use repeat (every 4 ticks), against a wall's side face, into tall grass (replaced in place in both), against double tall grass (1.8.9 replaces it in place, 1.7.10 places beside it), a slab on a slab (a double slab), the last item of a stack, pillaring up with jump.",
+  "world": "arena",
+  "spawn": [8.5, 64.0, -2.5, 0.0, 60.0],
+  "setup": [{"slot": 36, "item": 1, "count": 64}, {"slot": 37, "item": 44, "count": 16}, {"slot": 38, "item": 3}, {"slot": 39, "item": 1, "count": 64}],
+  "watch": [[8, 64, -2], [8, 64, -1], [8, 65, -2], [25, 65, -14], [11, 64, -8], [11, 64, -9], [14, 64, -7], [14, 65, -7], [14, 64, -8], [4, 64, -6], [0, 64, -6], [-7, 64, -7], [-7, 65, -7], [-7, 66, -7]],
+  "steps": [
+    {"hold": 2},
+    {"note": "stone on the floor ahead", "tap": ["use"], "hold": 3},
+    {"note": "held use", "keys": ["use"], "hold": 10},
+    {"hold": 2},
+    {"note": "against the wall's south face", "in": [{"posLook": [25.5, 64.0, -12.5, 180.0, 10.0]}], "hold": 2},
+    {"tap": ["use"], "hold": 3},
+    {"note": "into tall grass", "in": [{"posLook": [11.5, 64.0, -10.5, 0.0, 30.0]}], "hold": 2},
+    {"tap": ["use"], "hold": 3},
+    {"note": "against double tall grass", "in": [{"posLook": [14.5, 64.0, -9.5, 0.0, 25.0]}], "hold": 2},
+    {"tap": ["use"], "hold": 3},
+    {"note": "a slab, then a slab on it", "tap": ["hotbar2"], "in": [{"posLook": [4.5, 64.0, -6.5, 0.0, 50.0]}], "hold": 2},
+    {"tap": ["use"], "hold": 2},
+    {"tap": ["use"], "hold": 3},
+    {"note": "the last item of a stack", "tap": ["hotbar3"], "in": [{"posLook": [0.5, 64.0, -6.5, 0.0, 60.0]}], "hold": 2},
+    {"tap": ["use"], "hold": 3},
+    {"note": "pillar up", "tap": ["hotbar4"], "in": [{"posLook": [-6.5, 64.0, -6.5, 0.0, 90.0]}], "hold": 2},
+    {"keys": ["jump", "use"], "hold": 20},
+    {"hold": 10}
+  ]
+}

@@ -1,0 +1,11 @@
+{
+  "name": "focus_step_ceiling_snow",
+  "about": "A 0.125 snow step whose edge is also the edge of a ceiling 2.0 above the floor. 1.7.10 steps up from the plain box by the full step height, hits the ceiling's side and restores the blocked move (stuck at x = 19.7). 1.8.9's swept-box candidate rises only 0.2 and walks under the ceiling onto the snow (minY 64.125).",
+  "world": "focus",
+  "spawn": [17.5, 64.0, 16.5, -90.0, 0.0],
+  "steps": [
+    {"hold": 3},
+    {"hold": 20, "keys": ["forward"]},
+    {"hold": 5}
+  ]
+}

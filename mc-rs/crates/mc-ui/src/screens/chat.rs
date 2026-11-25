@@ -44,6 +44,9 @@ use crate::widget::{Rect, TextField, Transform};
 // copy). A child module so it can reach `ChatLog`'s private fields; vanilla while off.
 mod m2;
 pub use m2::ChatMods;
+// Minecraft 1.7.10's chat clicks: a child module, for the log's lines and the input's layout.
+#[path = "chat_v5.rs"]
+mod v5;
 
 /// Vanilla's scrollback cap, for both lists: the log's cap until [`ChatLog::set_max_lines`].
 // java: GuiNewChat.java:162

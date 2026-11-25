@@ -512,6 +512,7 @@ mod tests {
             match message {
                 crate::net::ToNet::Disconnect => closed = true,
                 crate::net::ToNet::Send(packet) => panic!("leaving sent {packet:?}"),
+                crate::net::ToNet::SendV5(packet) => panic!("leaving sent {packet:?}"),
             }
         }
         assert!(closed, "the old channel was closed");

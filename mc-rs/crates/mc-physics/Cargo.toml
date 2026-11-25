@@ -13,3 +13,8 @@ thiserror.workspace = true
 mc-math.workspace   = true
 mc-world.workspace  = true
 mc-data.workspace   = true
+
+[dev-dependencies]
+# Only the 1.7.10 movement oracle (`tests/v17_movement_oracle.rs`) reads JSON fixtures; the
+# workspace's `arbitrary_precision` makes `as_f64` a correctly rounded parse of the number text.
+serde_json.workspace = true

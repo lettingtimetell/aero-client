@@ -1,0 +1,20 @@
+{
+  "name": "move_knockback_setbacks",
+  "about": "S12 knockback while walking, an S27 push mid-jump, S08 setbacks mid-jump, with unnormalized angles (yaw 450, -720.5), two S08 in one frame, and a teleport into a wall (pushed out).",
+  "world": "flat",
+  "spawn": [8.5, 64.0, 8.5, 0.0, 0.0],
+  "steps": [
+    {"hold": 3},
+    {"keys": ["forward"], "hold": 3},
+    {"note": "S12 knockback while walking", "in": [{"velocity": [0.3, 0.4, 0.2]}], "keys": ["forward"], "hold": 12},
+    {"keys": ["forward", "jump"], "hold": 2},
+    {"note": "an explosion push mid-jump", "in": [{"explosion": [8.5, 64.0, 12.0, 2.0, 0.2, 0.3, 0.1]}], "keys": ["forward"], "hold": 12},
+    {"keys": ["forward", "jump"], "hold": 3},
+    {"note": "S08 setback mid-jump", "in": [{"posLook": [8.5, 64.0, 8.5, 0.0, 0.0]}], "keys": ["forward"], "hold": 8},
+    {"note": "S08 yaw 450, pitch 10", "in": [{"posLook": [8.5, 64.0, 8.5, 450.0, 10.0]}], "hold": 4},
+    {"note": "S08 yaw -720.5", "in": [{"posLook": [8.5, 64.0, 8.5, -720.5, -10.0]}], "hold": 4},
+    {"note": "two S08 in one frame", "in": [{"posLook": [9.5, 64.0, 9.5, 0.0, 0.0]}, {"posLook": [10.5, 64.0, 10.5, 90.0, 0.0]}], "keys": ["forward"], "hold": 4},
+    {"note": "a teleport into the wall: pushed out", "in": [{"posLook": [24.3, 64.0, 8.5, 270.0, 0.0]}], "hold": 12},
+    {"hold": 5}
+  ]
+}

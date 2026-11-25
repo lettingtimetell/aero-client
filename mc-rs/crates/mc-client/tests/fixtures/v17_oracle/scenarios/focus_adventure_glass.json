@@ -1,0 +1,12 @@
+{
+  "name": "focus_adventure_glass",
+  "about": "Adventure mode, empty hand, dig glass. 1.7.10 glass material is adventure-exempt: C07 start, swings, break after 9 ticks; 1.8.9 needs a CanDestroy item: one swing only, no C07.",
+  "world": "focus",
+  "gameType": 2,
+  "spawn": [6.5, 64.0, 33.5, -90.0, 35.0],
+  "steps": [
+    {"hold": 3},
+    {"hold": 12, "keys": ["attack"]},
+    {"hold": 3}
+  ]
+}

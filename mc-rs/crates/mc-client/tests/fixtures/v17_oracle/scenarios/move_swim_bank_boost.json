@@ -1,0 +1,20 @@
+{
+  "name": "move_swim_bank_boost",
+  "about": "Swimming into a pool's bank holding jump, with water on the floor two blocks beyond the bank, at negative and at positive x, then a lava pool: a control for 1.7.10's World.isAnyLiquid, whose scan reaches one more block on the negative side, here only the bank's own column, so both versions give the +0.3 climb boost (focus_neg_pool_climb puts the water inside that column).",
+  "world": "pools",
+  "spawn": [-12.5, 64.0, -19.5, 90.0, 0.0],
+  "steps": [
+    {"hold": 2},
+    {"note": "west into the pool at negative x", "keys": ["forward"], "hold": 10},
+    {"note": "swim into the west bank (water beyond it)", "keys": ["forward", "jump"], "hold": 100},
+    {"hold": 10},
+    {"note": "the mirror at positive x", "in": [{"posLook": [12.5, 64.0, 19.5, 270.0, 0.0]}], "hold": 2},
+    {"keys": ["forward"], "hold": 10},
+    {"keys": ["forward", "jump"], "hold": 100},
+    {"hold": 10},
+    {"note": "the lava pool", "in": [{"posLook": [-12.5, 64.0, 19.5, 90.0, 0.0]}], "hold": 2},
+    {"keys": ["forward"], "hold": 10},
+    {"keys": ["forward", "jump"], "hold": 100},
+    {"hold": 10}
+  ]
+}

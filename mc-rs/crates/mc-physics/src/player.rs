@@ -722,7 +722,7 @@ fn move_entity_with_heading_player(
 }
 
 /// java: `EntityLivingBase.jump` + `EntityPlayer.jump`.
-fn jump(s: &mut PhysicsState) {
+pub(crate) fn jump(s: &mut PhysicsState) {
     s.vel.y = f64::from(JUMP_MOTION);
     // java: `EntityLivingBase.jump:1567` — `isPotionActive(Potion.jump)` is *not* `isRemote`
     // gated, and the client's `activePotionsMap` is filled by `S1DPacketEntityEffect`, so Jump
@@ -750,7 +750,7 @@ fn set_sprinting(s: &mut PhysicsState, sprinting: bool) {
 /// `!isMovementBlocked()` (alive and not sleeping), and the method touches the arm only while
 /// the player `isCurrentViewEntity()`; callers apply both gates. The float difference is widened,
 /// halved and added in double precision, then narrowed once, as the Java expression is written.
-fn update_render_arm(s: &mut PhysicsState) {
+pub(crate) fn update_render_arm(s: &mut PhysicsState) {
     s.prev_render_arm_yaw = s.render_arm_yaw;
     s.prev_render_arm_pitch = s.render_arm_pitch;
     s.render_arm_pitch =
@@ -948,7 +948,7 @@ fn move_entity_with_heading(
 /// hard-codes `chunkExists` to `true` — but the second half does not: `provideChunk` hands out a
 /// shared `EmptyChunk` for a column that has never arrived, and `EmptyChunk.isLoaded()` is
 /// `false`. So the pin really does fire on an unsent column, and only on one.
-fn column_is_loaded(w: &World, pos: DVec3) -> bool {
+pub(crate) fn column_is_loaded(w: &World, pos: DVec3) -> bool {
     // java: `(int)posX` truncates toward zero rather than flooring.
     let column = mc_math::BlockPos::new(pos.x as i32, 0, pos.z as i32).chunk_pos();
     w.is_chunk_loaded(column)
@@ -956,7 +956,7 @@ fn column_is_loaded(w: &World, pos: DVec3) -> bool {
 
 /// java: the `f4` expression in `moveEntityWithHeading` — `0.91F`, or the slipperiness of the
 /// block one below the box's bottom, times `0.91F`, when on the ground.
-fn ground_slipperiness(w: &World, s: &PhysicsState) -> f32 {
+pub(crate) fn ground_slipperiness(w: &World, s: &PhysicsState) -> f32 {
     if !s.on_ground {
         return BASE_SLIPPERINESS;
     }

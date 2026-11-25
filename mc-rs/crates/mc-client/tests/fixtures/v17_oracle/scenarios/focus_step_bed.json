@@ -1,0 +1,11 @@
+{
+  "name": "focus_step_bed",
+  "about": "Walk east into a bed row (top 0.5625). 1.7.10 stepHeight 0.5 stops at x = 11.7; 1.8.9 (0.6) steps onto the bed.",
+  "world": "focus",
+  "spawn": [10.5, 64.0, 1.5, -90.0, 0.0],
+  "steps": [
+    {"hold": 3},
+    {"hold": 20, "keys": ["forward"]},
+    {"hold": 5}
+  ]
+}

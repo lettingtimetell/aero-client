@@ -1,0 +1,14 @@
+{
+  "name": "focus_sprint_sneak_release",
+  "about": "Hold forward while sneaking, release sneak (1.7.10 counts it as a forward tap: sprintToggleTimer = 7), release forward, press forward again within 7 ticks. 1.7.10 starts sprinting (C0B start sprinting); 1.8.9 only arms the timer.",
+  "world": "focus",
+  "spawn": [-10.5, 64.0, 20.5, 0.0, 0.0],
+  "steps": [
+    {"hold": 3},
+    {"hold": 10, "keys": ["forward", "sneak"]},
+    {"hold": 1, "keys": ["forward"]},
+    {"hold": 1},
+    {"hold": 15, "keys": ["forward"]},
+    {"hold": 5}
+  ]
+}

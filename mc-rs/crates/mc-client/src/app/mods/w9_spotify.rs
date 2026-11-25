@@ -448,6 +448,15 @@ impl W9State {
         }
     }
 
+    /// Whether [`Self::press`] would land on a control at `cursor` (and so consume the press),
+    /// found without pressing anything.
+    fn takes_press(&self, cursor: (i32, i32), hud: &ModHud, now: Instant) -> bool {
+        self.now_playing.is_some()
+            && self
+                .locate(cursor, hud, now)
+                .is_some_and(|(layout, (x, y))| layout.hit(x, y).is_some())
+    }
+
     /// A left press at `cursor` while chat is open. `Some` when it landed on a control (the
     /// press is consumed even on a disabled one); a command goes out only for an enabled one.
     fn press(&mut self, cursor: (i32, i32), hud: &ModHud, now: Instant) -> Option<SpotifyControl> {
@@ -693,6 +702,17 @@ impl Client {
             self.play_button_press();
         }
         true
+    }
+
+    /// Whether [`Client::w9_mouse_pressed`] would consume this press now, without pressing (the
+    /// 1.7.10 screen phase keeps the widget's clicks in the frame, `app/send_sites_v5.rs`).
+    pub(crate) fn w9_takes_press(&self, button: i32) -> bool {
+        self.w9.enabled
+            && button == 0
+            && matches!(self.ui, Ui::Chat(_))
+            && self
+                .w9
+                .takes_press(self.cursor, &self.mods.hud, Instant::now())
     }
 
     /// First in `mouse_released`: ends a press or a volume drag. Returns
@@ -1374,5 +1394,57 @@ mod tests {
         assert!(!slot.placeholder, "a real sample, not the placeholder box");
         // Bottom right, 2 px in and 16 px up (clear of the chat input line).
         assert_eq!((rect.x + rect.w, rect.y + rect.h), (638.0, 344.0));
+    }
+
+    /// A 1.7.10 session's screen pass asks [`Client::w9_takes_press`] whether a press is the
+    /// widget's before it keeps the press in the frame (`app/send_sites_v5.rs`), so the copy must
+    /// answer what [`Client::w9_mouse_pressed`] then does: in chat with a track, in game, in
+    /// chat with no track and with the mod off, for both buttons, on each control and beside
+    /// the widget. The hub is the fake one.
+    #[test]
+    fn w9_takes_press_answers_what_w9_mouse_pressed_does() {
+        let Some(mut h) = harness() else { return };
+        let fakes = Rc::clone(&h.fakes);
+        let client = &mut h.client;
+        client.mods.settings.set_enabled(MOD_ID, true);
+        frame(client);
+        fakes.borrow()[0].set(Some(track("Song", true)));
+        client.open_chat("");
+        frame(client);
+        let mut spots: Vec<(i32, i32)> = [
+            SpotifyControl::Previous,
+            SpotifyControl::PlayPause,
+            SpotifyControl::Next,
+            SpotifyControl::Volume,
+        ]
+        .into_iter()
+        .map(|control| centre_of(client, control))
+        .collect();
+        spots.push((2, 2));
+        let mut taken = 0;
+        let mut check = |client: &mut Client, case: &str| {
+            for &at in &spots {
+                for button in [0, 1] {
+                    client.cursor = at;
+                    let takes = client.w9_takes_press(button);
+                    let took = client.w9_mouse_pressed(button);
+                    client.w9_mouse_released(button);
+                    assert_eq!(takes, took, "{case}, button {button} at {at:?}");
+                    taken += usize::from(took);
+                }
+            }
+        };
+        check(client, "chat with a track");
+        client.ui = Ui::InGame;
+        check(client, "in game");
+        client.open_chat("");
+        fakes.borrow()[0].set(None);
+        frame(client);
+        check(client, "chat with no track");
+        client.mods.settings.set_enabled(MOD_ID, false);
+        frame(client);
+        check(client, "the mod off");
+        // Not vacuous: each of the four controls takes the left button, in chat with a track.
+        assert_eq!(taken, 4);
     }
 }

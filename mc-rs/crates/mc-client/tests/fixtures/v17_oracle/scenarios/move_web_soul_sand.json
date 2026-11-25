@@ -1,0 +1,20 @@
+{
+  "name": "move_web_soul_sand",
+  "about": "Soul sand (walk, sprint, sprint-jump), a two-high cobweb (walk, jump, a shove, the sprint key), standing on soul sand inside a web with Jump Boost II and without, sneaking out (the 1.8.9 oracle's edge_soul_sand inputs).",
+  "world": "edge",
+  "spawn": [-6.5, 64.0, -10.5, 0.0, 0.0],
+  "steps": [
+    {"hold": 2},
+    {"note": "soul sand", "keys": ["forward"], "hold": 12},
+    {"keys": ["forward", "sprint"], "hold": 10},
+    {"keys": ["forward", "sprint", "jump"], "hold": 14},
+    {"note": "into the two-high web", "keys": ["forward"], "hold": 16},
+    {"keys": ["forward", "jump"], "hold": 15},
+    {"in": [{"velocity": [0.4, 0.4, 0.4]}], "keys": ["forward"], "hold": 10},
+    {"keys": ["forward", "sprint"], "hold": 20},
+    {"note": "on soul sand inside the low web", "in": [{"posLook": [-6.5, 63.875, 3.5, 0.0, 0.0]}], "hold": 10},
+    {"note": "Jump Boost II", "in": [{"effect": [8, 1, 400]}], "keys": ["jump"], "hold": 30},
+    {"in": [{"removeEffect": 8}], "keys": ["forward", "sprint", "jump"], "hold": 24},
+    {"look": [180.0, 0.0], "keys": ["forward", "sneak"], "hold": 30}
+  ]
+}

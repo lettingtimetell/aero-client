@@ -21,6 +21,11 @@ use mc_protocol::play::{c2s, C2SPlay};
 use mc_protocol::ItemStack;
 use mc_ui::screens::sign::CommandBlockTarget;
 
+// 1.7.10: the packets whose protocol-5 content differs (`outbound_v5.rs`). A child module, so its
+// movement builder keeps this module's sprint and sneak edge fields.
+#[path = "outbound_v5.rs"]
+pub mod v5;
+
 /// Vanilla truncates a chat message to 100 characters in the packet's own constructor, before
 /// it ever reaches the wire. java: `C01PacketChatMessage(String)`
 pub const MAX_CHAT_LENGTH: usize = 100;

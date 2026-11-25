@@ -120,6 +120,22 @@ use crate::sync::{scoreboard, BorderState, ChatPosition, ClientEvent};
 // and touches this 2.3 MB file only to call a hook at its `<<MOD-...>>` marker. See API.md.
 #[path = "mods/mod.rs"]
 pub(crate) mod mods;
+// 1.7.10 support: the 1.7.10 crosshair and clicks, a child for the same reason as `mods`. Each
+// 1.8.9 function it replaces starts with a one-line version hook.
+#[path = "interact_v5.rs"]
+mod interact_v5;
+// The 1.7.10 inbound drain inside the tick: a child of this module like `mods`, for the frame
+// poll's private seams.
+#[path = "net_v5.rs"]
+mod net_v5;
+// The 1.7.10 send sites: the screens' packet phase and the packets whose 1.7.10 form differs. A
+// child of this module like `mods`, for `Client`'s private fields.
+#[path = "send_sites_v5.rs"]
+mod send_sites_v5;
+// The 1.7.10 screens and HUD (containers, chat, sign, book, tab list, sidebar, resource-pack
+// prompt, camera): a child of this module like `mods`, for `Client`'s private fields.
+#[path = "ui_v5.rs"]
+mod ui_v5;
 // The replay playback API's types, nameable outside the crate (tools, tests).
 pub use mods::tw_replay_play::{PlaybackStats, ReplayCameraMode, ReplayCameraPose, ReplaySound};
 
@@ -134,6 +150,15 @@ mod h1_movement_oracle;
 #[cfg(test)]
 #[path = "h2_interaction_oracle.rs"]
 mod h2_interaction_oracle;
+// 1.7.10 support: the interaction oracle against the real 1.7.10 client (test only).
+#[cfg(test)]
+#[path = "v17_interaction_oracle.rs"]
+mod v17_interaction_oracle;
+// The 1.7.10 movement differential oracle against the real 1.7.10 client (test only), driven
+// through the same seams as the oracles above.
+#[cfg(test)]
+#[path = "v17_movement_oracle.rs"]
+mod v17_movement_oracle;
 // Hostile packet sequences through the live
 // client (test only), a child of this module for the same reason as the oracles above.
 #[cfg(test)]
@@ -2097,6 +2122,10 @@ pub struct Client {
     pub last_events: Vec<ClientEvent>,
     /// What the crosshair is on. java: `Minecraft.objectMouseOver`
     pub hit: HitResult,
+    /// 1.7.10 support: what the tick's 1.7.10 pick knew beyond `hit` (`app/interact_v5.rs`).
+    pick_v5: interact_v5::PickV5,
+    /// 1.7.10 support: the screen input the frames queue for the tick (`app/send_sites_v5.rs`).
+    screen_input_v5: send_sites_v5::ScreenInputV5,
     /// java: `Minecraft.playerController`'s block-breaking half.
     pub controller: PlayerController,
     /// The player's own inventory, window `0`. java: `EntityPlayerSP.inventoryContainer`.
@@ -2152,6 +2181,8 @@ pub struct Client {
     /// java: `EntityRenderer`'s two `MouseFilter`s and smooth-camera accumulators. The boolean
     /// toggle is the separate session field on [`GameSettings`].
     smooth_camera: SmoothCamera,
+    /// 1.7.10 support: whether `smooth_camera` is kept as the setting left it (`app/ui_v5.rs`).
+    smooth_camera_v5: ui_v5::SmoothCameraV5,
     /// When the window most recently lost focus while `pauseOnLostFocus` was enabled.
     /// java: `Minecraft.runGameLoop`'s `systemTime` focus timeout.
     focus_lost_at: Option<Instant>,
@@ -4331,6 +4362,8 @@ impl Client {
         let diagnostic = config.diagnostic_simulation;
         // `<gameDir>/mc-rs-mods.json`. A missing file means every mod is off.
         let mods_runtime = mods::ModRuntime::load(&config.game_dir);
+        // The title screen's version line names the picked version (`app/mods/game_version.rs`).
+        let ui = mods::game_version::with_version_line(ui, &config, &mods_runtime.settings);
         let m3_state = mods::m3_controls::M3State::new(&mods_runtime.settings);
         let assets = mods::m8_ctm::seed_assets(assets, &mods_runtime.settings);
 
@@ -4360,6 +4393,8 @@ impl Client {
             auth,
             last_events: Vec::new(),
             hit: HitResult::Miss,
+            pick_v5: interact_v5::PickV5::default(),
+            screen_input_v5: send_sites_v5::ScreenInputV5::default(),
             controller: PlayerController::new(),
             player_container: mc_ui::screens::container::player_container(PLAYER_WINDOW_ID),
             pending_local_item_drops: Vec::new(),
@@ -4373,6 +4408,7 @@ impl Client {
             pending_hotbar_scroll: 0,
             input_epoch: 0,
             smooth_camera: SmoothCamera::default(),
+            smooth_camera_v5: ui_v5::SmoothCameraV5::default(),
             focus_lost_at: None,
             loader,
             boot_ui: None,
@@ -4878,7 +4914,7 @@ impl Client {
         // `Client::new` was not.
         self.refresh_sound_registry();
         self.reinstall(gpu, phases, width, height);
-        self.ui = Ui::MainMenu(Box::new(MainMenuScreen::new(pick_splash(&self.assets))));
+        self.ui = Ui::MainMenu(self.main_menu(pick_splash(&self.assets)));
         // java: `startGame:571` — `--server` skips the main menu. It has to happen here rather
         // than before `Shell::run`, or `Ui::Connecting` would hide the loading screen.
         if let Some((host, port)) = self.config.server.clone() {
@@ -5086,7 +5122,7 @@ impl Client {
         self.debug.visible = false;
         // Vanilla clears chat here; "Keep chat between servers" keeps it.
         self.x2_title_screen_chat();
-        self.ui = Ui::MainMenu(Box::new(MainMenuScreen::new(pick_splash(&self.assets))));
+        self.ui = Ui::MainMenu(self.main_menu(pick_splash(&self.assets)));
     }
 
     /// Connect to a server. java: `GuiMultiplayer.connectToServer` → `new GuiConnecting`.
@@ -5200,6 +5236,8 @@ impl Client {
         if self.acc_before_join(host, port) {
             return;
         }
+        // The version this connection plays, read once: the session keeps it for its whole life.
+        let version = self.selected_game_version();
         let options = match (&self.config.login, &self.auth) {
             (LoginMode::Offline(name), _) => ConnectOptions::offline(host, port, name.clone()),
             // Launcher credentials take exactly the same road as a Microsoft login from here on:
@@ -5221,10 +5259,11 @@ impl Client {
             }
         }
         .with_proxy(self.config.proxy.clone())
-        .with_lan_auth_tolerance(self.current_server_lan);
+        .with_lan_auth_tolerance(self.current_server_lan)
+        .with_version(version);
         let handle = self.runtime.connect(options);
         self.camera_path = None;
-        self.session = Some(Session::new(handle, self.join_settings()));
+        self.session = Some(Session::with_version(handle, self.join_settings(), version));
         self.ui = Ui::Connecting(Box::new(ConnectingScreen::with_parent(
             format!("{host}:{port}"),
             parent,
@@ -5271,8 +5310,10 @@ impl Client {
             "replaying a capture instead of connecting"
         );
         self.camera_path = Some(CameraPath::new(self.config.replay_camera));
+        // The capture's own version: a 1.7.10 capture plays through a 1.7.10 session.
+        let version = source.version();
         let handle = crate::net::NetHandle::replay(source);
-        let mut session = Session::new(handle, self.join_settings());
+        let mut session = Session::with_version(handle, self.join_settings(), version);
         if let Some(mode) = self.config.diagnostic_simulation {
             session.state_mut().entities = crate::sync::entities::EntityTracker::with_random_seed(
                 mode.seed ^ 0x454E_5449_5449_4553,
@@ -5585,6 +5626,9 @@ impl Client {
             chat_colors: self.settings.chat_colors,
             displayed_skin_parts: displayed_skin_parts(&self.settings),
             brand: mods::client_brand::client_brand().to_owned(),
+            // 1.7.10's client settings (`app/mods/game_version.rs`); unused by 1.8.9.
+            difficulty: mods::game_version::settings_difficulty(&self.settings),
+            show_cape: mods::game_version::settings_show_cape(&self.settings),
         }
     }
 
@@ -5789,7 +5833,10 @@ impl Client {
                 // java: `NetHandlerPlayClient.handleJoinGame` writes the S01 difficulty into
                 // `Minecraft.gameSettings` immediately after constructing WorldClient. The
                 // packet field is an unsigned EnumDifficulty id and wraps modulo four.
-                self.settings.difficulty = i32::from(packet.difficulty % 4);
+                // java17's `handleJoinGame` (`:229-242`) leaves the client's option alone.
+                if !self.plays_1_7_10() {
+                    self.settings.difficulty = i32::from(packet.difficulty % 4);
+                }
                 self.server_brand = None;
                 // `setRenderViewEntity(thePlayer)` clears any entity shader during world load.
                 self.shader_visible = false;
@@ -5797,6 +5844,8 @@ impl Client {
                 self.pending_shader_action = Some(mc_render::post::SuperSecretShaderAction::Clear);
                 self.player_container =
                     mc_ui::screens::container::player_container(PLAYER_WINDOW_ID);
+                // The session's version's click rules; a fresh 1.7.10 tab list (`app/ui_v5.rs`).
+                self.join_game_ui_v5();
                 self.refresh_hotbar();
                 self.controller = PlayerController::new();
                 self.hit = HitResult::Miss;
@@ -6960,7 +7009,8 @@ impl Client {
                 let title = mc_ui::font::component::ChatComponent::from_json(&packet.window_title)
                     .map(|component| component.unformatted_text(&self.assets.language))
                     .unwrap_or_else(|_| packet.window_title.clone());
-                if let Some(mut screen) = ContainerScreen::for_open_window(packet, title) {
+                // A 1.7.10 session opens 1.7.10's containers (`app/ui_v5.rs`).
+                if let Some(mut screen) = self.container_screen_for_open_window(packet, title) {
                     screen.set_language(&self.assets.language);
                     screen.advanced_tooltips = self.settings.advanced_item_tooltips;
                     // `Container.slotClick`'s mode-3 arm and `isValidDragMode`'s drag
@@ -7792,6 +7842,10 @@ impl Client {
             return;
         }
         if let Some(session) = &mut self.session {
+            // 1.7.10: the plugin payloads in their 1.7.10 form (`session/sends_v5.rs`).
+            let Some(packets) = session.send_container_packets_v5(packets) else {
+                return;
+            };
             session.send_all(packets);
         }
     }
@@ -7808,6 +7862,10 @@ impl Client {
             match action {
                 BookAction::Close => self.show_screen(None),
                 BookAction::Send { channel, stack } => {
+                    // 1.7.10: a signed book keeps its typed pages (`app/send_sites_v5.rs`).
+                    let Some(stack) = self.book_as_sent_v5(channel, stack) else {
+                        continue;
+                    };
                     let selected = usize::try_from(self.player_hud.selected_slot)
                         .unwrap_or(0)
                         .min(8);
@@ -7815,6 +7873,10 @@ impl Client {
                         .set_slot_contents(HOTBAR_SLOT_OFFSET + selected, Some(stack.clone()));
                     self.refresh_hotbar();
                     if let Some(session) = &mut self.session {
+                        // 1.7.10: the padded payload (`session/sends_v5.rs`).
+                        if session.send_book_v5(channel, &stack) {
+                            continue;
+                        }
                         session.send(crate::outbound::book_payload(channel, &stack));
                     }
                 }
@@ -7857,6 +7919,10 @@ impl Client {
                     track_output,
                 } => {
                     if let Some(session) = &mut self.session {
+                        // 1.7.10: no track-output flag, padded (`session/sends_v5.rs`).
+                        if session.send_command_block_v5(target, &command) {
+                            continue;
+                        }
                         session.send(crate::outbound::command_block_payload(
                             target,
                             &command,
@@ -7917,6 +7983,10 @@ impl Client {
     /// packs; remote packs use the validated cache/download seam.
     fn react_to_server_resource_pack(&mut self, url: String, hash: String) {
         use mc_protocol::play::c2s::ResourcePackStatusResult as Result;
+        // A 1.7.10 session's `MC|RPack` rules (`app/ui_v5.rs`).
+        if self.react_to_resource_pack_v5(&url) {
+            return;
+        }
 
         if url.starts_with("level://") {
             self.accept_level_resource_pack(&url, &hash);
@@ -8018,6 +8088,10 @@ impl Client {
         hash: &str,
         result: mc_protocol::play::c2s::ResourcePackStatusResult,
     ) {
+        // 1.7.10 has no resource-pack status packet (`app/ui_v5.rs`).
+        if self.suppresses_resource_pack_status_v5() {
+            return;
+        }
         if let Some(session) = &mut self.session {
             session.send(crate::outbound::resource_pack_status(hash, result));
         }
@@ -8063,6 +8137,7 @@ impl Client {
         let headers = crate::app::assets::ServerResourcePackHeaders {
             username: self.auth.as_ref().map(|session| session.username.clone()),
             uuid: self.auth.as_ref().map(|session| session.uuid_undashed()),
+            version: self.current_game_version(),
         };
         let tx = self.async_tx.clone();
         let task = self.runtime.handle().spawn(async move {
@@ -8183,6 +8258,10 @@ impl Client {
     }
 
     fn finish_server_resource_pack_choice(&mut self, confirmed: bool) {
+        // The 1.7.10 prompt's answer (`app/ui_v5.rs`).
+        if self.finish_resource_pack_choice_v5(confirmed) {
+            return;
+        }
         let current = std::mem::replace(&mut self.ui, Ui::Loading);
         let Ui::ConfirmServerResourcePack(_, _, pending) = current else {
             unreachable!("resource-pack choice is only finished from its own screen")
@@ -8664,12 +8743,15 @@ impl Client {
             Ui::Multiplayer(screen) => screen.take_ping_queue(),
             _ => return,
         };
+        // The version the list was opened for: the status is asked for it.
+        let version = self.selected_game_version();
         for (index, address) in queue {
             let tx = self.async_tx.clone();
             let task = self.runtime.handle().spawn(async move {
                 let message = match crate::net::ping::ping_with_timeout(
                     &address,
                     crate::net::ping::PING_TIMEOUT,
+                    version,
                 )
                 .await
                 {
@@ -9051,8 +9133,8 @@ impl Client {
         self.debug_f3_held = false;
         self.event_button = None;
         self.touch_value = 0;
-        let step = self.controller.reset_block_removing();
-        self.apply_dig_step(step);
+        // 1.7.10 support: the session's version picks the reset (`app/interact_v5.rs`).
+        self.reset_block_removing_for_version();
         // java: the raw-key loop opens the modal, then the same `runTick` still reaches
         // `sendClickBlockToController(false)`, whose reset emits ABORT before the tick ends.
         // Packet-driven modal routes must cross this same seam.
@@ -9075,6 +9157,8 @@ impl Client {
         // A replay being watched never opens a gameplay screen (death,
         // sleep, containers...): they become the screen it is watched under. An `Option` test.
         let screen = self.tw_rb_redirect_screen(screen);
+        // A 1.7.10 session's sign, book and command-block editors (`app/ui_v5.rs`).
+        let screen = self.screen_for_session_version(screen);
         // A volume slider still held as its screen goes (Escape mid-drag)
         // writes its postponed save now. One `bool` test otherwise.
         self.x4_flush_sound_save(true);
@@ -9096,7 +9180,7 @@ impl Client {
         let screen = match screen {
             Some(screen) => screen,
             None if self.session.is_none() => {
-                Ui::MainMenu(Box::new(MainMenuScreen::new(pick_splash(&self.assets))))
+                Ui::MainMenu(self.main_menu(pick_splash(&self.assets)))
             }
             None if self.player_is_dead() && self.session.is_some() => {
                 let hardcore = self
@@ -9156,6 +9240,9 @@ impl Client {
     /// `rotationYawHead`, last tick's yaw, and the current pitch. Picking with the frame-fresh
     /// yaw here let a click land on a player the server's last rotation did not face.
     fn update_hit_result(&mut self) {
+        if self.plays_1_7_10() {
+            return self.update_hit_result_v5();
+        }
         mc_core::profile_scope!("client.update_hit_result");
         let Some((eye, yaw, pitch)) = self
             .session
@@ -9616,6 +9703,9 @@ impl Client {
                     }
                 },
             }
+            // 1.7.10: a key's container click joins this pass's packets in event order
+            // (`app/send_sites_v5.rs`); a 1.8.9 session drains it at the tick, as before.
+            self.drain_key_clicks_v5();
             // Opening a modal clears LWJGL's buffered input. The queues above were already moved
             // into this local batch, so stop explicitly when that transition occurs rather than
             // leaking its tail into the newly installed screen.
@@ -10131,6 +10221,11 @@ impl Client {
         if self.x2_chat_click(clicked_chat_style.as_ref(), mods_snapshot.shift) {
             return;
         }
+        // 1.7.10's chat click rules replace 1.8.9's (`app/ui_v5.rs`).
+        if self.chat_click_v5(button, &ctx, mods_snapshot.shift) {
+            return;
+        }
+        let clicked_chat_style = self.chat_style_for_v47_rules(clicked_chat_style);
         let on_sign_editor = matches!(self.ui, Ui::EditSign(_));
         // Preserve the primitive GuiButton hit separately from the action it produces. Vanilla
         // plays the press sound before `actionPerformed`, including actionless buttons; chat
@@ -10803,6 +10898,10 @@ impl Client {
             // java: `runTick` wraps the drop-key loop in `if (!thePlayer.isSpectator())`.
             if may_drop {
                 if let Some(session) = &mut self.session {
+                    // 1.7.10: `dropOneItem`'s C07 (`session/sends_v5.rs`).
+                    if session.send_drop_v5(ctrl) {
+                        continue;
+                    }
                     session.player_action(|out, packets| out.drop_item(ctrl, packets));
                 }
             }
@@ -10899,6 +10998,9 @@ impl Client {
 
     /// java: `Minecraft.clickMouse` (`:1522`) — the left-button *press* edge.
     fn click_mouse(&mut self) {
+        if self.plays_1_7_10() {
+            return self.click_mouse_v5();
+        }
         let dig_context = self.current_dig_context();
         self.controller.set_dig_context(dig_context);
         if !self.controller.may_damage_block() {
@@ -11022,6 +11124,9 @@ impl Client {
     /// crosshair owns `render_hit`; reading it here would make a frame-only camera interpolation
     /// change the packet/input target between ticks.
     fn middle_click_mouse(&mut self) {
+        if self.plays_1_7_10() {
+            return self.middle_click_mouse_v5();
+        }
         // java: `boolean flag = this.thePlayer.capabilities.isCreativeMode;` (`Minecraft.java:2503`)
         // is the S39 bit, unlike `clickMouse`'s controller game type. Only the C10 at the end is
         // also gated on the game type, inside `sendSlotPacket` (see `send_creative_pick_slot`).
@@ -12088,6 +12193,9 @@ impl Client {
     /// * the `C0A` swing was unconditional, where vanilla swings only when `onPlayerRightClick`
     ///   returned true. Bare-hand right-clicks and unplaceable blocks swung and should not.
     fn right_click_mouse(&mut self) {
+        if self.plays_1_7_10() {
+            return self.right_click_mouse_v5();
+        }
         // 1.7 Animations' "Using items
         // stops mining" lets a press that starts blocking, drawing a bow, eating or drinking
         // cancel the dig first, as releasing attack would (`x4_use_stops_mining`).
@@ -13939,6 +14047,9 @@ impl Client {
     /// Bow durability and arrow consumption are predicted after C07; projectile spawning is
     /// server-only. Later inventory packets reconcile the local prediction.
     fn release_item_use(&mut self) {
+        if self.plays_1_7_10() {
+            return self.release_item_use_v5();
+        }
         let used = self.controller.item_in_use().cloned();
         let used_action = self.controller.item_in_use_action();
         let time_left = self.controller.item_in_use_count();
@@ -14295,6 +14406,9 @@ impl Client {
     /// java: `Minecraft.sendClickBlockToController` (`:1496`), called every tick with whether the
     /// attack button is *held*.
     fn send_click_block_to_controller(&mut self, left_click: bool) {
+        if self.plays_1_7_10() {
+            return self.send_click_block_to_controller_v5(left_click);
+        }
         let dig_context = self.current_dig_context();
         self.controller.set_dig_context(dig_context);
         if !left_click {
@@ -17910,6 +18024,8 @@ impl Client {
         // A watched replay's microphone and desktop audio (one `Option` test
         // while no replay is watched).
         self.nw_re_voice_frame();
+        // The mod menu's Game version row (a length test while no menu event is queued).
+        self.game_version_menu_frame();
         // Debounced mod-settings persistence (one u64 compare when nothing changed),
         // then this frame's menu events are dropped.
         self.drive_mods_frame();
@@ -22269,6 +22385,10 @@ impl Client {
         if board.is_empty() {
             return None;
         }
+        // 1.7.10's sidebar rules (`app/ui_v5.rs`).
+        if self.plays_1_7_10() {
+            return self.sidebar_snapshot_v5();
+        }
         let username = session.state().local.username.as_str();
         let objective = board
             .player_team(username)
@@ -22313,6 +22433,10 @@ impl Client {
         let show = self.tab_list_held && self.session.is_some();
         self.tab_list.update_with_counter(show, now_ms, self.tick);
         if !show {
+            return;
+        }
+        // A 1.7.10 session's grid (`app/ui_v5.rs`).
+        if self.draw_tab_list_v5(d, ctx) {
             return;
         }
         // Rows rebuilt only when their inputs change (`MC_NW_F3_TAB=0`: the
@@ -22918,6 +23042,8 @@ impl Client {
             // hard-coded `Minecraft 1.8.9` prefix in the UI, but carry the launcher's dynamic
             // label into the parenthesised F3 value.
             version: self.config.version.clone(),
+            // The prefix names the version the session plays ("Minecraft 1.7.10").
+            game_version: self.current_game_version(),
             // java: `ClientBrandRetriever.getClientModName()`. This is the same value the current
             // connection's `MC|Brand` payload carries (`client_brand.rs`), so the overlay and
             // server identification stay in lock-step.
@@ -23278,6 +23404,8 @@ impl Client {
                 }
             }
             Action::RunCommand(command) => {
+                // 1.7.10 records it in the sent history (`app/ui_v5.rs`).
+                self.record_run_command_v5(&command);
                 if let Some(session) = &mut self.session {
                     session.send_chat(&command);
                 }
@@ -23325,6 +23453,10 @@ impl Client {
             }
             Action::RequestTabComplete(prefix) => {
                 if let Some(session) = &mut self.session {
+                    // 1.7.10: the text alone (`session/sends_v5.rs`).
+                    if session.send_tab_complete_v5(&prefix) {
+                        return;
+                    }
                     session.send(mc_protocol::play::C2SPlay::TabComplete(
                         mc_protocol::play::c2s::TabComplete {
                             message: prefix,
@@ -23460,7 +23592,7 @@ impl Client {
                     // `OpenOptions`/`OpenOptionsPage`, both of which push — but falling back to
                     // the main menu beats being stuck on a screen with a dead Done button.
                     Some(OptionsParent::MainMenu) | None => {
-                        Ui::MainMenu(Box::new(MainMenuScreen::new(pick_splash(&self.assets))))
+                        Ui::MainMenu(self.main_menu(pick_splash(&self.assets)))
                     }
                 };
             }
@@ -23784,6 +23916,8 @@ impl Client {
         let generation = self.allocate_server_ping_generation();
         let mut screen = MultiplayerScreen::new(std::mem::take(&mut self.servers));
         screen.set_ping_generation(generation);
+        // Rows are compared with, and pinged for, the version the next connection plays.
+        screen.set_client_version(self.selected_game_version());
         self.ui = Ui::Multiplayer(Box::new(screen));
     }
 
@@ -23970,6 +24104,7 @@ impl Client {
     /// java: `Minecraft.addGraphicsAndWorldToCrashReport` (`:2255`), which is why a vanilla
     /// crash report tells you which world and which screen you were on.
     pub fn describe(&self, report: &mut CrashReport) {
+        report.set_game_version(self.current_game_version());
         let category = report.make_category("Affected client");
         category
             .add("Game state", self.machine.state().name())
@@ -25822,8 +25957,8 @@ impl Client {
             self.debug_f3_held = false;
             self.event_button = None;
             self.touch_value = 0;
-            let step = self.controller.reset_block_removing();
-            self.apply_dig_step(step);
+            // 1.7.10 support: the session's version picks the reset (`app/interact_v5.rs`).
+            self.reset_block_removing_for_version();
         }
     }
 
@@ -26095,6 +26230,8 @@ impl mc_render::ShellApp for Client {
 
     fn on_focus_changed(&mut self, focused: bool) {
         self.note_focus_changed_at(focused, Instant::now());
+        // A press held on the title screen's version slider never gets its release now.
+        self.version_slider_focus_changed(focused);
     }
 
     fn before_ticks(&mut self, camera: &mut Camera) {
@@ -26144,6 +26281,9 @@ impl mc_render::ShellApp for Client {
         if let Some(session) = &mut self.session {
             session.update_controller();
         }
+        // A 1.7.10 session applies its queued packets here, in the tick after the controller's
+        // sync (`app/net_v5.rs`); a 1.8.9 one does nothing here.
+        self.drain_v5_in_world(ctx.camera);
         // java: `runTick:1771-1785` opens GuiGameOver
         // (health <= 0) or GuiSleepMP right after `updateController` and *before* the input
         // section. `displayGuiScreen` -> `setIngameNotInFocus` -> `unPressAllKeys`, so that very
@@ -26153,6 +26293,13 @@ impl mc_render::ShellApp for Client {
         // `death_and_respawn`). The call there stays for direct `Client::tick` callers; here it
         // makes that one a no-op.
         self.tick_death_and_sleep_screens();
+        // 1.7.10: the screen's queued mouse and key events are handled here, at
+        // `currentScreen.handleInput()` (`app/send_sites_v5.rs`); a 1.8.9 session handled them
+        // in the frame.
+        self.tick_screen_input_v5(ctx.input);
+        // Before its world exists, a 1.7.10 session applies its queued packets at the
+        // screen-update step (`app/net_v5.rs`); a 1.8.9 one does nothing here.
+        self.drain_v5_before_world(ctx.camera);
         // java: `runTick`'s keyboard/mouse block runs before the world tick, and everything in it
         // is inside `if (currentScreen == null || currentScreen.allowUserInput)`.
         if self.diagnostic_progress.is_none() {
@@ -26195,6 +26342,11 @@ impl mc_render::ShellApp for Client {
         // java: `EntityRenderer.updateRenderer` filters every raw smooth-camera delta collected
         // by render frames exactly once per game tick, then resets smoothCamPartialTicks to zero.
         let smooth = self.smooth_camera_on();
+        // 1.7.10 leaves the filters alone while its smooth camera setting is off
+        // (`app/ui_v5.rs`).
+        if self.smooth_camera_kept_v5(smooth) {
+            return;
+        }
         // The same `mouseSensitivity` as the frame's `look_delta_raw`.
         self.smooth_camera.tick(self.look_sensitivity(), smooth);
     }
@@ -26243,7 +26395,11 @@ impl mc_render::ShellApp for Client {
         // A screen this iteration's ticks or event pump opened releases (and re-centres) the
         // cursor before its first input pass, so that pass already reads the centre.
         self.reconcile_cursor_grab(ctx.input, width, height);
-        if self.diagnostic_progress.is_none() {
+        // 1.7.10: the frame queues the events for the next tick's screen phase and runs only the
+        // pointer half here (`app/send_sites_v5.rs`); a 1.8.9 session handles them now.
+        if self.diagnostic_progress.is_none()
+            && !self.queue_screen_input_v5(ctx.input, width, height)
+        {
             self.handle_screen_input(ctx.input, width, height);
         }
         // §7.6 / ATLAS-4: a changed `mipmapLevels` re-stitches the atlas through the same
@@ -26293,7 +26449,13 @@ impl mc_render::ShellApp for Client {
             // (`look_sensitivity`), never a scale on the finished delta:
             let (dx, dy) = ctx.input.look_delta_raw(self.look_sensitivity(), false);
             let smooth = self.smooth_camera_on();
-            let (dx, dy) = self.smooth_camera.apply(dx, dy, ctx.partial_ticks, smooth);
+            // 1.7.10 passes the delta through without touching the filters while its smooth
+            // camera setting is off (`app/ui_v5.rs`).
+            let (dx, dy) = if self.smooth_camera_kept_v5(smooth) {
+                (dx, dy)
+            } else {
+                self.smooth_camera.apply(dx, dy, ctx.partial_ticks, smooth)
+            };
             // java applies `invertMouse` after the smooth filter, immediately before setAngles.
             // Keeping the sign out of MouseFilter state matters when the setting changes.
             let dy = dy

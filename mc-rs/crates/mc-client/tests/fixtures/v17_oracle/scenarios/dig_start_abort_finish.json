@@ -1,0 +1,32 @@
+{
+  "name": "dig_start_abort_finish",
+  "about": "Digging the floor with a diamond pickaxe (break, the 5-tick hit delay, the next block), wool released early (C07 ABORT), looking away while holding (1.7.10's resetBlockRemoving ABORT carries face -1), retargeting while holding, shears on wool, a hotbar switch mid-dig, an instant break of tall grass.",
+  "world": "arena",
+  "spawn": [8.5, 64.0, 2.5, 0.0, 60.0],
+  "setup": [{"slot": 36, "item": 278}, {"slot": 37, "item": 359}, {"slot": 38, "item": 279}],
+  "watch": [[8, 63, 3], [8, 62, 3], [8, 63, 4], [0, 64, 3], [2, 64, 3], [1, 64, 3]],
+  "steps": [
+    {"hold": 2},
+    {"note": "the floor with a diamond pickaxe", "keys": ["attack"], "hold": 30},
+    {"hold": 3},
+    {"note": "red wool with the pickaxe, released after 10 ticks", "in": [{"posLook": [0.5, 64.0, 0.5, 0.0, 24.1]}], "hold": 2},
+    {"keys": ["attack"], "hold": 10},
+    {"hold": 2},
+    {"note": "dig the wool, then look at the sky while holding", "keys": ["attack"], "hold": 5},
+    {"look": [0.0, -60.0], "keys": ["attack"], "hold": 4},
+    {"hold": 2},
+    {"note": "retarget while holding: wool, then planks", "look": [0.0, 24.1], "keys": ["attack"], "hold": 5},
+    {"look": [321.34, 19.3], "keys": ["attack"], "hold": 8},
+    {"hold": 2},
+    {"note": "shears on wool", "look": [0.0, 24.1], "tap": ["hotbar2"], "hold": 1},
+    {"keys": ["attack"], "hold": 8},
+    {"hold": 2},
+    {"note": "the axe on planks, switching to the pickaxe mid-dig", "look": [321.34, 19.3], "tap": ["hotbar3"], "hold": 1},
+    {"keys": ["attack"], "hold": 3},
+    {"tap": ["hotbar1"], "keys": ["attack"], "hold": 1},
+    {"keys": ["attack"], "hold": 5},
+    {"hold": 2},
+    {"note": "tall grass: an instant break", "look": [348.7, 27.4], "keys": ["attack"], "hold": 4},
+    {"hold": 2}
+  ]
+}

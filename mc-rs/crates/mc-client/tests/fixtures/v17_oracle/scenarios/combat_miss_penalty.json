@@ -1,0 +1,23 @@
+{
+  "name": "combat_miss_penalty",
+  "about": "Clicks at the sky: two in one frame (1.8.9's 10-tick miss penalty eats the second swing), single taps, pressing at the sky and holding while looking down at the floor (1.7.10 digs at once, 1.8.9 after the penalty), a sky click followed by a player click.",
+  "world": "arena",
+  "spawn": [8.5, 64.0, 8.5, 0.0, -60.0],
+  "setup": [{"slot": 36, "item": 276}],
+  "steps": [
+    {"hold": 2},
+    {"note": "two taps in one frame at the sky", "tap": ["attack", "attack"], "hold": 2},
+    {"note": "single taps", "tap": ["attack"], "hold": 1},
+    {"tap": ["attack"], "hold": 1},
+    {"hold": 2},
+    {"note": "press at the sky and hold", "keys": ["attack"], "hold": 2},
+    {"note": "look down at the floor while holding", "look": [0.0, 60.0], "keys": ["attack"], "hold": 14},
+    {"hold": 3},
+    {"look": [0.0, -60.0], "in": [{"spawnPlayer": [200, 8.5, 64.0, 11.0, 180.0, 0.0], "name": "Target"}], "hold": 2},
+    {"note": "a sky click, then a player click", "tap": ["attack"], "hold": 1},
+    {"look": [0.0, 0.0], "tap": ["attack"], "hold": 2},
+    {"note": "hold at the sky, then look at the player while holding", "look": [0.0, -60.0], "keys": ["attack"], "hold": 2},
+    {"look": [0.0, 0.0], "keys": ["attack"], "hold": 6},
+    {"hold": 2}
+  ]
+}

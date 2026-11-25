@@ -1,0 +1,11 @@
+{
+  "name": "focus_water_dig_eye",
+  "about": "Standing in a 1x1 hole whose upper block is flowing water meta 3 (fluid top 63.667), dig the dirt east at feet level by hand (pitch 60 aims at it). 1.8.9 tests the eye at minY + 1.62 = 63.62 (in water: dig speed / 5, 76 ticks after float accumulation); 1.7.10 tests posY + 0.12 = 63.74 (not in water, 15 ticks).",
+  "world": "focus",
+  "spawn": [-5.5, 62.0, 10.5, -90.0, 60.0],
+  "steps": [
+    {"hold": 5},
+    {"hold": 90, "keys": ["attack"]},
+    {"hold": 3}
+  ]
+}

@@ -120,6 +120,40 @@ impl CaptureSink {
         }
     }
 
+    /// [`CaptureSink::from_env`] for a connection speaking `protocol` (5 for 1.7.10), which the
+    /// capture header records so a replay decodes it with that protocol's packets.
+    #[must_use]
+    pub fn from_env_for_protocol(address: &str, protocol: i32) -> CaptureSink {
+        match std::env::var_os(CAPTURE_ENV) {
+            Some(path) if !path.is_empty() => {
+                CaptureSink::to_file_for_protocol(PathBuf::from(path), address, protocol)
+            }
+            _ => CaptureSink::disabled(),
+        }
+    }
+
+    /// [`CaptureSink::to_file`] for a connection speaking `protocol`; see
+    /// [`CaptureSink::from_env_for_protocol`].
+    #[must_use]
+    pub fn to_file_for_protocol(
+        path: impl Into<PathBuf>,
+        address: &str,
+        protocol: i32,
+    ) -> CaptureSink {
+        let path = path.into();
+        tracing::info!(path = %path.display(), address, protocol, "recording this session");
+        CaptureSink {
+            inner: Some(Inner {
+                recorder: StreamRecorder::new(CaptureMeta {
+                    protocol,
+                    ..CaptureMeta::new(address)
+                }),
+                path,
+            }),
+            tap: None,
+        }
+    }
+
     /// Whether anything is being recorded.
     #[must_use]
     pub fn is_recording(&self) -> bool {

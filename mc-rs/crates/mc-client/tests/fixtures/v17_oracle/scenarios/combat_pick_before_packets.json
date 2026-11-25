@@ -1,0 +1,21 @@
+{
+  "name": "combat_pick_before_packets",
+  "about": "A player spawned in the crosshair in the frame of a click (1.8.9 applies the spawn before the tick's pick and hits; 1.7.10 picks first, then applies it: a swing only), a second click, knockback and a click together, the target removed (S13) in the frame of a click, a spawn in a render-only frame then a click.",
+  "world": "arena",
+  "spawn": [8.5, 64.0, 8.5, 0.0, 0.0],
+  "setup": [{"slot": 36, "item": 276}],
+  "steps": [
+    {"hold": 2},
+    {"note": "spawn and click in one frame", "tap": ["attack"], "in": [{"spawnPlayer": [200, 8.5, 64.0, 10.5, 180.0, 0.0], "name": "Target"}], "hold": 1},
+    {"hold": 3},
+    {"note": "a second click", "tap": ["attack"], "hold": 3},
+    {"note": "knockback and a click in one frame", "tap": ["attack"], "in": [{"velocity": [0.0, 0.4, -0.3]}], "hold": 1},
+    {"hold": 5},
+    {"note": "back to the start", "in": [{"posLook": [8.5, 64.0, 8.5, 0.0, 0.0]}], "hold": 3},
+    {"note": "the target removed in the frame of a click", "tap": ["attack"], "in": [{"destroy": [200]}], "hold": 1},
+    {"hold": 3},
+    {"note": "a spawn in a render-only frame", "in": [{"spawnPlayer": [201, 8.5, 64.0, 10.5, 180.0, 0.0], "name": "Second"}], "ticks": 0, "hold": 1},
+    {"tap": ["attack"], "hold": 1},
+    {"hold": 3}
+  ]
+}

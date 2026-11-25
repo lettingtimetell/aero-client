@@ -1,0 +1,24 @@
+{
+  "name": "hotbar_keys_wheel_server",
+  "about": "Hotbar number keys (the C09 goes out at the next controller sync), two keys in one frame, the wheel with wrap-around, S09 from the server (1.7.10 syncs it back one tick later: its sync runs before the packets), S09 in a render-only frame, a key and an S09 in one frame, a key in a slow frame.",
+  "world": "arena",
+  "spawn": [8.5, 64.0, 8.5, 0.0, 0.0],
+  "setup": [{"slot": 36, "item": 276}, {"slot": 37, "item": 297, "count": 5}, {"slot": 38, "item": 1, "count": 64}],
+  "steps": [
+    {"hold": 2},
+    {"note": "number keys", "tap": ["hotbar2"], "hold": 2},
+    {"tap": ["hotbar3"], "hold": 2},
+    {"tap": ["hotbar1"], "hold": 2},
+    {"note": "two number keys in one frame", "tap": ["hotbar2", "hotbar3"], "hold": 2},
+    {"note": "the wheel", "wheel": -1, "hold": 2},
+    {"wheel": 1, "hold": 2},
+    {"wheel": 3, "hold": 2},
+    {"note": "S09 from the server", "in": [{"heldItem": 5}], "hold": 3},
+    {"in": [{"heldItem": 0}], "hold": 3},
+    {"note": "S09 in a render-only frame", "in": [{"heldItem": 2}], "ticks": 0, "hold": 1},
+    {"hold": 3},
+    {"note": "a key and an S09 in one frame", "tap": ["hotbar1"], "in": [{"heldItem": 7}], "hold": 3},
+    {"note": "a key in a slow frame (3 ticks)", "tap": ["hotbar4"], "ticks": 3, "hold": 1},
+    {"hold": 2}
+  ]
+}

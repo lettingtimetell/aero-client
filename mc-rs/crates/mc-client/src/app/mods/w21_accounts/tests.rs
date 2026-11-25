@@ -603,6 +603,7 @@ fn the_title_corner_shows_the_account_and_opens_the_screen() {
             mc_font: &mut client.font,
             labels: &labels,
             version: "",
+            game_version: mc_version::GameVersion::V1_8_9,
             copyright: "",
             screen,
             now,

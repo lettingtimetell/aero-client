@@ -1,0 +1,12 @@
+{
+  "name": "focus_place_double_plant",
+  "about": "Right-click the west face of a double tall grass (lower half at (8, 64, 36)) with a stone block. Both send the same C08 (clicked position and face). 1.8.9 treats the plant as replaceable and predicts the stone in place at (8, 64, 36); 1.7.10 only replaces snow, vine, tallgrass and deadbush in place, so it predicts the stone at (7, 64, 36). The next frames' pick shows which.",
+  "world": "focus",
+  "spawn": [6.5, 64.0, 36.5, -90.0, 35.0],
+  "setup": [{"slot": 36, "item": 1, "count": 64}],
+  "steps": [
+    {"hold": 3},
+    {"hold": 1, "tap": ["use"]},
+    {"hold": 3}
+  ]
+}

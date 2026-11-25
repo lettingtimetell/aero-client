@@ -1811,6 +1811,7 @@ dependencies = [
  "mc-shell",
  "mc-ui",
  "mc-update",
+ "mc-version",
  "mc-video",
  "mc-world",
  "mimalloc",
@@ -1872,6 +1873,7 @@ name = "mc-mods"
 version = "1.0.0"
 dependencies = [
  "mc-core",
+ "mc-version",
  "serde_json",
 ]
 
@@ -1920,6 +1922,7 @@ dependencies = [
  "mc-data",
  "mc-math",
  "mc-world",
+ "serde_json",
  "thiserror 2.0.20",
 ]
 
@@ -1935,6 +1938,7 @@ dependencies = [
  "mc-core",
  "mc-math",
  "mc-nbt",
+ "mc-version",
  "proptest",
  "rand 0.8.7",
  "rsa",
@@ -2017,6 +2021,7 @@ dependencies = [
  "mc-nbt",
  "mc-protocol",
  "mc-render",
+ "mc-version",
  "mc-world",
  "serde_json",
  "tempfile",
@@ -2043,6 +2048,10 @@ dependencies = [
  "wiremock",
  "zip",
 ]
+
+[[package]]
+name = "mc-version"
+version = "1.0.0"
 
 [[package]]
 name = "mc-video"

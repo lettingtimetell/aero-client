@@ -62,6 +62,11 @@ use crate::widget::{keys, DrawList, MemoryClipboard, TextField, UiTexture};
 
 use super::interaction::{MouseState, SlotTarget};
 use super::model::Container;
+
+// The 1.7.10 screens' rules (enchanting gate and plates, furnace properties, anvil field): a
+// child module, for this type's private state.
+#[path = "screen_v5.rs"]
+mod v5;
 use super::player_preview::{HorsePreviewSnapshot, PlayerPreviewRenderer, PlayerPreviewSnapshot};
 use super::stack_ext::{self, ItemStack};
 use super::tooltip_box::{self, WORLD_DIM_BOTTOM, WORLD_DIM_TOP};
@@ -995,6 +1000,12 @@ impl ContainerArt {
         hovered_enchant_plate: Option<usize>,
         mut runes: Option<&mut [TextMesh; 3]>,
     ) {
+        // A 1.7.10 table's plates have no lapis (`screen_v5.rs`).
+        let hovered = hovered_enchant_plate;
+        if self.draw_enchanting_offers_v5(d, (left, top), container, hovered, runes.as_deref_mut())
+        {
+            return;
+        }
         let ContainerArt::Enchanting(e) = self else {
             return;
         };
@@ -1241,6 +1252,7 @@ impl ContainerArt {
                     false,
                 );
                 let lapis = container.slot_stack(1).map_or(0, |s| s.count);
+                let lapis = v5::offer_lapis_v5(container, lapis);
                 for row in 0..3usize {
                     let level = e.enchant_levels[row];
                     if level == 0 {
@@ -1722,6 +1734,8 @@ pub struct ContainerScreen {
     /// The `scrollable_tooltips` mod's state. Off by default, when the tooltip
     /// draw is exactly vanilla's; the client turns it on with `set_options`.
     pub tooltip_scroll: super::tooltip_scroll::TooltipScroll,
+    /// The left edge a 1.7.10 inventory keeps until its next layout (`screen_v5.rs`).
+    init_shift_v5: super::v5::InitShiftV5,
 }
 
 impl ContainerScreen {
@@ -1788,6 +1802,7 @@ impl ContainerScreen {
             horse_entity_id: None,
             horse_preview_snapshot: None,
             tooltip_scroll: super::tooltip_scroll::TooltipScroll::default(),
+            init_shift_v5: super::v5::InitShiftV5::default(),
         }
     }
 
@@ -1971,6 +1986,8 @@ impl ContainerScreen {
         } else {
             (self.screen_width - self.art.x_size()) / 2
         };
+        // 1.7.10 keeps the position its `initGui` chose (`screen_v5.rs`).
+        self.keep_init_gui_left_v5();
     }
 
     // java: InventoryEffectRenderer.java:71-112 (drawActivePotionEffects)
@@ -2541,11 +2558,15 @@ impl ContainerScreen {
         let ContainerArt::Merchant(merchant) = &mut self.art else {
             return Ok(false);
         };
+        let page = merchant.selected;
         merchant.recipes = recipes;
         merchant.selected = 0;
+        let first = merchant.recipes.first().cloned();
         self.hovered_merchant_preview = None;
-        self.container
-            .set_merchant_recipe(merchant.recipes.first().cloned());
+        // A 1.7.10 window keeps its page and its output (`screen_v5.rs`).
+        if !self.apply_merchant_list_v5(page) {
+            self.container.set_merchant_recipe(first);
+        }
         Ok(true)
     }
 
@@ -2562,7 +2583,10 @@ impl ContainerScreen {
             return false;
         };
         self.hovered_merchant_preview = None;
-        self.container.set_merchant_recipe(recipe);
+        // A 1.7.10 container takes the whole list (`screen_v5.rs`).
+        if !self.sync_merchant_offers_v5() {
+            self.container.set_merchant_recipe(recipe);
+        }
         self.outgoing_plugins.push(c2s::PluginMessage {
             channel: "MC|TrSel".to_owned(),
             data,
@@ -2572,6 +2596,10 @@ impl ContainerScreen {
 
     /// Apply an `S31PacketWindowProperty` addressed at this window; ignored otherwise.
     pub fn apply_window_property(&mut self, pkt: &s2c::WindowProperty) {
+        // A 1.7.10 furnace numbers its properties differently (`screen_v5.rs`).
+        if self.apply_window_property_v5(pkt) {
+            return;
+        }
         if pkt.window_id == self.container.window_id {
             self.art.apply_window_property(pkt.var_index, pkt.var_value);
             // Deliberately NOT mirrored onto `Container::maximum_cost`, even though that is the
@@ -2738,6 +2766,7 @@ impl ContainerScreen {
         art.creative = self.creative;
         let names = art.rune_offer_names();
         let lapis = self.container.slot_stack(1).map_or(0, |stack| stack.count);
+        let lapis = v5::offer_lapis_v5(&self.container, lapis);
         let hovered = self.enchant_plate_at_position(mouse_x, mouse_y);
         for (row, name) in names.iter().enumerate() {
             if art.enchant_levels[row] == 0 {
@@ -3214,6 +3243,8 @@ impl ContainerScreen {
                     slots: BTreeSet::new(),
                 });
             }
+            // A 1.7.10 pick-block drag previews with the limit it reuses (`screen_v5.rs`).
+            self.sync_drag_preview_v5();
         }
         // java: `GuiRepair.mouseClicked` calls the container implementation first, then gives
         // the same press to its name field. The draw-time caret metrics make this exact without
@@ -3237,6 +3268,8 @@ impl ContainerScreen {
                 }
                 _ => false,
             };
+            // A 1.7.10 table's rule (`screen_v5.rs`).
+            let can_activate = self.enchant_gate_v5(row).unwrap_or(can_activate);
             if can_activate {
                 self.outgoing_actions
                     .push(OrderedContainerAction::EnchantItem(c2s::EnchantItem {
@@ -3796,6 +3829,7 @@ impl Screen for ContainerScreen {
     // java: GuiContainer.java:88 (initGui)
     fn init(&mut self, ctx: &ScreenCtx) {
         self.screen_width = ctx.width;
+        self.init_shift_v5.laid_out(ctx.width, ctx.height);
         self.update_active_potion_effects();
         self.gui_top = (ctx.height - self.art.y_size()) / 2;
         if matches!(&self.art, ContainerArt::Beacon(_)) {

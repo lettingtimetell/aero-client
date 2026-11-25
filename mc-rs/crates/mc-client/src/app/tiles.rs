@@ -1680,6 +1680,10 @@ impl Client {
                             .state_mut()
                             .world
                             .set_sign_components(position, lines.clone());
+                        // 1.7.10: plain lines (`session/sends_v5.rs`).
+                        if session.send_update_sign_v5(position, &lines) {
+                            continue;
+                        }
                         session.send(mc_protocol::play::C2SPlay::UpdateSign(
                             mc_protocol::play::c2s::UpdateSign { position, lines },
                         ));

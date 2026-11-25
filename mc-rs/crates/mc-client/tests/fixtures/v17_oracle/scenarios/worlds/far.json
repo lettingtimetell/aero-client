@@ -1,0 +1,8 @@
+{
+  "about": "Stone floor (top y = 64) over chunk columns x 624..626, z -1..1 (x 9984..10047, z -16..31), with a wall at z = 12 (x 9990..10010, y 64..66): float precision at large coordinates.",
+  "chunks": [624, -1, 626, 1],
+  "boxes": [
+    [9984, 60, -16, 10047, 63, 31, 1],
+    [9990, 64, 12, 10010, 66, 12, 1]
+  ]
+}

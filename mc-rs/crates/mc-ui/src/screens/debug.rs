@@ -13,6 +13,7 @@
 //! independently from the Java's format strings.
 
 use mc_math::{BlockPos, Facing};
+use mc_version::GameVersion;
 use mc_world::World;
 
 use crate::font::FontRenderer;
@@ -219,6 +220,9 @@ pub fn blend_colors(first: u32, second: u32, amount: f32) -> u32 {
 pub struct DebugInfo {
     /// The client version string, e.g. `"1.8.9"`.
     pub version: String,
+    /// The version the session plays: the first line reads "Minecraft 1.8.9" or
+    /// "Minecraft 1.7.10" ([`GameVersion::title_line`]).
+    pub game_version: GameVersion,
     /// The brand, e.g. `"vanilla"`. java: `ClientBrandRetriever.getClientModName()`
     pub brand: String,
     /// The host runtime version shown in Java's `System.getProperty("java.version")` slot.
@@ -289,6 +293,7 @@ impl Default for DebugInfo {
     fn default() -> Self {
         Self {
             version: "1.8.9".into(),
+            game_version: GameVersion::V1_8_9,
             brand: "vanilla".into(),
             java_version: "<unknown>".into(),
             java_bits: usize::BITS as u8,
@@ -566,8 +571,19 @@ impl DebugOverlay {
                 format!("MultiplayerChunkCache: {count}, {count}")
             },
         );
+        // The brackets hold the launcher's label, which names the 1.8.9 install: a 1.7.10 session
+        // names its own version there too.
+        let launched = match info.game_version {
+            GameVersion::V1_8_9 => info.version.as_str(),
+            version => version.name(),
+        };
         let header = vec![
-            format!("Minecraft 1.8.9 ({}/{})", info.version, info.brand),
+            format!(
+                "{} ({}/{})",
+                info.game_version.title_line(),
+                launched,
+                info.brand
+            ),
             info.fps.clone(),
             info.renders.clone(),
             info.entities.clone(),
@@ -1031,6 +1047,25 @@ mod tests {
         let mut i = info();
         i.version = "1.8.9-custom".into();
         i.brand = "vanilla".into();
+        assert_eq!(
+            o.left_column(&i, None)[0],
+            "Minecraft 1.8.9 (1.8.9-custom/vanilla)"
+        );
+    }
+
+    #[test]
+    fn the_header_names_the_version_the_session_plays() {
+        let o = DebugOverlay::new();
+        let mut i = info();
+        i.version = "1.8.9-custom".into();
+        i.game_version = GameVersion::V1_7_10;
+        assert_eq!(
+            o.left_column(&i, None)[0],
+            "Minecraft 1.7.10 (1.7.10/vanilla)",
+            "no 1.8.9 label in a 1.7.10 session"
+        );
+        // Negative control: 1.8.9 keeps the launcher's label.
+        i.game_version = GameVersion::V1_8_9;
         assert_eq!(
             o.left_column(&i, None)[0],
             "Minecraft 1.8.9 (1.8.9-custom/vanilla)"

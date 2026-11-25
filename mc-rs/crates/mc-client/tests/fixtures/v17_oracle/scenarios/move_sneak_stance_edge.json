@@ -1,0 +1,23 @@
+{
+  "name": "move_sneak_stance_edge",
+  "about": "Sneaking in place, at a platform edge and on a slab rim: the 1.7.10 eye/stance drop (ySize 0.2 x 0.4 per move) and its decay after release vs 1.8.9's instant 1.54 eye; the sneak edge guard; a sneaking jump onto the slab rim (1.7.10's step gate while sneaking in the air).",
+  "world": "edge",
+  "spawn": [23.5, 67.0, 12.5, 0.0, 0.0],
+  "steps": [
+    {"hold": 3},
+    {"note": "sneak standing still", "keys": ["sneak"], "hold": 10},
+    {"note": "release: 1.7.10 ySize decays 0.032, 0.0128, ...", "hold": 12},
+    {"note": "sneak-walk up onto the slab rim and hold at its edge", "keys": ["forward", "sneak"], "hold": 45},
+    {"note": "unsneak at the edge: walk off", "keys": ["forward"], "hold": 4},
+    {"hold": 20},
+    {"note": "back on top: jump toward the rim holding sneak and W", "in": [{"posLook": [23.5, 67.0, 12.0, 0.0, 0.0]}], "hold": 3},
+    {"keys": ["forward", "sneak", "jump"], "hold": 1},
+    {"keys": ["forward", "sneak"], "hold": 20},
+    {"hold": 10},
+    {"note": "the platform's west edge (a 3-block drop)", "in": [{"posLook": [20.5, 67.0, 10.5, 90.0, 0.0]}], "keys": ["sneak"], "hold": 2},
+    {"keys": ["forward", "sneak"], "hold": 30},
+    {"keys": ["left", "sneak"], "hold": 20},
+    {"keys": ["right", "sneak", "forward"], "hold": 10},
+    {"hold": 5}
+  ]
+}

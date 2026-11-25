@@ -9,6 +9,9 @@
 //! left-aligned title is also the one arrangement that never covers the scene's middle, where
 //! the path and the waterfalls are.
 //!
+//! The column starts with the version slider, a slimmer row than a button, set a little apart
+//! from the buttons: it picks the game, they pick what to do in it.
+//!
 //! Sizes are in design pixels for a 1920x1080 window, scaled by [`scale`].
 
 use super::AeroButton;
@@ -18,7 +21,7 @@ use crate::screens::modmenu::paint::Rect;
 pub const MARGIN_X: f32 = 128.0;
 /// The title's em size.
 pub const TITLE_SIZE: f32 = 116.0;
-/// From the title's baseline to the first button's top.
+/// From the title's baseline to the column's top (the version slider's).
 pub const TITLE_TO_BUTTONS: f32 = 66.0;
 /// One button.
 pub const BUTTON_W: f32 = 340.0;
@@ -32,6 +35,10 @@ pub const QUIT_GAP: f32 = 18.0;
 pub const BUTTON_RADIUS: f32 = 16.0;
 /// Distance of the footer text's bottom from the window's bottom.
 pub const FOOTER_BOTTOM: f32 = 22.0;
+/// The version slider's height.
+pub const VERSION_H: f32 = 44.0;
+/// From the version slider to the first button.
+pub const VERSION_GAP: f32 = 18.0;
 
 /// Physical pixels per design pixel: the height decides (a 1080p window is 1), unless the window
 /// is so narrow that the title would not fit.
@@ -58,6 +65,8 @@ pub struct Layout {
     pub title_size: f32,
     /// The title's baseline: its capitals are centred on `screen.1 / 8`.
     pub title_baseline: f32,
+    /// The version slider, at the top of the column.
+    pub version: Rect,
     /// The buttons, in [`AeroButton::ALL`] order.
     pub buttons: [Rect; AeroButton::COUNT],
     /// Button corner radius.
@@ -77,6 +86,8 @@ impl Layout {
         let title_baseline = (screen.1 / 8.0 + cap * 0.5).round();
         let mut y = title_baseline + TITLE_TO_BUTTONS * s;
         let (w, h) = ((BUTTON_W * s).round(), (BUTTON_H * s).round());
+        let version = Rect::new(left, y.round(), w, (VERSION_H * s).round());
+        y += version.h + VERSION_GAP * s;
         let mut buttons = [Rect::default(); AeroButton::COUNT];
         for (index, button) in buttons.iter_mut().enumerate() {
             if index == AeroButton::Quit.index() {
@@ -91,6 +102,7 @@ impl Layout {
             left,
             title_size,
             title_baseline,
+            version,
             buttons,
             radius: BUTTON_RADIUS * s,
             footer_bottom: screen.1 - FOOTER_BOTTOM * s,
@@ -124,9 +136,36 @@ mod tests {
         assert!(gap(quit - 1) > gap(quit - 2));
         // The whole menu stays in the top part of the screen: the greenhouse keeps the rest.
         // (Replays, and later Mods, joined the column; it was the top
-        // half with four buttons.)
+        // half with four buttons. The version slider heading the column moved it down by its
+        // row: under 62% before, two thirds now.)
         let last = b[AeroButton::COUNT - 1];
-        assert!(last.bottom() < 1080.0 * 0.62, "{}", last.bottom());
+        assert!(last.bottom() < 1080.0 * 0.67, "{}", last.bottom());
+    }
+
+    #[test]
+    fn the_version_slider_heads_the_column_a_little_apart_from_the_buttons() {
+        for screen in [
+            (1920.0, 1080.0),
+            (1280.0, 720.0),
+            (854.0, 480.0),
+            (3840.0, 2160.0),
+        ] {
+            let layout = Layout::new(screen, cap);
+            let (version, first) = (layout.version, layout.buttons[0]);
+            assert_eq!(
+                (version.x, version.w),
+                (first.x, first.w),
+                "{screen:?}: one column"
+            );
+            assert!(version.h < first.h, "{screen:?}: slimmer than a button");
+            assert!(
+                version.y > layout.title_baseline,
+                "{screen:?}: under the title"
+            );
+            let gap = first.y - version.bottom();
+            let between = layout.buttons[1].y - first.bottom();
+            assert!(gap > between, "{screen:?}: set apart, {gap} > {between}");
+        }
     }
 
     #[test]

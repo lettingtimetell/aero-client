@@ -10,6 +10,7 @@
 use glam::{Mat4, Vec3};
 use mc_assets::Language;
 use mc_math::BlockPos;
+use mc_version::GameVersion;
 
 use crate::font::component::ChatComponent;
 use crate::font::FontRenderer;
@@ -18,6 +19,12 @@ use crate::screens::common::{LABEL_COLOR, TITLE_COLOR};
 use crate::widget::draw::DrawList;
 use crate::widget::keys::{self, Clipboard, Modifiers};
 use crate::widget::{draw_centered_string, draw_string, Button, TextField, Transform, UiTexture};
+
+// Minecraft 1.7.10's line limit and command-block controls: a child module, for the editors'
+// private state.
+#[path = "sign_v5.rs"]
+mod v5;
+pub use v5::MAX_LINE_LENGTH_V5;
 
 const DONE_BUTTON_ID: i32 = 0;
 /// `GuiEditSign.keyTyped` limits rendered line width, not character count.
@@ -422,6 +429,8 @@ pub struct EditSignScreen {
     done_button: Button,
     finished: bool,
     actions: Vec<SignAction>,
+    /// Whose line rule typing follows (`sign_v5.rs`); 1.8.9 unless set.
+    version: GameVersion,
 }
 
 impl EditSignScreen {
@@ -437,6 +446,7 @@ impl EditSignScreen {
             done_button: Button::new(DONE_BUTTON_ID, 0, 0, ""),
             finished: false,
             actions: Vec::new(),
+            version: GameVersion::V1_8_9,
         }
     }
 
@@ -463,6 +473,7 @@ impl EditSignScreen {
             done_button: Button::new(DONE_BUTTON_ID, 0, 0, ""),
             finished: false,
             actions: Vec::new(),
+            version: GameVersion::V1_8_9,
         }
     }
 
@@ -501,6 +512,7 @@ impl EditSignScreen {
             done_button: Button::new(DONE_BUTTON_ID, 0, 0, ""),
             finished: false,
             actions: Vec::new(),
+            version: GameVersion::V1_8_9,
         }
     }
 
@@ -651,7 +663,12 @@ impl EditSignScreen {
         if let Some(character) = typed.filter(|character| keys::is_allowed_character(*character)) {
             let mut candidate = text.clone();
             candidate.push(character);
-            if font.string_width(&candidate) <= MAX_LINE_WIDTH {
+            let fits = match self.version {
+                GameVersion::V1_8_9 => font.string_width(&candidate) <= MAX_LINE_WIDTH,
+                // 15 characters, whatever their width (`sign_v5.rs`).
+                GameVersion::V1_7_10 => v5::line_accepts_v5(&candidate),
+            };
+            if fits {
                 text = candidate;
             }
         }
@@ -779,6 +796,8 @@ pub struct CommandBlockScreen {
     /// `lastOutput` JSON) as last mirrored by [`Self::sync_live_logic`], so an unchanged frame
     /// costs only comparisons.
     live_raw: Option<(String, bool, Option<String>)>,
+    /// Whose controls the editor shows (`sign_v5.rs`); 1.8.9 unless set.
+    version: GameVersion,
 }
 
 impl CommandBlockScreen {
@@ -805,6 +824,7 @@ impl CommandBlockScreen {
             finished: false,
             actions: Vec::new(),
             live_raw: None,
+            version: GameVersion::V1_8_9,
         }
     }
 
@@ -1015,6 +1035,8 @@ impl CommandBlockScreen {
             self.cancel_button.text = lang.tr("gui.cancel").to_owned();
         }
         self.refresh_done_button();
+        // 1.7.10 has no track-output toggle (`sign_v5.rs`).
+        self.hide_track_output_v5();
     }
 
     /// Advance the focused command field's cursor blink.

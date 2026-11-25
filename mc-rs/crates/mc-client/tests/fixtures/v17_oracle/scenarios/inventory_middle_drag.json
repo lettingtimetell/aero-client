@@ -1,0 +1,14 @@
+{
+  "name": "inventory_middle_drag",
+  "about": "A middle-button drag in survival with 4 stone on the cursor over two empty slots (pressed over slot 9, moved within it, then onto slot 10): 1.7.10 runs it as a drag (mode 5, stages 0/1/2) and splits the stack, 1.8.9 sends the middle-drag stages (8/9/10) and its prediction rejects the drag.",
+  "world": "arena",
+  "spawn": [8.5, 64.0, 8.5, 0.0, 0.0],
+  "setup": [{"slot": 36, "item": 1, "count": 4}],
+  "steps": [
+    {"hold": 2},
+    {"note": "open", "tap": ["inventory"], "hold": 2},
+    {"note": "pick up the 4 stone", "click": [{"slot": 36, "button": 0}], "hold": 6},
+    {"note": "middle drag over slots 9 and 10", "drag": {"slots": [9, 9, 10], "button": 2}, "hold": 3},
+    {"tap": ["inventory"], "hold": 2}
+  ]
+}

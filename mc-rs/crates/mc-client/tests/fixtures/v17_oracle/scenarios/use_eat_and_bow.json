@@ -1,0 +1,23 @@
+{
+  "name": "use_eat_and_bow",
+  "about": "Eating bread while sprinting (the use slowdown ends the sprint), the server finishing the use (S19 9, the new stack, food), drawing a bow while walking and jumping and releasing (C07 RELEASE_USE_ITEM: 1.7.10 face 255), a short draw, a hotbar change ending a draw (the 1.8.9 oracle's eating and bow inputs).",
+  "world": "arena",
+  "spawn": [8.5, 64.0, 8.5, 0.0, 0.0],
+  "setup": [{"slot": 36, "item": 297, "count": 5}, {"slot": 37, "item": 261}, {"slot": 9, "item": 262, "count": 16}, {"health": [20.0, 12, 0.0]}],
+  "steps": [
+    {"note": "sprint, then eat while sprinting", "look": [90.0, 0.0], "keys": ["forward", "sprint"], "hold": 2},
+    {"keys": ["forward", "sprint", "use"], "hold": 20},
+    {"note": "the server finishes the use", "in": [{"status": 9}, {"slot": 36, "item": 297, "count": 4}, {"health": [20.0, 17, 6.0]}], "keys": ["forward", "sprint", "use"], "hold": 4},
+    {"keys": ["forward", "sprint"], "hold": 6},
+    {"hold": 5},
+    {"note": "draw the bow while walking and jumping", "tap": ["hotbar2"], "hold": 1},
+    {"look": [135.0, -10.0], "keys": ["forward"], "hold": 3},
+    {"keys": ["forward", "use", "jump"], "hold": 22},
+    {"keys": ["forward"], "hold": 3},
+    {"note": "a short draw", "keys": ["forward", "use"], "hold": 4},
+    {"hold": 8},
+    {"note": "a hotbar change ends the draw", "keys": ["use"], "hold": 6},
+    {"tap": ["hotbar1"], "keys": ["use"], "hold": 2},
+    {"hold": 4}
+  ]
+}

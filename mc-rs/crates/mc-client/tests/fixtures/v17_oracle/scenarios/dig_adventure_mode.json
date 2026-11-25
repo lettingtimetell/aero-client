@@ -1,0 +1,24 @@
+{
+  "name": "dig_adventure_mode",
+  "about": "Adventure mode: glass with an empty hand (1.7.10 allows it: an adventure-exempt material), the stone floor with a diamond pickaxe (1.7.10 allows it: the tool can harvest), the floor with an empty hand (refused in both), placing stone (refused in both, the C08 still goes out).",
+  "world": "arena",
+  "gameType": 2,
+  "spawn": [3.5, 64.0, 0.5, 0.0, 24.1],
+  "setup": [{"slot": 36, "item": 278}, {"slot": 38, "item": 1, "count": 64}],
+  "watch": [[3, 64, 3], [3, 63, 1], [3, 64, 1]],
+  "steps": [
+    {"hold": 2},
+    {"note": "glass with an empty hand", "tap": ["hotbar2"], "hold": 1},
+    {"keys": ["attack"], "hold": 10},
+    {"hold": 3},
+    {"note": "the floor with a diamond pickaxe", "look": [0.0, 60.0], "tap": ["hotbar1"], "hold": 1},
+    {"keys": ["attack"], "hold": 10},
+    {"hold": 3},
+    {"note": "the floor with an empty hand", "tap": ["hotbar2"], "hold": 1},
+    {"keys": ["attack"], "hold": 8},
+    {"hold": 3},
+    {"note": "place stone", "tap": ["hotbar3"], "hold": 1},
+    {"tap": ["use"], "hold": 3},
+    {"hold": 2}
+  ]
+}

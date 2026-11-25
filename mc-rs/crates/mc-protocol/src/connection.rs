@@ -41,6 +41,7 @@ use std::sync::OnceLock;
 use std::time::{Duration, Instant};
 
 use bytes::BytesMut;
+use mc_version::GameVersion;
 use tokio::io::{AsyncRead, AsyncReadExt, AsyncWrite, AsyncWriteExt};
 use tokio::net::{lookup_host, TcpStream, ToSocketAddrs};
 use tokio_util::codec::{Decoder, Encoder};
@@ -57,6 +58,9 @@ use crate::{PacketBuffer, ProtoError};
 
 /// The protocol version this client speaks: **47**, Minecraft 1.8.9.
 pub const PROTOCOL_VERSION: i32 = 47;
+
+// The plain `handshake` is the 1.8.9 one: its number and 1.8.9's must never drift apart.
+const _: () = assert!(PROTOCOL_VERSION == GameVersion::V1_8_9.protocol());
 
 /// How many bytes to pull off the socket per read.
 const READ_CHUNK: usize = 8192;
@@ -660,6 +664,23 @@ pub async fn handshake<S: AsyncRead + AsyncWrite + Unpin>(
     port: u16,
     next: NextState,
 ) -> Result<(), ProtoError> {
+    handshake_for(conn, address, port, next, GameVersion::V1_8_9).await
+}
+
+/// [`handshake`] for a connection that plays `version`: the handshake carries its protocol
+/// number ([`GameVersion::protocol`]: 47 for 1.8.9, 5 for 1.7.10). Both versions' `C00Handshake`
+/// has the same fields in the same order; only the number differs.
+///
+/// # Errors
+///
+/// As [`handshake`].
+pub async fn handshake_for<S: AsyncRead + AsyncWrite + Unpin>(
+    conn: &mut Connection<S>,
+    address: &str,
+    port: u16,
+    next: NextState,
+    version: GameVersion,
+) -> Result<(), ProtoError> {
     let target = match next {
         NextState::Handshaking => State::Handshaking,
         NextState::Play => State::Play,
@@ -673,7 +694,7 @@ pub async fn handshake<S: AsyncRead + AsyncWrite + Unpin>(
         });
     }
     conn.send(&Handshake {
-        protocol_version: PROTOCOL_VERSION,
+        protocol_version: version.protocol(),
         server_address: address.to_owned(),
         server_port: port,
         next_state: next,
@@ -810,8 +831,22 @@ fn ensure_packet_consumed(packet_id: i32, body: &PacketBuffer) -> Result<(), Pro
 ///
 /// Any error from [`Connection::connect`], [`handshake`], or [`status`].
 pub async fn ping_server(host: &str, port: u16) -> Result<ServerStatus, ProtoError> {
+    ping_server_for(host, port, GameVersion::V1_8_9).await
+}
+
+/// [`ping_server`] as a client that plays `version`: a server that speaks several versions
+/// answers the status request for the one the handshake names.
+///
+/// # Errors
+///
+/// As [`ping_server`].
+pub async fn ping_server_for(
+    host: &str,
+    port: u16,
+    version: GameVersion,
+) -> Result<ServerStatus, ProtoError> {
     let mut conn = Connection::connect((host, port)).await?;
-    handshake(&mut conn, host, port, NextState::Status).await?;
+    handshake_for(&mut conn, host, port, NextState::Status, version).await?;
     status(&mut conn).await
 }
 
@@ -2114,5 +2149,51 @@ mod tests {
             })
         ));
         task.await.unwrap();
+    }
+
+    /// The bytes one handshake puts on the wire: `None` sends the plain [`handshake`].
+    async fn handshake_bytes(version: Option<GameVersion>) -> Vec<u8> {
+        let (client_stream, mut server_stream) = tokio::io::duplex(1024);
+        let mut client = Connection::new(client_stream);
+        let sent = match version {
+            None => handshake(&mut client, "example.test", 25565, NextState::Status).await,
+            Some(version) => {
+                handshake_for(
+                    &mut client,
+                    "example.test",
+                    25565,
+                    NextState::Status,
+                    version,
+                )
+                .await
+            }
+        };
+        sent.unwrap();
+        assert_eq!(client.state(), State::Status);
+        drop(client);
+        let mut bytes = Vec::new();
+        server_stream.read_to_end(&mut bytes).await.unwrap();
+        bytes
+    }
+
+    /// `handshake` is 1.8.9's, byte for byte; a 1.7.10 connection sends the same handshake with
+    /// protocol 5 (java17 `C00Handshake.writePacketData`, same fields as java18's).
+    #[tokio::test]
+    async fn the_handshake_names_the_versions_protocol_and_nothing_else() {
+        let mut expected = vec![0x12, 0x00, 0x2F, 0x0C];
+        expected.extend_from_slice(b"example.test");
+        expected.extend_from_slice(&[0x63, 0xDD, 0x01]);
+        assert_eq!(handshake_bytes(None).await, expected, "1.8.9: protocol 47");
+        assert_eq!(
+            handshake_bytes(Some(GameVersion::V1_8_9)).await,
+            expected,
+            "the same bytes"
+        );
+        expected[2] = 0x05;
+        assert_eq!(
+            handshake_bytes(Some(GameVersion::V1_7_10)).await,
+            expected,
+            "1.7.10: protocol 5"
+        );
     }
 }

@@ -1,0 +1,21 @@
+{
+  "name": "drop_item_and_stack",
+  "about": "The drop key (C07 DROP_ITEM), Ctrl (the default sprint key) + drop (C07 DROP_ALL_ITEMS), dropping while walking, two drops in one frame.",
+  "world": "arena",
+  "spawn": [8.5, 64.0, 8.5, 0.0, 0.0],
+  "setup": [{"slot": 36, "item": 4, "count": 16}, {"slot": 37, "item": 262, "count": 32}],
+  "steps": [
+    {"hold": 2},
+    {"note": "drop one", "tap": ["drop"], "hold": 2},
+    {"tap": ["drop"], "hold": 2},
+    {"note": "Ctrl (the sprint key) + drop: the stack", "keys": ["sprint"], "hold": 1},
+    {"tap": ["drop"], "keys": ["sprint"], "hold": 1},
+    {"hold": 2},
+    {"note": "drop while walking", "tap": ["hotbar2"], "hold": 1},
+    {"keys": ["forward"], "hold": 2},
+    {"tap": ["drop"], "keys": ["forward"], "hold": 1},
+    {"keys": ["forward"], "hold": 3},
+    {"hold": 2},
+    {"note": "two drops in one frame", "tap": ["drop", "drop"], "hold": 2}
+  ]
+}

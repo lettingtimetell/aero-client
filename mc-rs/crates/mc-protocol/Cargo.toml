@@ -25,6 +25,8 @@ flate2.workspace      = true          # zlib, above the SetCompression threshold
 # AsyncRead/AsyncWrite extension traits. Added here rather than in the root table so the
 # other sections' builds do not grow a networking stack they never use.
 tokio                 = { workspace = true, features = ["net", "io-util"] }
+# The handshake names the version the connection plays (47 for 1.8.9, 5 for 1.7.10).
+mc-version.workspace  = true
 
 [dev-dependencies]
 proptest.workspace = true

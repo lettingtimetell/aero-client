@@ -1,0 +1,11 @@
+{
+  "name": "focus_pick_before_packets",
+  "about": "A zombie spawns in the crosshair in the same frame as a click. 1.7.10 picks (getMouseOver) before updateController processes the frame's packets, so the click is a MISS; 1.8.9 handles the packets before the tick and attacks (C02).",
+  "world": "focus",
+  "spawn": [8.5, 64.0, -20.5, 0.0, 0.0],
+  "steps": [
+    {"hold": 3},
+    {"hold": 1, "in": [{"spawnMob": [103, 54, 8.5, 64.0, -18.0, 0.0]}], "tap": ["attack"]},
+    {"hold": 3}
+  ]
+}

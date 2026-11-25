@@ -43,6 +43,7 @@ use mc_assets::{
 };
 use mc_render::settings::GameSettings;
 use mc_ui::font::glyphs::FontData;
+use mc_version::GameVersion;
 
 use crate::app::config::ClientConfig;
 use crate::app::loading::{LoadingScreen, StageProgress};
@@ -551,6 +552,10 @@ pub struct ServerResourcePackHeaders {
     pub username: Option<String>,
     /// The current dashless account UUID, when one is available.
     pub uuid: Option<String>,
+    /// The version the session plays, named by `X-Minecraft-Version` (java18
+    /// `Minecraft.getSessionInfo` sends "1.8.9", java17 `ResourcePackRepository.func_148528_a`
+    /// "1.7.10").
+    pub version: GameVersion,
 }
 
 /// Return the cache key used by vanilla's `downloadResourcePack`.
@@ -942,7 +947,7 @@ async fn request_server_resource_pack(
         .header(reqwest::header::HOST, &request.host_header)
         .header(reqwest::header::ACCEPT, SERVER_RESOURCE_PACK_ACCEPT)
         .header(reqwest::header::CONNECTION, "close")
-        .header("X-Minecraft-Version", "1.8.9");
+        .header("X-Minecraft-Version", headers.version.name());
     if let Some(username) = &headers.username {
         call = call.header("X-Minecraft-Username", username);
     }
@@ -3230,6 +3235,7 @@ mod tests {
             let headers = ServerResourcePackHeaders {
                 username: Some("oomf".to_owned()),
                 uuid: Some("0123456789abcdef".to_owned()),
+                version: GameVersion::V1_8_9,
             };
             let path = download_server_resource_pack(
                 &config,
@@ -3243,6 +3249,66 @@ mod tests {
             assert_eq!(path, server_resource_pack_cache_path(&config, hash));
             assert_eq!(std::fs::read(path).expect("cached body").as_slice(), BODY);
         });
+    }
+
+    /// `X-Minecraft-Version` names the version the session plays: "1.8.9" (java18
+    /// `Minecraft.getSessionInfo`) or "1.7.10" (java17 `ResourcePackRepository.func_148528_a`).
+    #[test]
+    fn server_pack_download_names_the_sessions_version() {
+        const BODY: &[u8] = b"PK\x05\x06\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0";
+        const HASH: &str = "b04f3ee8f5e43fa3b162981b50bb72fe1acabb33";
+        let runtime = tokio::runtime::Builder::new_current_thread()
+            .enable_io()
+            .enable_time()
+            .build()
+            .expect("test runtime");
+        for version in GameVersion::ALL {
+            let request = runtime.block_on(async {
+                use tokio::io::{AsyncReadExt, AsyncWriteExt};
+
+                let listener = tokio::net::TcpListener::bind("127.0.0.1:0")
+                    .await
+                    .expect("listener");
+                let address = listener.local_addr().expect("listener address");
+                let server = tokio::spawn(async move {
+                    let (mut stream, _) = listener.accept().await.expect("request");
+                    let mut request = Vec::new();
+                    let mut chunk = [0; 512];
+                    while !request.windows(4).any(|window| window == b"\r\n\r\n") {
+                        let read = stream.read(&mut chunk).await.expect("request bytes");
+                        assert!(read > 0, "request must have headers");
+                        request.extend_from_slice(&chunk[..read]);
+                    }
+                    let response = format!(
+                        "HTTP/1.1 200 OK\r\nContent-Length: {}\r\nConnection: close\r\n\r\n",
+                        BODY.len()
+                    );
+                    stream
+                        .write_all(response.as_bytes())
+                        .await
+                        .expect("headers");
+                    stream.write_all(BODY).await.expect("body");
+                    String::from_utf8_lossy(&request).to_ascii_lowercase()
+                });
+                let dir = tempfile::tempdir().expect("tempdir");
+                let config = ClientConfig {
+                    game_dir: dir.path().to_path_buf(),
+                    ..ClientConfig::default()
+                };
+                let headers = ServerResourcePackHeaders {
+                    version,
+                    ..ServerResourcePackHeaders::default()
+                };
+                let url = format!("http://{address}/pack.zip");
+                download_server_resource_pack(&config, &url, HASH, &headers)
+                    .await
+                    .expect("download");
+                server.await.expect("server task")
+            });
+            let expected = format!("x-minecraft-version: {version}\r\n");
+            assert!(request.contains(&expected), "{request}");
+            assert_eq!(request.matches("x-minecraft-version").count(), 1);
+        }
     }
 
     #[test]
@@ -3319,6 +3385,7 @@ mod tests {
             let headers = ServerResourcePackHeaders {
                 username: Some("oomf".to_owned()),
                 uuid: Some("0123456789abcdef".to_owned()),
+                version: GameVersion::V1_8_9,
             };
             let path = download_server_resource_pack(
                 &config,

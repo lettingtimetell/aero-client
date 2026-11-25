@@ -1,0 +1,21 @@
+{
+  "name": "dig_while_using_place_while_digging",
+  "about": "Sword-blocking then holding attack on the floor (1.7.10 digs and swings while blocking; 1.8.9 does nothing), and holding attack on the floor with stone in hand while pressing and holding use (1.7.10 places while digging; 1.8.9 ignores right clicks while hitting a block).",
+  "world": "arena",
+  "spawn": [8.5, 64.0, 2.5, 0.0, 60.0],
+  "setup": [{"slot": 36, "item": 276}, {"slot": 37, "item": 1, "count": 64}],
+  "watch": [[8, 63, 3], [8, 64, 3], [8, 64, 2], [8, 62, 3]],
+  "steps": [
+    {"hold": 2},
+    {"note": "block with the sword", "keys": ["use"], "hold": 3},
+    {"note": "hold attack on the floor while blocking", "keys": ["use", "attack"], "hold": 12},
+    {"keys": ["use"], "hold": 1},
+    {"hold": 3},
+    {"note": "stone in hand: dig the floor, press use while digging", "tap": ["hotbar2"], "hold": 1},
+    {"keys": ["attack"], "hold": 4},
+    {"tap": ["use"], "keys": ["attack"], "hold": 1},
+    {"keys": ["attack"], "hold": 6},
+    {"note": "hold use while digging", "keys": ["attack", "use"], "hold": 8},
+    {"hold": 3}
+  ]
+}

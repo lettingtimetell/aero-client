@@ -1,0 +1,19 @@
+{
+  "name": "move_falls",
+  "about": "Drops of 3, 10 and 20 blocks, a jump off a pillar, a fall into water, a sneaking fall: fall distance and landing ticks.",
+  "world": "flat",
+  "spawn": [8.5, 64.0, 8.5, 0.0, 0.0],
+  "steps": [
+    {"hold": 3},
+    {"note": "3-block drop", "in": [{"posLook": [8.5, 67.0, 8.5, 0.0, 0.0]}], "hold": 20},
+    {"note": "10-block drop", "in": [{"posLook": [8.5, 74.0, 8.5, 0.0, 0.0]}], "hold": 30},
+    {"note": "20-block drop", "in": [{"posLook": [8.5, 84.0, 8.5, 0.0, 0.0]}], "hold": 40},
+    {"note": "on the pillar top: jump off it", "in": [{"posLook": [0.5, 72.0, -20.5, 180.0, 0.0]}], "hold": 3},
+    {"keys": ["forward", "jump"], "hold": 3},
+    {"keys": ["forward"], "hold": 20},
+    {"hold": 10},
+    {"note": "a fall into the water pool", "in": [{"posLook": [-19.5, 80.0, -19.5, 0.0, 0.0]}], "hold": 40},
+    {"note": "a sneaking fall", "in": [{"posLook": [8.5, 70.0, 8.5, 0.0, 0.0]}], "keys": ["sneak"], "hold": 25},
+    {"hold": 5}
+  ]
+}

@@ -16,6 +16,9 @@
 //! button activates it ([`AeroTitleScreen::mouse_released`]). The client maps the button to
 //! vanilla's own action ([`AeroButton::action`]) and plays vanilla's button sound.
 //!
+//! The column starts with the version slider ([`version_slider`]): which Minecraft version the
+//! next connection plays, 1.7.10 or 1.8.9.
+//!
 //! Above the copyright line at the bottom right, a small glass button with the Discord logo
 //! links to the Aero Client Discord server ([`discord`]).
 
@@ -27,11 +30,14 @@ pub mod layout;
 pub mod phase;
 // The update card (bottom left).
 pub mod update_notice;
+pub mod version_slider;
 
 #[cfg(test)]
 mod tests;
 
 use std::time::Instant;
+
+use mc_version::GameVersion;
 
 use self::font::{TitleFont, TitleLook};
 use self::icons::Icon;
@@ -56,6 +62,10 @@ const HIGHLIGHT_RATE: f32 = 20.0;
 /// How strongly the crisp copy of the buttons' marks covers their VHS-finished copy
 /// ([`AeroTitleScreen::build_layers`]): about half the finish's blur stays on the small text.
 pub const CRISP_ALPHA: f32 = 0.55;
+
+/// The version slider's place in the pop-in ([`anim::window_open_progress`]): with Multiplayer,
+/// right under it, so every other element keeps its time.
+const VERSION_POP: usize = 1;
 
 /// One of the buttons.
 ///
@@ -191,6 +201,8 @@ pub struct AeroTitleEnv<'a> {
     pub labels: &'a [String; AeroButton::COUNT],
     /// The bottom-left line (vanilla's version line).
     pub version: &'a str,
+    /// The version the next connection plays: where the version slider's knob rests.
+    pub game_version: GameVersion,
     /// The bottom-right line (vanilla's copyright line).
     pub copyright: &'a str,
     /// Window size in physical pixels.
@@ -221,6 +233,9 @@ pub struct AeroTitleScreen {
     pub notice: update_notice::UpdateNotice,
     /// The Discord button (bottom right); the client opens the link.
     pub discord: discord::DiscordButton,
+    /// The version slider at the top of the column. The client routes clicks on it before the
+    /// buttons and saves what it picks ([`version_slider::VersionSlider::mouse_released`]).
+    pub version_slider: version_slider::VersionSlider,
 }
 
 impl AeroTitleScreen {
@@ -238,6 +253,7 @@ impl AeroTitleScreen {
             shown: [false; AeroButton::COUNT],
             notice: update_notice::UpdateNotice::default(),
             discord: discord::DiscordButton::default(),
+            version_slider: version_slider::VersionSlider::default(),
         }
     }
 
@@ -359,8 +375,8 @@ impl AeroTitleScreen {
             frost: FROST,
             // The buttons, plus one pane for the update card and one for the account pill
             // and one for the Discord button, so none of
-            // them reallocates per frame.
-            rects: Vec::with_capacity(AeroButton::COUNT + 3),
+            // them reallocates per frame. One more for the version slider.
+            rects: Vec::with_capacity(AeroButton::COUNT + 4),
         };
         let mut painter = Painter::new(list);
         let mut crisp = crisp.map(Painter::new);
@@ -421,6 +437,17 @@ impl AeroTitleScreen {
             }
         }
 
+        // ---- the version slider: element 1, with Multiplayer; its pane after the buttons' ----
+        let cursor = self.cursor;
+        self.version_slider.build(
+            &mut painter,
+            crisp.as_mut(),
+            env,
+            &layout,
+            &mut glass,
+            (elapsed, dt, cursor),
+        );
+
         // ---- the footer, with the last button ----
         let progress = anim::window_open_progress(elapsed, AeroButton::COUNT);
         if progress > 0.0 {
@@ -436,7 +463,6 @@ impl AeroTitleScreen {
 
         // The update card, bottom left, after the buttons' pop-in (an
         // `Option` test when there is none).
-        let cursor = self.cursor;
         self.notice.build(
             &mut painter,
             crisp.as_mut(),

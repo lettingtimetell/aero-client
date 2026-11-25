@@ -107,6 +107,9 @@ pub(crate) mod w21_accounts;
 pub(crate) mod w21_updater;
 // Background FPS: the frame cap while the window is in the background.
 pub(crate) mod background_fps;
+// The version the client plays (1.8.9 or 1.7.10): the title screen's slider, the mod menu's
+// Game version row, `--gameVersion`, and what a connection takes from them.
+pub(crate) mod game_version;
 
 /// A change is written once settings have been still for this long...
 const SAVE_DEBOUNCE: Duration = Duration::from_millis(750);
@@ -566,6 +569,9 @@ impl Client {
         if self.mods.settings.catalog()[index].id == "waypoints" {
             self.fill_waypoint_rows(index);
         }
+        if self.mods.settings.catalog()[index].id == game_version::MENU_MOD_ID {
+            self.fill_game_version_row(index);
+        }
     }
 
     /// Write unsaved mod settings now (shutdown).
@@ -656,7 +662,8 @@ impl Client {
         data.fps = self.debug_fps.fps;
         match self.session.as_ref() {
             Some(session) => {
-                data.ping_ms = session.state().latency_ms();
+                // 1.7.10's player list is keyed by name (`app/ui_v5.rs`).
+                data.ping_ms = super::ui_v5::session_latency_ms(session);
                 if let Some(predictor) = session.predictor() {
                     let pos = predictor.state.pos;
                     data.position = [pos.x, pos.y, pos.z];
@@ -881,7 +888,7 @@ impl Client {
     /// in physical pixels. `None` once nothing is left to draw. Also refreshes the expanded
     /// mod's dynamic rows. Separate from [`Client::build_mod_menu`] so tests can lay the menu
     /// out (and record its hit regions) without a GPU.
-    fn layout_mod_menu(
+    pub(super) fn layout_mod_menu(
         &mut self,
         size: (u32, u32),
         list: &mut DrawList,

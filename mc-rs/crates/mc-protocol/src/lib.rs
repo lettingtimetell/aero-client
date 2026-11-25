@@ -52,6 +52,7 @@ pub mod chunk;
 pub mod codec;
 pub mod compress;
 pub mod connection;
+pub mod connection_v5;
 pub mod crypt;
 pub mod handshake;
 pub mod item;
@@ -60,6 +61,7 @@ pub mod metadata;
 pub mod packet;
 pub mod play;
 pub mod status;
+pub mod v5;
 
 pub use buffer::{Angle, PacketBuffer};
 pub use compress::CompressionCodec;

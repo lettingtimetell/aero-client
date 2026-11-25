@@ -121,11 +121,25 @@ impl ReplaySummary {
 #[derive(Debug)]
 struct Timed {
     micros: u64,
-    packet: S2CPlay,
+    packet: Recorded,
     /// The frame's exact bytes, kept only for a source built to feed the
     /// replay recorder ([`ReplaySource::from_file_keeping_bytes`]).
     raw: Option<Box<[u8]>>,
 }
+
+/// A replayed packet, in the protocol of the capture's header.
+#[derive(Debug)]
+enum Recorded {
+    /// Protocol 47, 1.8.9.
+    V47(S2CPlay),
+    /// Protocol 5, 1.7.10 (`replay_v5.rs`), with the sky flag of the dimension it arrived in,
+    /// which lays out its chunk columns as on a live connection.
+    V5(Box<mc_protocol::v5::S2CPlay5>, bool),
+}
+
+// Protocol-5 (1.7.10) captures: their decode, a child module for the private queue types.
+#[path = "replay_v5.rs"]
+mod v5;
 
 /// The queue the source hands packets out of: a `VecDeque` because delivery is strictly
 /// front-to-back and the packets are moved out rather than cloned.
@@ -144,6 +158,8 @@ pub struct ReplaySource {
     /// The `Connected` message, taken on the first `next()` call.
     login: Option<LoginOutcome>,
     summary: ReplaySummary,
+    /// The version the capture was recorded in, from its header's protocol number.
+    version: mc_version::GameVersion,
 }
 
 impl ReplaySource {
@@ -218,7 +234,17 @@ impl ReplaySource {
         let mut packets: Queue = Queue::new();
         let mut login: Option<LoginOutcome> = None;
 
-        for frame in capture.frames() {
+        // A capture of a 1.7.10 connection decodes as protocol 5 (`replay_v5.rs`); the 1.8.9
+        // loop below then has no frame to read.
+        let frames_v47 = if mc_version::GameVersion::from_protocol(capture.meta.protocol)
+            == Some(mc_version::GameVersion::V1_7_10)
+        {
+            v5::decode_frames(capture, keep_bytes, &mut summary, &mut packets, &mut login)?;
+            &[][..]
+        } else {
+            capture.frames()
+        };
+        for frame in frames_v47 {
             if frame.direction != Direction::Clientbound {
                 continue;
             }
@@ -275,7 +301,7 @@ impl ReplaySource {
                     }
                     packets.push_back(Timed {
                         micros: frame.micros,
-                        packet,
+                        packet: Recorded::V47(packet),
                         raw: keep_bytes.then(|| Box::from(&frame.payload[..])),
                     });
                 }
@@ -322,6 +348,8 @@ impl ReplaySource {
             step_micros: step_micros.max(1),
             login: Some(login),
             summary,
+            version: mc_version::GameVersion::from_protocol(capture.meta.protocol)
+                .unwrap_or_default(),
         })
     }
 
@@ -335,6 +363,13 @@ impl ReplaySource {
     #[must_use]
     pub fn summary(&self) -> &ReplaySummary {
         &self.summary
+    }
+
+    /// The version the capture was recorded in (its header's protocol number; 1.8.9 for any
+    /// other): the session that plays it must be built for it ([`crate::Session::with_version`]).
+    #[must_use]
+    pub fn version(&self) -> mc_version::GameVersion {
+        self.version
     }
 
     /// How many packets are still to be delivered.
@@ -385,7 +420,15 @@ impl ReplaySource {
         // Moved, not cloned: a `MapChunkBulk` is hundreds of kilobytes and cloning one per
         // delivery would put an allocation the live path does not have into the measurement.
         let timed = self.packets.pop_front()?;
-        Some(ToGame::Packet(timed.packet).with_raw(timed.raw.filter(|_| tap)))
+        Some(match timed.packet {
+            Recorded::V47(packet) => ToGame::Packet(packet).with_raw(timed.raw.filter(|_| tap)),
+            // A 1.7.10 packet enters the session as a live one would: queued for the tick, its
+            // full chunk columns converted and unpacking in the background.
+            Recorded::V5(packet, sky) => {
+                let raw = timed.raw.filter(|_| tap);
+                crate::net::chunk_v5::message_v5(*packet, sky).with_raw_v5(raw)
+            }
+        })
     }
 }
 

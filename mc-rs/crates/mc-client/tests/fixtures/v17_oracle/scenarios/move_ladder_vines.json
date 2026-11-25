@@ -1,0 +1,18 @@
+{
+  "name": "move_ladder_vines",
+  "about": "Climbing a ladder, a shove away from the wall while climbing, holding position sneaking, sliding down, edging across to vines, climbing out over the top and jumping off (the 1.8.9 oracle's edge_ladder inputs).",
+  "world": "edge",
+  "spawn": [21.5, 64.0, -1.5, 180.0, 0.0],
+  "steps": [
+    {"hold": 2},
+    {"note": "to the ladder and up it", "keys": ["forward"], "hold": 36},
+    {"note": "a shove away from the wall", "in": [{"velocity": [0.0, 0.2, 0.4]}], "keys": ["forward"], "hold": 10},
+    {"keys": ["forward", "sneak"], "hold": 8},
+    {"note": "let go: slide down", "hold": 12},
+    {"note": "across to the vines", "keys": ["forward", "right"], "hold": 16},
+    {"keys": ["forward"], "hold": 80},
+    {"keys": ["forward", "jump"], "hold": 10},
+    {"look": [0.0, 0.0], "keys": ["forward", "jump"], "hold": 20},
+    {"hold": 16}
+  ]
+}

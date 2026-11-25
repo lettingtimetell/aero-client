@@ -34,12 +34,18 @@ use mc_protocol::connection::{
 use mc_protocol::handshake::NextState;
 use mc_protocol::play::{c2s, s2c, C2SPlay, S2CPlay};
 use mc_protocol::{PacketBuffer, ProtoError};
+use mc_version::GameVersion;
 use tokio::io::{AsyncRead, AsyncWrite, ReadBuf};
 use tokio::sync::mpsc::{Sender, UnboundedReceiver};
 
 use crate::error::ClientError;
 use crate::net::capture::CaptureSink;
 use crate::net::channel::{DisconnectOrigin, DisconnectReason, ToGame, ToNet};
+
+// The 1.7.10 (protocol 5) connection, selected in `run`. A child module, so that it shares this
+// file's helpers without a line of the 1.8.9 path changing.
+#[path = "task_v5.rs"]
+mod v5;
 
 /// Timestamp captured at the transport boundary, before framing or decode.
 type ActivityInstant = tokio::time::Instant;
@@ -101,6 +107,9 @@ pub struct ConnectOptions {
     /// to Mojang. Tests point it at a fake session server on loopback through
     /// [`ConnectOptions::with_session_join_url`].
     pub session_join_url: Option<String>,
+    /// The version the connection plays: 1.8.9 from both constructors, another one through
+    /// [`ConnectOptions::with_version`]. The handshake carries its protocol number.
+    pub version: GameVersion,
 }
 
 impl ConnectOptions {
@@ -117,6 +126,7 @@ impl ConnectOptions {
             proxy: None,
             capture: None,
             session_join_url: None,
+            version: GameVersion::V1_8_9,
         }
     }
 
@@ -131,7 +141,16 @@ impl ConnectOptions {
             proxy: None,
             capture: None,
             session_join_url: None,
+            version: GameVersion::V1_8_9,
         }
+    }
+
+    /// Play `version` on this connection (the version picked on the title screen, read once
+    /// when the connection opens).
+    #[must_use]
+    pub fn with_version(mut self, version: GameVersion) -> Self {
+        self.version = version;
+        self
     }
 
     /// Select vanilla's LAN-only tolerance for session-server authentication failures.
@@ -198,6 +217,12 @@ pub(crate) async fn run(
     from_game: UnboundedReceiver<ToNet>,
     raw_tap: std::sync::Arc<std::sync::atomic::AtomicBool>,
 ) {
+    // The connection's version picks the whole task body, once: 1.7.10 has its own login and
+    // play pump (`task_v5.rs`); 1.8.9 is everything below.
+    match opts.version {
+        GameVersion::V1_7_10 => return v5::run(opts, to_game, from_game, raw_tap).await,
+        GameVersion::V1_8_9 => {}
+    }
     // Plan §13's S22 -> S21 row. Off unless the caller asked or `MC_CAPTURE` names a file;
     // see `net::capture`.
     let address = format!("{}:{}", opts.host, opts.port);
@@ -1123,6 +1148,10 @@ where
                         return disconnect_reason_for(&err);
                     }
                 }
+                // A protocol-5 packet never belongs on a 1.8.9 connection: dropped, never sent.
+                Some(ToNet::SendV5(packet)) => {
+                    tracing::error!(?packet, "a 1.7.10 packet on a 1.8.9 connection; not sent");
+                }
                 Some(ToNet::Disconnect) | None => return DisconnectReason::ClosedByClient,
             },
 
@@ -1396,6 +1425,42 @@ mod tests {
             tokio::task::yield_now().await;
         }
         panic!("no packet arrived");
+    }
+
+    /// The connection's version reaches its handshake through `run`, which picks the login path
+    /// once: 47 from the constructors (this file's 1.8.9 login), 5 for 1.7.10 (`task_v5.rs`).
+    #[tokio::test]
+    async fn the_handshake_carries_the_connections_version() {
+        use mc_protocol::handshake::Handshake;
+
+        for (version, protocol) in [(None, 47), (Some(GameVersion::V1_7_10), 5)] {
+            let listener = tokio::net::TcpListener::bind("127.0.0.1:0")
+                .await
+                .expect("IPv4 loopback listener");
+            let port = listener.local_addr().expect("listener address").port();
+            let server = tokio::spawn(async move {
+                let (socket, _) = listener.accept().await.expect("accept the client");
+                let mut conn = Connection::new(socket);
+                let (id, mut body) = conn.read_packet().await.expect("handshake");
+                assert_eq!(id, Handshake::ID);
+                let handshake = Handshake::read(&mut body).expect("decode handshake");
+                assert_eq!(handshake.next_state, NextState::Login);
+                handshake.protocol_version
+            });
+            let (handle, to_game, immediate_to_game, from_game) = NetHandle::new_live_pair();
+            let mut opts = ConnectOptions::offline("127.0.0.1", port, "VersionTest");
+            if let Some(version) = version {
+                opts = opts.with_version(version);
+            }
+            // The server hangs up after the handshake: the login fails and `run` returns.
+            let raw_tap = handle.raw_tap_flag();
+            let _ = tokio::time::timeout(
+                Duration::from_secs(2),
+                run(opts, to_game, immediate_to_game, from_game, raw_tap),
+            )
+            .await;
+            assert_eq!(server.await.expect("server task"), protocol, "{version:?}");
+        }
     }
 
     #[tokio::test]

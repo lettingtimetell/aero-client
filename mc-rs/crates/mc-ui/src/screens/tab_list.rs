@@ -22,6 +22,11 @@ use crate::font::FontRenderer;
 use crate::widget::draw::{DrawList, UiTexture};
 use crate::widget::Transform;
 
+// Minecraft 1.7.10's player list: a child module, for this overlay's state and helpers.
+#[path = "tab_list_v5.rs"]
+mod v5;
+pub use v5::{TabCellV5, TabGridV5};
+
 /// Numeric ping is secondary information, smaller than the player name.
 const PING_TEXT_SCALE: f32 = 0.75;
 
@@ -289,6 +294,8 @@ pub struct TabListOverlay {
     /// Draw the rows element by element across all rows (see
     /// [`Self::set_pass_order`]); `None` follows `MC_NW_F3_PASSES` (on unless `=0`).
     pass_order: Option<bool>,
+    /// The 1.7.10 list's cells, rebuilt only when their inputs change (`tab_list_v5.rs`).
+    v5: v5::TabCacheV5,
 }
 
 /// The parts of one Tab row `TabListOverlay::draw` can draw separately.

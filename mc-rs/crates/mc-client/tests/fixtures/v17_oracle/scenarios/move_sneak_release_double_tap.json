@@ -1,0 +1,23 @@
+{
+  "name": "move_sneak_release_double_tap",
+  "about": "Holding W while sneaking and then releasing sneak: in 1.7.10 the release counts as a forward tap for double-tap sprint (no previous-sneak guard), so a following W tap sprints; two sneak releases sprint on their own; a plain double-tap W is the negative control.",
+  "world": "flat",
+  "spawn": [8.5, 64.0, 8.5, 0.0, 0.0],
+  "steps": [
+    {"hold": 3},
+    {"note": "W held while sneaking", "keys": ["forward", "sneak"], "hold": 10},
+    {"note": "release sneak", "keys": ["forward"], "hold": 3},
+    {"note": "tap W again within 7 ticks", "hold": 1},
+    {"keys": ["forward"], "hold": 8},
+    {"hold": 6},
+    {"note": "two sneak releases while holding W", "keys": ["forward", "sneak"], "hold": 3},
+    {"keys": ["forward"], "hold": 1},
+    {"keys": ["forward", "sneak"], "hold": 1},
+    {"keys": ["forward"], "hold": 8},
+    {"hold": 6},
+    {"note": "negative control: double-tap W", "keys": ["forward"], "hold": 1},
+    {"hold": 1},
+    {"keys": ["forward"], "hold": 8},
+    {"hold": 6}
+  ]
+}

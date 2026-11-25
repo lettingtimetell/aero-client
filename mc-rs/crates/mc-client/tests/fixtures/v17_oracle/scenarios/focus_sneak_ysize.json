@@ -1,0 +1,11 @@
+{
+  "name": "focus_sneak_ysize",
+  "about": "Hold sneak 10 ticks, release, idle 30 ticks. 1.7.10 posY = minY + 1.62F - ySize with ySize = 0.08000000566244125 while sneaking and x0.4 decay after release; compare posY and the C03 stance bit for bit.",
+  "world": "focus",
+  "spawn": [-10.5, 64.0, 40.5, 0.0, 0.0],
+  "steps": [
+    {"hold": 3},
+    {"hold": 10, "keys": ["sneak"]},
+    {"hold": 30}
+  ]
+}

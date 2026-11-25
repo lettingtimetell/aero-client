@@ -1,0 +1,12 @@
+{
+  "name": "focus_reach_entity_3blocks",
+  "about": "A zombie 3.2 blocks ahead (box face plus 0.1 border at x = 11.9) in front of a stone face at x = 13 (4.3 blocks). 1.7.10 searches entities only within 3.0, so the click digs the stone (C07 start); 1.8.9 finds the zombie, turns the pick into a MISS (no C02, no C07, leftClickCounter = 10).",
+  "world": "focus",
+  "spawn": [8.7, 64.0, 40.5, -90.0, 0.0],
+  "setup": [{"spawnMob": [100, 54, 12.3, 64.0, 40.5, 0.0]}],
+  "steps": [
+    {"hold": 3},
+    {"hold": 1, "tap": ["attack"]},
+    {"hold": 3}
+  ]
+}

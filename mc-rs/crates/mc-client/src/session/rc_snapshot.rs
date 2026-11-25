@@ -24,6 +24,7 @@ impl ClientState {
             world: self.world.try_clone_with(cloner)?,
             entities: self.entities.clone(),
             players: self.players.clone(),
+            players_v5: self.players_v5.clone(),
             scoreboard: self.scoreboard.clone(),
             env: self.env.clone(),
             local: self.local.clone(),
@@ -68,6 +69,13 @@ impl Session {
             world_generation: self.world_generation,
             hit_particles: self.hit_particles.clone(),
             tapped_raw: None,
+            // The copy plays the same version as the session it was taken from.
+            version: self.version,
+            // Copies are taken after every pushed packet was applied: nothing waits in the
+            // 1.7.10 queue either (playback drains it when it flushes its packets).
+            inbound_v5: super::v5::InboundV5::default(),
+            // A replay holds no screen packets; the rest is copied like every other field.
+            sends_v5: self.sends_v5.clone(),
         })
     }
 }

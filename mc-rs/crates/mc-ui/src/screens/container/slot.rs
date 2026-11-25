@@ -93,6 +93,13 @@ pub enum SlotRole {
         /// Whether this mount accepts armour.
         can_wear: bool,
     },
+    /// 1.7.10's `ContainerHorseInventory` slot 1: the same `canWearArmor()` gate, then exactly
+    /// the three horse armours (java17 `ContainerHorseInventory.<init>`, `:32-34`, and
+    /// `EntityHorse.func_146085_a`, `:1647-1650`).
+    HorseArmorV5 {
+        /// Whether this mount accepts armour.
+        can_wear: bool,
+    },
 }
 
 impl SlotRole {
@@ -131,13 +138,18 @@ impl SlotRole {
             SlotRole::HorseArmor { can_wear } => {
                 can_wear && stack_ext::props(stack).armor_material.is_some()
             }
+            // Iron (417), golden (418) and diamond (419) horse armour.
+            SlotRole::HorseArmorV5 { can_wear } => can_wear && matches!(stack.item_id, 417..=419),
         }
     }
 
     /// java: `Slot.canBeHovered`. This is intentionally independent from click hit-testing.
     #[must_use]
     pub const fn can_be_hovered(self) -> bool {
-        !matches!(self, SlotRole::HorseArmor { can_wear: false })
+        !matches!(
+            self,
+            SlotRole::HorseArmor { can_wear: false } | SlotRole::HorseArmorV5 { can_wear: false }
+        )
     }
 }
 

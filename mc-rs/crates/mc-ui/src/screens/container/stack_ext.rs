@@ -163,6 +163,14 @@ pub fn split_stack(stack: &mut ItemStack, amount: i32) -> ItemStack {
     }
 }
 
+// The helpers above in a given game version's item registry (1.7.10's or 1.8.9's).
+#[path = "stack_ext_v5.rs"]
+mod v5;
+pub use v5::{
+    has_subtypes_in, is_item_damaged_in, is_stack_damageable_in, is_stackable_in,
+    max_stack_size_in, props_in, same_item_respecting_subtypes_in, try_props_in,
+};
+
 #[cfg(test)]
 mod tests {
     use super::*;

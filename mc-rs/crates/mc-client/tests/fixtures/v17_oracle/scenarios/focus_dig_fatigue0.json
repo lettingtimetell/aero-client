@@ -1,0 +1,12 @@
+{
+  "name": "focus_dig_fatigue0",
+  "about": "Diamond pickaxe on stone under mining fatigue amplifier 0. 1.7.10 factor 1 - 0.2*(amp+1) = 0.8 (C07 stop on the 8th damage tick); 1.8.9 factor 0.3 (19th).",
+  "world": "focus",
+  "spawn": [6.5, 64.0, 24.5, -90.0, 35.0],
+  "setup": [{"slot": 36, "item": 278}, {"effect": [4, 0, 2000]}],
+  "steps": [
+    {"hold": 3},
+    {"hold": 25, "keys": ["attack"]},
+    {"hold": 3}
+  ]
+}

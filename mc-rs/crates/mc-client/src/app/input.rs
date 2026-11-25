@@ -369,6 +369,14 @@ impl RawKeyboard {
     pub fn drain_presses(&mut self) -> Vec<KeyPress> {
         std::mem::take(&mut self.queued)
     }
+
+    /// Queue `presses`, taken earlier by [`Self::drain_presses`], again ahead of anything queued
+    /// since, oldest first, and leave `presses` empty. The held modifiers stay as they are; each
+    /// press keeps the snapshot it was queued with. A 1.7.10 session takes a frame's presses at
+    /// the frame and hands them back at its tick (`app/send_sites_v5.rs`).
+    pub(crate) fn requeue_presses(&mut self, presses: &mut Vec<KeyPress>) {
+        self.queued.splice(0..0, presses.drain(..));
+    }
 }
 
 /// The character a physical key produces on a **US QWERTY** layout — the *fallback*

@@ -140,6 +140,13 @@ impl MouseState {
         Self::default()
     }
 
+    /// The drag mode the current (or last) drag uses: `0` split evenly, `1` one per slot, `2`
+    /// a full stack per slot (1.8.9 creative). java: `GuiContainer.dragSplittingLimit`.
+    #[must_use]
+    pub const fn drag_splitting_limit(&self) -> i32 {
+        self.drag_splitting_limit
+    }
+
     /// java: `GuiContainer.mouseClicked`. `pick_block` is whether the button pressed is bound
     /// to vanilla's "pick block" action (middle-click by default); `shift` is whether shift is
     /// currently held. Returns the one click event this press produces immediately, or `None`
@@ -187,6 +194,7 @@ impl MouseState {
                     self.drag_splitting = true;
                     self.drag_splitting_button = button;
                     self.drag_splitting_slots.clear();
+                    let last_limit = self.drag_splitting_limit;
                     self.drag_splitting_limit = if button == LEFT {
                         0
                     } else if button == RIGHT {
@@ -194,6 +202,11 @@ impl MouseState {
                     } else {
                         2
                     };
+                    // java17 `GuiContainer.mouseClicked` sets the limit for the left and right
+                    // buttons only, so a pick-block drag reuses the last one (0 in a new screen).
+                    if container.game_version().is_1_7_10() && button != LEFT && button != RIGHT {
+                        self.drag_splitting_limit = last_limit;
+                    }
                 }
             }
         }

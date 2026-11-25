@@ -1,0 +1,42 @@
+name	state	dir	id	body_hex	verdict	reencoded_hex	note
+s01_spectator_difficulty6_FLAT	PLAY	S2C	0x01	000000070b00061404464c4154	ok	000000070800021404666c6174	GameType.getByID(3) is SURVIVAL, 6 % 4 = 2, case-insensitive name
+s01_unknown_world_type	PLAY	S2C	0x01	00000007000000140a637573746f6d697a6564	ok	00000007000000140764656661756c74	customized is not a 1.7.10 type: DEFAULT
+s01_dotless_i	PLAY	S2C	0x01	00000007000000140c6c6172676542c4b16f6d6573	ok	00000007000000140b6c6172676542696f6d6573	largeB<U+0131>omes: equalsIgnoreCase folds it
+s07_gamemode_9	PLAY	S2C	0x07	ffffffff05090764656661756c74	ok	ffffffff01000764656661756c74	respawn: 5 % 4, getByID(9)
+s0e_negative_data	PLAY	S2C	0x0E	053c0000000000000000000000000000ffffffff	ok	053c0000000000000000000000000000ffffffff	data <= 0: no velocity read
+s13_negative_count	PLAY	S2C	0x13	ff	error:NegativeArraySizeException		new int[-1]
+s20_bad_operation	PLAY	S2C	0x20	000000010000000101613ff0000000000000000100000000000000000000000000000000000000000000000003	error:IllegalArgumentException		operation 3 fails Validate
+s20_negative_counts	PLAY	S2C	0x20	00000001ffffffff	ok	0000000100000000	the property loop never runs
+s21_bad_zlib	PLAY	S2C	0x21	0000000000000000010001000000000004789d0102	error:IOException		incorrect zlib header check
+s21_truncated_zlib	PLAY	S2C	0x21	0000000000000000010001000000000002789c	ok-noreencode:NullPointerException		header only: one inflate call, zeros
+s21_dictionary	PLAY	S2C	0x21	000000000000000000000100000000000678bb00000001	ok-noreencode:NullPointerException		FDICT: inflate returns 0, no exception
+s22_zero_length	PLAY	S2C	0x22	0000000100000002000300000000	ok	0000000100000002000300000000	length 0: data stays null
+s22_negative_length	PLAY	S2C	0x22	00000001000000020003ffffffff	ok	0000000100000002000300000000	negative: data stays null
+s26_negative_count	PLAY	S2C	0x26	ffff0000000001	error:NegativeArraySizeException		new int[-1]
+s27_negative_count	PLAY	S2C	0x27	00000000000000000000000040800000ffffffff	error:IllegalArgumentException		new ArrayList(-1)
+s30_negative_count	PLAY	S2C	0x30	00ffff	error:NegativeArraySizeException		new ItemStack[-1]
+s3a_negative_count	PLAY	S2C	0x3A	ffffffff0f	error:NegativeArraySizeException		new String[-1]
+s3c_remove_has_no_objective	PLAY	S2C	0x3C	05537465766501	ok	05537465766501	action 1: nothing more
+s3e_negative_players	PLAY	S2C	0x3E	0372656403ffff	ok	03726564030000	mode 3, count -1: none read
+s2d_horse	PLAY	S2C	0x2D	020b05486f7273650201000003f6	ok	020b05486f7273650201000003f6	type 11 reads the entity id
+s04_slot_nbt_minus_two	PLAY	S2C	0x04	0000004d00000001010000fffe	ok	0000004d00000001010000ffff	any negative NBT length is no tag
+s04_slot_nbt_zero_length	PLAY	S2C	0x04	0000004d000000010100000000	error:EOFException		NBT length 0: empty gzip stream, EOFException
+s04_slot_negative_damage	PLAY	S2C	0x04	0000004d00000001c8ffffffff	ok	0000004d00000001c80000ffff	damage clamped to 0, count -56
+s1c_type7_null_entry	PLAY	S2C	0x1C	00000001e400057f	ok-noreencode:NullPointerException		type 7: null entry, nothing consumed
+s1c_empty	PLAY	S2C	0x1C	000000017f	ok	000000017f	terminator only: null list
+s3f_short_payload	PLAY	S2C	0x3F	016100050102	error:IndexOutOfBoundsException		length longer than the frame
+c02_action_minus_2	PLAY	C2S	0x02	00000001fe	ok	0000000100	-2 % 2 == 0: INTERACT
+c02_action_minus_1	PLAY	C2S	0x02	00000001ff	error:ArrayIndexOutOfBoundsException		-1 % 2 == -1: AIOOBE
+c16_status_5	PLAY	C2S	0x16	05	ok	02	5 % 3 = 2
+c16_status_minus_1	PLAY	C2S	0x16	ff	error:ArrayIndexOutOfBoundsException		AIOOBE
+c15_difficulty_6	PLAY	C2S	0x15	05656e5f55530c00010601	ok	05656e5f55530c00010201	6 % 4 = 2
+c17_negative_length	PLAY	C2S	0x17	0161ffff	ok	0161ffff	length -1: no payload read
+c17_length_32767	PLAY	C2S	0x17	01617fff	ok	01617fff	length 32767: no payload read
+s21_empty_array_bad_zlib	PLAY	S2C	0x21	0000000000000000000000000000000004789d0102	error:IOException		array of 0: bad header still throws
+s21_empty_array_bad_block	PLAY	S2C	0x21	0000000000000000000000000000000003789c07	error:IOException		array of 0: invalid block type still throws
+s21_empty_array_literal	PLAY	S2C	0x21	0000000000000000000000000000000009789c4b040000620062	ok-noreencode:NullPointerException		array of 0: stops before the first literal
+s26_zero_count_bad_zlib	PLAY	S2C	0x26	00000000000401789d0102	error:IOException		no columns: bad header still throws
+s26_zero_count_empty	PLAY	S2C	0x26	00000000000001	ok-noreencode:NullPointerException		no columns, no stream
+s2f_nbt_end_list	PLAY	S2C	0x2F	0000010001010000001f1f8b0800000000000000e36260e06460cc610002660600a27eaf620d000000	ok	0000010001010000001f1f8b0800000000000000e36260e06460cc610002660600a27eaf620d000000	TAG_End list with three elements
+s2f_nbt_empty_string_list	PLAY	S2C	0x2F	0000010001010000001e1f8b0800000000000000e36260e06460cce1600001000cafd1a50d000000	ok	0000010001010000001d1f8b0800000000000000e36260e06460cc61000300612d82490d000000	empty list declared as strings
+s2f_nbt_negative_list_count	PLAY	S2C	0x2F	0000010001010000001f1f8b0800000000000000e36260e06460cc61fe0f040c002d57cbf60d000000	ok	0000010001010000001d1f8b0800000000000000e36260e06460cc61000300612d82490d000000	list count -1: empty

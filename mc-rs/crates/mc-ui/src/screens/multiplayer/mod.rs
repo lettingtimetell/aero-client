@@ -23,6 +23,7 @@ pub mod server_data;
 pub mod status;
 
 use mc_assets::Language;
+use mc_version::GameVersion;
 
 use crate::font::FontRenderer;
 use crate::screen_stack::ScreenCtx;
@@ -35,7 +36,8 @@ use crate::widget::{Button, ScrollList, ScrollbarX};
 pub use server_data::{ResourceMode, ServerEntry, ServerList};
 pub use status::{StatusResponse, FAVICON_SIDE};
 
-/// The protocol version this client speaks. The protocol-47 rule.
+/// The protocol version this client speaks. The protocol-47 rule. A list shown for 1.7.10 compares with
+/// that version's instead ([`MultiplayerScreen::set_client_version`]).
 pub const CLIENT_PROTOCOL: i32 = 47;
 
 /// `ServerListEntryNormal` submits ping work to a five-thread executor. The app owns the actual
@@ -261,6 +263,17 @@ impl MultiplayerScreen {
         self.ping_generation = generation;
     }
 
+    /// Show the list to a client that plays `version` (1.8.9 unless this is called): each saved
+    /// row is compared with `version`'s protocol, and a row that was pinged by another version
+    /// (the list keeps its rows' ping state between visits) forgets that ping and is pinged again
+    /// with `version`'s protocol ([`ServerEntry::set_client_version`]). Call it when the screen
+    /// opens, before the first ping.
+    pub fn set_client_version(&mut self, version: GameVersion) {
+        for entry in self.servers.entries_mut() {
+            entry.set_client_version(version);
+        }
+    }
+
     /// Invalidate queued results while keeping this screen instance alive (for example behind a
     /// confirmation dialog).
     pub fn invalidate_ping_generation(&mut self) {
@@ -299,13 +312,7 @@ impl MultiplayerScreen {
         // must not let the previous visit's status, population, sample list, or version label
         // leak into the new selector while the next status request is pending.
         for entry in self.servers.entries_mut() {
-            entry.state = server_data::PingState::Unqueried;
-            entry.motd.clear();
-            entry.population.clear();
-            entry.player_list.clear();
-            entry.ping_ms = 0;
-            entry.protocol = CLIENT_PROTOCOL;
-            entry.game_version = "1.8.9".to_owned();
+            entry.forget_ping();
         }
         self.lan_servers.clear();
         self.select(-1);
@@ -1853,5 +1860,77 @@ mod tests {
             overlay_positions.iter().all(|&y| y >= hovered.y as f32),
             "the selected-but-not-hovered first row must not receive overlay art"
         );
+    }
+
+    // ---- the version the list is shown for ----------------------------------------------------
+
+    fn status_of(protocol: i32, name: &str) -> StatusResponse {
+        StatusResponse::parse(&format!(
+            r#"{{"players":{{"online":1,"max":9}},"version":{{"name":"{name}","protocol":{protocol}}}}}"#
+        ))
+        .expect("status response")
+    }
+
+    /// java17 `ServerListEntryNormal.drawEntry` compares with 5 where java18 compares with 47.
+    #[test]
+    fn a_list_shown_for_1_7_10_compares_servers_with_protocol_5() {
+        let mut s = screen(3);
+        s.set_client_version(GameVersion::V1_7_10);
+        for entry in s.servers.entries() {
+            // java17 `ServerData.<init>`'s defaults.
+            assert_eq!((entry.protocol, entry.game_version.as_str()), (5, "1.7.10"));
+            assert!(
+                !entry.version_mismatch(),
+                "not out of date before a ping answers"
+            );
+        }
+        s.apply_ping(0, &status_of(5, "1.7.10"), 20, &lang());
+        s.apply_ping(1, &status_of(47, "1.8.9"), 20, &lang());
+        s.apply_ping(2, &status_of(4, "1.7.2"), 20, &lang());
+        let entry = |index: usize| s.servers.get(index).expect("row");
+        assert!(!entry(0).version_mismatch());
+        assert_eq!(row::ping_tooltip(entry(1)), "Client out of date!");
+        assert_eq!(row::ping_tooltip(entry(2)), "Server out of date!");
+
+        // Negative control: the same answers on a 1.8.9 list.
+        let mut s = screen(2);
+        s.apply_ping(0, &status_of(5, "1.7.10"), 20, &lang());
+        s.apply_ping(1, &status_of(47, "1.8.9"), 20, &lang());
+        let entry = |index: usize| s.servers.get(index).expect("row");
+        assert_eq!(row::ping_tooltip(entry(0)), "Server out of date!");
+        assert!(!entry(1).version_mismatch());
+    }
+
+    #[test]
+    fn a_list_shown_for_another_version_pings_its_rows_again() {
+        let mut s = screen(2);
+        let _ = s.take_ping_queue();
+        s.apply_ping(0, &status_of(47, "1.8.9"), 20, &lang());
+        s.fail_ping(1, false);
+        // The rows keep their ping state between visits: shown for 1.8.9 again, nothing changes.
+        let before = s.servers.clone();
+        s.set_client_version(GameVersion::V1_8_9);
+        assert_eq!(s.servers, before, "1.8.9 rows stay exactly as they were");
+        // Shown for 1.7.10: both forget what their 1.8.9 pings said and are pinged again.
+        s.set_client_version(GameVersion::V1_7_10);
+        for entry in s.servers.entries() {
+            assert_eq!(entry.state, server_data::PingState::Unqueried);
+            assert!(entry.motd.is_empty() && entry.population.is_empty());
+            assert_eq!(entry.client_version, GameVersion::V1_7_10);
+        }
+        s.queue_visible_pings();
+        assert_eq!(s.take_ping_queue().len(), 2);
+    }
+
+    #[test]
+    fn a_refresh_resets_rows_to_the_versions_own_defaults() {
+        let mut s = screen(1);
+        s.set_client_version(GameVersion::V1_7_10);
+        s.apply_ping(0, &status_of(47, "1.8.9"), 20, &lang());
+        assert!(s.servers.get(0).expect("row").version_mismatch());
+        s.activate(ids::REFRESH);
+        let entry = s.servers.get(0).expect("row");
+        assert_eq!((entry.protocol, entry.game_version.as_str()), (5, "1.7.10"));
+        assert!(!entry.version_mismatch());
     }
 }

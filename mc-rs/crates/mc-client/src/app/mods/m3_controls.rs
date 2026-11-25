@@ -345,6 +345,11 @@ impl Zoom {
         true
     }
 
+    /// Whether [`Self::wheel`] would take a notch now, without zooming.
+    pub(crate) fn takes_wheel(&self) -> bool {
+        self.enabled && self.scroll && self.active
+    }
+
     /// The world camera's FOV multiplier, zoomed.
     #[must_use]
     pub(crate) fn fov(&self, f: f32) -> f32 {
@@ -634,6 +639,12 @@ impl Client {
     /// The top of `mouse_wheel`: `true` when the zoom consumed the notch.
     pub(crate) fn zoom_wheel(&mut self, delta: f32) -> bool {
         matches!(self.ui, Ui::InGame) && self.m3.zoom.wheel(delta)
+    }
+
+    /// Whether [`Client::zoom_wheel`] would consume a notch now, without zooming (the 1.7.10
+    /// screen phase keeps a zoom notch in the frame, `app/send_sites_v5.rs`).
+    pub(crate) fn zoom_takes_wheel(&self) -> bool {
+        matches!(self.ui, Ui::InGame) && self.m3.zoom.takes_wheel()
     }
 
     /// Dynamic FOV's flattened target. Unchanged at the vanilla
@@ -1296,5 +1307,36 @@ mod tests {
             half,
             Mat4::from_rotation_z((-wave * 14.0 * 0.5).to_radians())
         ));
+    }
+
+    /// A 1.7.10 session's screen pass asks [`Client::zoom_takes_wheel`] whether a wheel notch is
+    /// the zoom's before it leaves the notch to the frame (`app/send_sites_v5.rs`), so the copy
+    /// must answer what [`Client::zoom_wheel`] then does: on every kind of screen, for every
+    /// state of the three flags the two gates read (the mod, its scroll option, the key held).
+    #[test]
+    fn zoom_takes_wheel_answers_what_zoom_wheel_does() {
+        let Some((mut client, _dir)) = offline_client() else {
+            return;
+        };
+        let mut taken = 0;
+        for screen in ["in game", "chat", "title"] {
+            for flags in 0..8_u8 {
+                match screen {
+                    "in game" => client.ui = Ui::InGame,
+                    "chat" => client.open_chat(""),
+                    _ => client.ui = Ui::MainMenu(client.main_menu(String::new())),
+                }
+                let zoom = &mut client.m3.zoom;
+                zoom.enabled = flags & 1 != 0;
+                zoom.scroll = flags & 2 != 0;
+                zoom.active = flags & 4 != 0;
+                let takes = client.zoom_takes_wheel();
+                let took = client.zoom_wheel(1.0);
+                assert_eq!(takes, took, "{screen}, flags {flags:03b}");
+                taken += usize::from(took);
+            }
+        }
+        // Not vacuous: the zoom takes the notch in exactly one state (in game, all three set).
+        assert_eq!(taken, 1);
     }
 }

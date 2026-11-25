@@ -1,0 +1,22 @@
+{
+  "name": "move_creative_flight",
+  "about": "Creative: double-tap jump to fly, ascending and descending (1.7.10: a constant 0.15 a tick), sprint-flying (1.7.10 does not double the fly acceleration), knockback while flying, a faster fly speed from S39, landing.",
+  "world": "flat",
+  "gameType": 1,
+  "spawn": [20.5, 64.0, -28.5, 0.0, 0.0],
+  "setup": [{"abilities": [13, 0.05, 0.1]}],
+  "steps": [
+    {"hold": 2},
+    {"note": "double-tap jump: fly", "keys": ["jump"], "hold": 1},
+    {"hold": 1},
+    {"keys": ["jump"], "hold": 1},
+    {"note": "ascend", "keys": ["jump"], "hold": 15},
+    {"note": "descend", "keys": ["sneak"], "hold": 10},
+    {"note": "sprint-fly", "keys": ["forward", "sprint"], "hold": 20},
+    {"keys": ["forward"], "hold": 10},
+    {"note": "knockback while flying", "in": [{"velocity": [0.2, 0.3, 0.1]}], "keys": ["forward"], "hold": 6},
+    {"note": "S39: fly speed 0.1", "in": [{"abilities": [15, 0.1, 0.1]}], "keys": ["forward", "jump"], "hold": 10},
+    {"note": "land", "keys": ["sneak"], "hold": 40},
+    {"hold": 4}
+  ]
+}

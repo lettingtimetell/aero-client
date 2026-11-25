@@ -579,6 +579,10 @@ impl Client {
         if let Some(taken) = self.discord_title_mouse(button, pressed) {
             return taken;
         }
+        // The version slider (the column's top) takes the clicks on itself before the buttons.
+        if let Some(taken) = self.version_slider_mouse(button, pressed) {
+            return taken;
+        }
         let Some(screen) = self
             .aero
             .live
@@ -907,6 +911,8 @@ impl Client {
             crate::app::stability::UI_ANIMATION_CYCLE,
         );
         let logo = self.aero.logo_style(&self.mods.settings);
+        // Where the version slider's knob rests.
+        let game_version = self.selected_game_version();
         // The mod menu over the title screen steps the UI aside too.
         let menu_over = self.mod_menu_over_title();
         let browsing = self.replay_browser_over_title() || menu_over;
@@ -992,6 +998,7 @@ impl Client {
             mc_font: &mut self.font,
             labels,
             version,
+            game_version,
             copyright: COPYRIGHT,
             screen: (width as f32, height as f32),
             now,

@@ -1,0 +1,19 @@
+{
+  "name": "place_far_coordinates",
+  "about": "Right-clicks on a wall at x = 10000.4999, 10002.06249, 10004.9999 and the floor at 10006.4999: 1.7.10 computes the C08 hit offsets as (float)hit - (float)block, 1.8.9 as (float)(hit - block), so the cursor bytes differ near 1/16 boundaries.",
+  "world": "far",
+  "spawn": [10000.4999, 64.0, 9.5, 0.0, 0.0],
+  "setup": [{"slot": 36, "item": 1, "count": 64}],
+  "watch": [[10000, 65, 11], [10002, 65, 11], [10004, 65, 11], [10006, 64, 10]],
+  "steps": [
+    {"hold": 2},
+    {"note": "the wall at x = 10000.4999", "tap": ["use"], "hold": 3},
+    {"note": "x = 10002.06249", "in": [{"posLook": [10002.06249, 64.0, 9.5, 0.0, 0.0]}], "hold": 2},
+    {"tap": ["use"], "hold": 3},
+    {"note": "x = 10004.9999", "in": [{"posLook": [10004.9999, 64.0, 9.5, 0.0, 0.0]}], "hold": 2},
+    {"tap": ["use"], "hold": 3},
+    {"note": "the floor at x = 10006.4999", "in": [{"posLook": [10006.4999, 64.0, 9.5, 0.0, 50.0]}], "hold": 2},
+    {"tap": ["use"], "hold": 3},
+    {"hold": 2}
+  ]
+}

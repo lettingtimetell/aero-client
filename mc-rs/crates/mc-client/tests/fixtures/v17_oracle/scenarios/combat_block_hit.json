@@ -1,0 +1,32 @@
+{
+  "name": "combat_block_hit",
+  "about": "Sword blocking (C08 use form), clicks drained while blocking, C07 RELEASE_USE_ITEM (1.7.10 face 255), block-hit alternation, holding attack on a block while blocking (1.7.10 digs and swings, 1.8.9 does nothing), the server replacing the held sword (the 1.8.9 oracle's block_hit_cycle inputs, extended).",
+  "world": "arena",
+  "spawn": [8.5, 64.0, 8.5, 0.0, 0.0],
+  "setup": [{"slot": 36, "item": 276}],
+  "steps": [
+    {"in": [{"spawnPlayer": [200, 8.5, 64.0, 11.0, 180.0, 0.0], "name": "Target"}], "hold": 2},
+    {"note": "block with the sword; clicks while blocking are drained", "keys": ["forward", "use"], "hold": 3},
+    {"tap": ["attack"], "keys": ["forward", "use"], "hold": 2},
+    {"note": "release: C07 RELEASE_USE_ITEM", "keys": ["forward"], "hold": 1},
+    {"note": "block-hit alternation", "tap": ["attack"], "keys": ["forward"], "hold": 1},
+    {"keys": ["forward", "use"], "hold": 2},
+    {"keys": ["forward"], "hold": 1},
+    {"tap": ["attack"], "keys": ["forward"], "hold": 1},
+    {"keys": ["forward", "use"], "hold": 2},
+    {"keys": ["forward"], "hold": 1},
+    {"tap": ["attack"], "keys": ["forward"], "hold": 1},
+    {"keys": ["forward", "use"], "hold": 2},
+    {"keys": ["forward"], "hold": 1},
+    {"tap": ["attack"], "keys": ["forward"], "hold": 1},
+    {"keys": ["forward", "use"], "hold": 2},
+    {"keys": ["forward"], "hold": 1},
+    {"note": "blocking while holding attack on the floor", "look": [0.0, 60.0], "keys": ["use"], "hold": 2},
+    {"keys": ["use", "attack"], "hold": 12},
+    {"keys": ["attack"], "hold": 1},
+    {"hold": 3},
+    {"note": "the server replaces the held sword: the use ends", "look": [0.0, 0.0], "keys": ["use"], "hold": 2},
+    {"in": [{"slot": 36, "item": 276}], "keys": ["use"], "hold": 3},
+    {"hold": 5}
+  ]
+}

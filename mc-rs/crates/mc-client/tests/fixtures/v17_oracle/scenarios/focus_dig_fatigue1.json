@@ -1,0 +1,12 @@
+{
+  "name": "focus_dig_fatigue1",
+  "about": "As focus_dig_fatigue0 with amplifier 1. 1.7.10 factor 0.6 (10 ticks); 1.8.9 factor 0.09 (63 ticks).",
+  "world": "focus",
+  "spawn": [6.5, 64.0, 24.5, -90.0, 35.0],
+  "setup": [{"slot": 36, "item": 278}, {"effect": [4, 1, 2000]}],
+  "steps": [
+    {"hold": 3},
+    {"hold": 70, "keys": ["attack"]},
+    {"hold": 3}
+  ]
+}

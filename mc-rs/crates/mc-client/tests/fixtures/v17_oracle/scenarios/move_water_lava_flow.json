@@ -1,0 +1,23 @@
+{
+  "name": "move_water_lava_flow",
+  "about": "Into a still pool, sinking, swimming across, a shove and an explosion push while swimming, Slowness (S20) mid-swim, out over the far edge (the +0.3 kick), the flowing channel, then the lava pool (the 1.8.9 oracle's edge_water inputs).",
+  "world": "edge",
+  "spawn": [0.5, 64.0, -14.5, 0.0, 0.0],
+  "steps": [
+    {"hold": 2},
+    {"note": "into the still pool", "keys": ["forward"], "hold": 12},
+    {"hold": 10},
+    {"keys": ["forward", "jump"], "hold": 10},
+    {"note": "a shove while swimming", "in": [{"velocity": [-0.2, 0.3, 0.25]}], "keys": ["forward"], "hold": 6},
+    {"note": "an explosion push", "in": [{"explosion": [0.5, 61.0, -6.0, 2.0, 0.1, 0.25, 0.2]}], "keys": ["forward", "jump"], "hold": 6},
+    {"note": "Slowness mid-swim", "in": [{"speed": 0.10000000149011612, "modifiers": [["7107DE5E-7CE8-4030-940E-514C1F160890", -0.30000001192092896, 2]]}], "keys": ["forward", "sprint"], "hold": 8},
+    {"note": "out over the far edge", "keys": ["forward", "jump"], "hold": 50},
+    {"note": "the flowing channel", "in": [{"speed": 0.10000000149011612}], "keys": ["forward"], "hold": 14},
+    {"hold": 16},
+    {"keys": ["forward", "jump"], "hold": 30},
+    {"note": "the lava pool", "keys": ["forward"], "hold": 20},
+    {"hold": 16},
+    {"keys": ["forward", "jump"], "hold": 100},
+    {"hold": 10}
+  ]
+}

@@ -139,7 +139,7 @@ struct HistoryEntry {
 pub struct Predictor {
     /// The player's current predicted state.
     pub state: PhysicsState,
-    tick: u64,
+    pub(crate) tick: u64,
     history: VecDeque<HistoryEntry>,
     history_limit: usize,
     last_reported: DVec3,
@@ -153,6 +153,8 @@ pub struct Predictor {
     /// The bit belongs to the predicted local entity rather than to the border packet: vanilla
     /// uses it as a one-block hysteresis latch when choosing between real blocks and stone.
     outside_border: bool,
+    /// The 1.7.10 player fields; `Some` only for [`Predictor::new_v5`]. See [`crate::v5`].
+    pub(crate) v5: Option<crate::v5::PlayerV5>,
 }
 
 impl Predictor {
@@ -177,6 +179,7 @@ impl Predictor {
             position_update_ticks: 0,
             corrections: 0,
             outside_border: false,
+            v5: None,
         }
     }
 

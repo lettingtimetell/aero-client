@@ -83,6 +83,8 @@ impl Container {
             && pkt.window_id as u8 == self.window_id
             && self.kind == ContainerKind::Enchanting
             && (pkt.slot == 0 || pkt.slot == 1);
+        // 1.7.10's table has slot 0 only (`model_v5.rs`).
+        let updates_enchanting_table = updates_enchanting_table || self.table_slot_v5(pkt);
         if pkt.window_id == -1 {
             self.set_cursor(pkt.item.clone());
         } else if pkt.window_id >= 0 && pkt.window_id as u8 == self.window_id && pkt.slot >= 0 {
@@ -103,6 +105,9 @@ impl Container {
             self.set_slot_contents(i, item.clone());
         }
         if self.kind == ContainerKind::Enchanting && !pkt.items.is_empty() {
+            self.enchanting_inputs_changed = true;
+        }
+        if self.kind == ContainerKind::EnchantingV5 && !pkt.items.is_empty() {
             self.enchanting_inputs_changed = true;
         }
     }

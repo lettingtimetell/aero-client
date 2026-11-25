@@ -59,6 +59,7 @@ pub mod item;
 pub mod misc;
 pub mod recipe;
 pub mod stat;
+pub mod v5;
 
 mod generated;
 

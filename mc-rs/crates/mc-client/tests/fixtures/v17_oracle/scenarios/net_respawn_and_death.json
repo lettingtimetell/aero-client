@@ -1,0 +1,17 @@
+{
+  "name": "net_respawn_and_death",
+  "about": "A server switch while sprinting: S07 to the Nether and straight back in one frame (1.7.10 builds a new player without carrying the sprint flag; 1.8.9 copies the data watcher), abilities, held item, chunks, the S08, sprinting again; then S06 with health 0 (the death screen).",
+  "world": "flat",
+  "spawn": [8.5, 64.0, 8.5, 0.0, 0.0],
+  "steps": [
+    {"keys": ["forward", "sprint", "jump"], "hold": 6},
+    {"note": "S07 to the Nether and back", "in": [{"respawn": [-1, 0]}, {"respawn": [0, 0]}], "keys": ["forward", "sprint"], "hold": 2},
+    {"in": [{"abilities": [0, 0.05, 0.1]}, {"heldItem": 0}], "keys": ["forward", "sprint"], "hold": 1},
+    {"in": [{"world": true}], "keys": ["forward", "sprint"], "hold": 2},
+    {"in": [{"posLook": [8.5, 64.0, 8.5, 0.0, 0.0]}], "keys": ["forward", "sprint"], "hold": 4},
+    {"hold": 1},
+    {"keys": ["forward", "sprint", "jump"], "hold": 10},
+    {"note": "health 0: the death screen", "in": [{"health": [0.0, 20, 5.0]}], "hold": 5},
+    {"hold": 3}
+  ]
+}

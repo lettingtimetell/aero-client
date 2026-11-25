@@ -52,6 +52,7 @@ use std::time::{SystemTime, UNIX_EPOCH};
 
 use mc_data::{state_properties, BlockId, BlockState};
 use mc_math::BlockPos;
+use mc_version::GameVersion;
 
 /// One `key: value` line inside a category.
 ///
@@ -123,6 +124,15 @@ impl CrashReportCategory {
     /// Add a detail line. java: `addCrashSection`.
     pub fn add(&mut self, key: impl Into<String>, value: impl Into<String>) -> &mut Self {
         self.children.push(Entry::value(key, value));
+        self
+    }
+
+    /// Replace the value of the detail line `key`, or add the line when there is none.
+    pub fn set(&mut self, key: &str, value: impl Into<String>) -> &mut Self {
+        match self.children.iter_mut().find(|entry| entry.key == key) {
+            Some(entry) => entry.value = value.into(),
+            None => self.children.push(Entry::value(key, value)),
+        }
         self
     }
 
@@ -870,6 +880,14 @@ impl CrashReport {
         &mut self.system_details
     }
 
+    /// Name `version` as the Minecraft version in `System Details`. A report starts as a 1.8.9
+    /// one; the client names the version its session played (or would play next).
+    pub fn set_game_version(&mut self, version: GameVersion) {
+        self.system_details
+            .set("Minecraft Version", version.name())
+            .set("Protocol Version", version.protocol().to_string());
+    }
+
     /// Append a new category and return it for filling in. java: `makeCategory`.
     ///
     /// java's `makeCategoryDepth` additionally prunes stack traces against the throwable's own;
@@ -1417,6 +1435,27 @@ pub fn process_memory_bytes() -> Option<u64> {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn a_report_names_the_version_the_client_played() {
+        let details = |report: &CrashReport| {
+            let text = report.complete_report();
+            let at = text.find("-- System Details --").expect("System Details");
+            text[at..].to_owned()
+        };
+        let mut report = CrashReport::new("test", "cause");
+        let before = details(&report);
+        assert!(before.contains("Minecraft Version: 1.8.9\n"), "{before}");
+        assert!(before.contains("Protocol Version: 47\n"), "{before}");
+        // Naming 1.8.9 again changes nothing.
+        report.set_game_version(GameVersion::V1_8_9);
+        assert_eq!(details(&report), before);
+        report.set_game_version(GameVersion::V1_7_10);
+        let after = details(&report);
+        assert!(after.contains("Minecraft Version: 1.7.10\n"), "{after}");
+        assert!(after.contains("Protocol Version: 5\n"), "{after}");
+        assert!(!after.contains("1.8.9"), "replaced, not added: {after}");
+    }
 
     /// The reason [`process_memory_bytes_cached`] exists, asserted rather than asserted-about:
     /// a run of cache hits must cost less than the single miss it replaces.

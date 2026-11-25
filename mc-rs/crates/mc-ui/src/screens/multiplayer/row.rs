@@ -143,7 +143,7 @@ pub fn hit_test(rel_x: i32, rel_y: i32, can_move_up: bool, can_move_down: bool) 
 #[must_use]
 pub fn ping_tooltip(entry: &ServerEntry) -> String {
     if entry.version_mismatch() {
-        return if entry.protocol > crate::screens::multiplayer::CLIENT_PROTOCOL {
+        return if entry.protocol > entry.client_version.protocol() {
             "Client out of date!".to_owned()
         } else {
             "Server out of date!".to_owned()

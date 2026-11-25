@@ -1,0 +1,12 @@
+{
+  "name": "focus_miss_cooldown",
+  "about": "Click at the sky (MISS) while holding attack, then release and tap attack in the next frame. 1.8.9 set leftClickCounter = 10 on the MISS, so the second click does nothing; 1.7.10 has no MISS penalty and swings twice (two C0A).",
+  "world": "focus",
+  "spawn": [-10.5, 64.0, 30.5, 0.0, 0.0],
+  "steps": [
+    {"hold": 3, "look": [0.0, -60.0]},
+    {"hold": 1, "keys": ["attack"]},
+    {"hold": 1, "tap": ["attack"], "note": "release edge, then press and release"},
+    {"hold": 3}
+  ]
+}

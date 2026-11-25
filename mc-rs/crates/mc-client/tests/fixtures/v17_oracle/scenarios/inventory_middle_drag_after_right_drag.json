@@ -1,0 +1,15 @@
+{
+  "name": "inventory_middle_drag_after_right_drag",
+  "about": "On one screen: a right-button drag of the 4 cursor stone over slots 20 and 21 (one each), then a middle-button drag over slots 9 and 10: 1.7.10 repeats the previous drag's button codes (one stone per slot, cursor empty), 1.8.9 sends the middle-drag codes and rejects it (cursor keeps 2).",
+  "world": "arena",
+  "spawn": [8.5, 64.0, 8.5, 0.0, 0.0],
+  "setup": [{"slot": 36, "item": 1, "count": 4}],
+  "steps": [
+    {"hold": 2},
+    {"note": "open", "tap": ["inventory"], "hold": 2},
+    {"note": "pick up the 4 stone", "click": [{"slot": 36, "button": 0}], "hold": 6},
+    {"note": "right drag over slots 20 and 21", "drag": {"slots": [20, 20, 21], "button": 1}, "hold": 3},
+    {"note": "middle drag over slots 9 and 10", "drag": {"slots": [9, 9, 10], "button": 2}, "hold": 3},
+    {"tap": ["inventory"], "hold": 2}
+  ]
+}

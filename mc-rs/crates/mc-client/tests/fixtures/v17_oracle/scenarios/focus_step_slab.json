@@ -1,0 +1,11 @@
+{
+  "name": "focus_step_slab",
+  "about": "Walk east onto a bottom-slab row (top 0.5). Both versions step up; per-tick minY must match between the 1.7.10 oracle and the Rust 1.7.10 mode.",
+  "world": "focus",
+  "spawn": [10.5, 64.0, 7.5, -90.0, 0.0],
+  "steps": [
+    {"hold": 3},
+    {"hold": 20, "keys": ["forward"]},
+    {"hold": 5}
+  ]
+}

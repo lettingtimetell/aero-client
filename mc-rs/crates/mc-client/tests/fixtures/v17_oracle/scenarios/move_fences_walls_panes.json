@@ -1,0 +1,17 @@
+{
+  "name": "move_fences_walls_panes",
+  "about": "A fence row (1.5 high), sliding along it, Jump Boost II clearing fences and walls, glass panes and iron bars (the 1.8.9 oracle's edge_fence inputs).",
+  "world": "edge",
+  "spawn": [14.5, 64.0, -12.5, 0.0, 0.0],
+  "steps": [
+    {"hold": 2},
+    {"keys": ["forward"], "hold": 20},
+    {"note": "jumping cannot clear the fence", "keys": ["forward", "jump"], "hold": 12},
+    {"note": "slide along it", "look": [30.0, 0.0], "keys": ["forward"], "hold": 10},
+    {"note": "Jump Boost II clears fences and walls", "look": [0.0, 0.0], "in": [{"effect": [8, 1, 600]}], "keys": ["forward", "jump"], "hold": 36},
+    {"in": [{"removeEffect": 8}], "keys": ["forward", "jump"], "hold": 40},
+    {"note": "along the panes", "look": [270.0, 0.0], "keys": ["forward", "sprint"], "hold": 16},
+    {"look": [180.0, 0.0], "keys": ["forward", "sneak"], "hold": 20},
+    {"hold": 6}
+  ]
+}
